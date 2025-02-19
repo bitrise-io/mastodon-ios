@@ -40,12 +40,14 @@ struct InlinePostPreview: View {
             }
             Spacer(minLength: 0) // This pushes the VStack all the way to the left.
         }
-        .padding(8)
+        .padding(showAttributionHeader ? 8 : 0)
         .frame(maxWidth: .infinity)
         .background {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(colorScheme == .dark ? AnyShapeStyle(Color(UIColor.secondarySystemBackground)) : AnyShapeStyle(.clear))
-                .stroke(.separator)
+            if showAttributionHeader {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(colorScheme == .dark ? AnyShapeStyle(Color(UIColor.secondarySystemBackground)) : AnyShapeStyle(.clear))
+                    .stroke(.separator)
+            }
         }
     }
 
