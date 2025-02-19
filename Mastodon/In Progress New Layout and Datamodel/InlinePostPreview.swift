@@ -16,26 +16,29 @@ struct InlinePostPreview: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading) {
-            header()
-            if let content = viewModel.content {
-                Text(String(content.characters[...]))
-                    .font(.subheadline)
-                    .lineLimit(showAttributionHeader ? 3 : 9)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if let attachmentInfo = viewModel.attachmentInfo {
-                HStack {
-                    Image(systemName: attachmentInfo.iconName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: tinyAvatarSize)
-                    Text(attachmentInfo.labelText)
+        HStack(spacing: 0) {
+            VStack(alignment: .leading) {
+                header()
+                if let content = viewModel.content {
+                    Text(String(content.characters[...]))
+                        .font(.subheadline)
+                        .lineLimit(showAttributionHeader ? 3 : 9)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundStyle(.secondary)
-                .font(.subheadline)
-                .lineLimit(1)
+                if let attachmentInfo = viewModel.attachmentInfo {
+                    HStack {
+                        Image(systemName: attachmentInfo.iconName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: tinyAvatarSize)
+                        Text(attachmentInfo.labelText)
+                    }
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                }
             }
+            Spacer(minLength: 0) // This pushes the VStack all the way to the left.
         }
         .padding(8)
         .frame(maxWidth: .infinity)
