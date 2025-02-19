@@ -143,7 +143,12 @@ struct NotificationListView: View {
                 await viewModel.refreshFeedFromTop()
             }
         }
-
+        .onAppear() {
+            NotificationService.shared.clearNotificationCountForActiveUser()
+        }
+        .onDisappear() {
+            NotificationService.shared.clearNotificationCountForActiveUser()
+        }
     }
 
     @ViewBuilder func rowView(_ notificationListItem: NotificationListItem)
