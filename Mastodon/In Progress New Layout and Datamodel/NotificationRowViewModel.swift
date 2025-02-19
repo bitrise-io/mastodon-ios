@@ -94,7 +94,7 @@ class NotificationRowViewModel: ObservableObject {
             if let statusViewModel =
                 notificationInfo.statusViewModel
             {
-                actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: statusViewModel.isReply, isPrivateStatus: statusViewModel.visibility == .direct)
+                actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: statusViewModel.isReplyToMe, isPrivateStatus: statusViewModel.visibility == .direct)
                 headerTextComponents = [
                     .text(
                         notificationInfo.groupedNotificationType
@@ -498,6 +498,7 @@ extension NotificationRowViewModel {
                 groupedNotificationType: type,
                 sourceAccounts: sourceAccounts,
                 statusViewModel: status?.viewModel(
+                    myAccountID: myAccountID,
                     myDomain: myAccountDomain,
                     navigateToStatus: {
                         Task {
@@ -554,6 +555,7 @@ extension NotificationRowViewModel {
                 accounts: [notification.account], totalActorCount: 1)
             
             let statusViewModel = notification.status?.viewModel(
+                myAccountID: myAccountID,
                 myDomain: myAccountDomain,
                 navigateToStatus: {
                     Task {

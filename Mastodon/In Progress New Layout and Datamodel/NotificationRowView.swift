@@ -1013,7 +1013,7 @@ extension Mastodon.Entity.Status {
     public struct ViewModel {
         public let content: AttributedString?
         public let visibility: Mastodon.Entity.Status.Visibility?
-        public let isReply: Bool
+        public let isReplyToMe: Bool
         public let isPinned: Bool
         public let accountDisplayName: String?
         public let accountFullName: String?
@@ -1026,7 +1026,7 @@ extension Mastodon.Entity.Status {
     }
 
     public func viewModel(
-        myDomain: String, navigateToStatus: @escaping () -> Void
+        myAccountID: String, myDomain: String, navigateToStatus: @escaping () -> Void
     ) -> ViewModel {
         let displayableContent: AttributedString
         if let content {
@@ -1055,7 +1055,7 @@ extension Mastodon.Entity.Status {
 
         return ViewModel(
             content: displayableContent, visibility: visibility,
-            isReply: inReplyToID != nil,
+            isReplyToMe: inReplyToAccountID == myAccountID,
             isPinned: false,
             accountDisplayName: account.displayName,
             accountFullName: accountFullName,
