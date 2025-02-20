@@ -509,6 +509,7 @@
 		DBFEEC99279BDCDE004F81DD /* ProfileAboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC98279BDCDE004F81DD /* ProfileAboutViewModel.swift */; };
 		DBFEEC9B279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9A279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift */; };
 		DBFEEC9D279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9C279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift */; };
+		FB24973A2D6771D500A508B2 /* Boutique in Frameworks */ = {isa = PBXBuildFile; productRef = FB2497392D6771D500A508B2 /* Boutique */; };
 		FB7C4CC62CD2CAB000F6129A /* DonationCompletionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CC52CD2CAA800F6129A /* DonationCompletionViewController.swift */; };
 		FB7C4CCC2CD55DEB00F6129A /* NavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCB2CD55DEB00F6129A /* NavigationFlow.swift */; };
 		FB7C4CCE2CD55DFF00F6129A /* NewDonationNavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCD2CD55DFE00F6129A /* NewDonationNavigationFlow.swift */; };
@@ -1325,6 +1326,7 @@
 				DBF96326262EC0A6001D8D25 /* AuthenticationServices.framework in Frameworks */,
 				D84FA0932AE6915800987F47 /* MBProgressHUD in Frameworks */,
 				D87364F92AE28DB500C8F919 /* Kanna in Frameworks */,
+				FB24973A2D6771D500A508B2 /* Boutique in Frameworks */,
 				2AAAA34E2B04DE21004C6672 /* VisionKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3182,6 +3184,7 @@
 				357FEEAE29523D470021C9DC /* MastodonSDKDynamic */,
 				D87364F82AE28DB500C8F919 /* Kanna */,
 				D84FA0922AE6915800987F47 /* MBProgressHUD */,
+				FB2497392D6771D500A508B2 /* Boutique */,
 			);
 			productName = Mastodon;
 			productReference = DB427DD225BAA00100D1B89D /* Mastodon.app */;
@@ -3367,6 +3370,7 @@
 				2AB501192992322500346092 /* XCRemoteSwiftPackageReference "LightChart" */,
 				D87364F72AE28DB500C8F919 /* XCRemoteSwiftPackageReference "Kanna" */,
 				D84FA0912AE6915800987F47 /* XCRemoteSwiftPackageReference "MBProgressHUD" */,
+				FB2497382D67704100A508B2 /* XCRemoteSwiftPackageReference "Boutique" */,
 			);
 			productRefGroup = DB427DD325BAA00100D1B89D /* Products */;
 			projectDirPath = "";
@@ -5449,6 +5453,14 @@
 				minimumVersion = 5.2.7;
 			};
 		};
+		FB2497382D67704100A508B2 /* XCRemoteSwiftPackageReference "Boutique" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mergesort/Boutique.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.9;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -5494,6 +5506,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D87364F72AE28DB500C8F919 /* XCRemoteSwiftPackageReference "Kanna" */;
 			productName = Kanna;
+		};
+		FB2497392D6771D500A508B2 /* Boutique */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FB2497382D67704100A508B2 /* XCRemoteSwiftPackageReference "Boutique" */;
+			productName = Boutique;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
