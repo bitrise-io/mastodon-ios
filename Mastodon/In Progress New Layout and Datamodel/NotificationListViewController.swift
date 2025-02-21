@@ -320,7 +320,7 @@ private class NotificationListViewModel: ObservableObject {
                 updatedItems = self.notificationPolicyBannerRow + updatedItems
                 self.notificationItems = updatedItems
             }
-        feedLoader.loadMore(olderThan: nil, newerThan: nil)
+        feedLoader.doFirstLoad()
     }
 
     public func refreshFeedFromTop() async {

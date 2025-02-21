@@ -16,6 +16,7 @@ extension Mastodon.Entity.V2 {
         public let description: String
         public let shortDescription: String?
         public let version: String?
+        public let apiVersions: [String : Int]?
         public let languages: [String]?     // (ISO 639 Part 1-5 language codes)
         public let registrations: Mastodon.Entity.V2.Instance.Registrations?
         public let approvalRequired: Bool?
@@ -37,6 +38,7 @@ extension Mastodon.Entity.V2 {
             self.shortDescription = nil
             self.contact = nil
             self.version = nil
+            self.apiVersions = nil
             self.languages = nil
             self.registrations = nil
             self.approvalRequired = approvalRequired
@@ -54,6 +56,7 @@ extension Mastodon.Entity.V2 {
             case description
             case shortDescription = "short_description"
             case version
+            case apiVersions = "api_versions"
             case languages
             case registrations
             case approvalRequired = "approval_required"

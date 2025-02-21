@@ -42,6 +42,16 @@ public struct MastodonAuthentication: Codable, Hashable, UserIdentifier {
             return version?.majorServerVersion(greaterThanOrEquals: 4) ?? false // following Tags is support beginning with Mastodon v4.0.0
         }
         
+        public var canGroupNotifications: Bool {
+            switch self {
+            case let .v1(instance):
+                return false
+            case let .v2(instance, _):
+                guard let apiVersion = instance.apiVersions?["mastodon"] else { return false }
+                return apiVersion >= 2
+            }
+        }
+        
         public var charactersReservedPerURL: Int {
             switch self {
             case let .v1(instance):

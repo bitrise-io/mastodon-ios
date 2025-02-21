@@ -1276,12 +1276,14 @@
 		FBBEA04F2D3819080000A900 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				BoutiqueStores.swift,
 				GroupedNotificationFeedLoader.swift,
 				InlinePostPreview.swift,
 				NotificationInfo.swift,
 				NotificationListViewController.swift,
 				NotificationRowView.swift,
 				NotificationRowViewModel.swift,
+				NotificationsCacheManager.swift,
 				TimelinePostCell/ActionButtons.swift,
 				TimelinePostCell/AuthorHeader.swift,
 				TimelinePostCell/BoostHeader.swift,

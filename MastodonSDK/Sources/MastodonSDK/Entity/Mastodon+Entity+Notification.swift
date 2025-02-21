@@ -94,6 +94,13 @@ extension Mastodon.Entity {
             case statuses
             case notificationGroups = "notification_groups"
         }
+        
+        public init(notificationGroups: [Mastodon.Entity.NotificationGroup], fullAccounts: [Mastodon.Entity.Account], partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]?, statuses: [Mastodon.Entity.Status]) {
+            self.notificationGroups = notificationGroups
+            self.accounts = fullAccounts
+            self.partialAccounts = partialAccounts
+            self.statuses = statuses
+        }
     }
     
     public struct PartialAccountWithAvatar: Codable, Sendable
@@ -166,6 +173,13 @@ extension Mastodon.Entity {
             case followingCount = "following_count"
             case createdAt = "created_at"
         }
+    }
+}
+
+extension Mastodon.Entity.PartialAccountWithAvatar: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        // The URL seems to be the only thing that doesn't change across instances.
+        hasher.combine(url)
     }
 }
 

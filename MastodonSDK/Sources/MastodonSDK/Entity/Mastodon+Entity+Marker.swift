@@ -17,6 +17,8 @@ extension Mastodon.Entity {
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/marker/)
     public struct Marker: Codable {
+        public static let storageKey = "last_read_marker"
+        
         // Base
         public let home: Position
         public let notifications: Position
