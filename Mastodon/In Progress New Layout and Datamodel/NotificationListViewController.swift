@@ -145,6 +145,9 @@ struct NotificationListView: View {
         }
         .onAppear() {
             NotificationService.shared.clearNotificationCountForActiveUser()
+            Task {
+                await viewModel.refreshFeedFromTop()
+            }
         }
         .onDisappear() {
             NotificationService.shared.clearNotificationCountForActiveUser()
@@ -299,7 +302,9 @@ private class NotificationListViewModel: ObservableObject {
             notificationPolicyBannerRow
             + withoutFilteredRow
         
-        feedLoader.loadMore(olderThan: nil, newerThan: nil)
+        Task {
+            await feedLoader.asyncLoadMore(olderThan: nil, newerThan: nil)
+        }
     }
 
     private func createNewFeedLoader() {
@@ -330,6 +335,8 @@ private class NotificationListViewModel: ObservableObject {
 
     public func loadOlder() {
         let oldestKnown = feedLoader.records.allRecords.last?.oldestID
-        feedLoader.loadMore(olderThan: oldestKnown, newerThan: nil)
+        Task {
+            await feedLoader.asyncLoadMore(olderThan: oldestKnown, newerThan: nil)
+        }
     }
 }

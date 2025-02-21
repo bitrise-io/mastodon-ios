@@ -47,6 +47,8 @@ final public class GroupedNotificationFeedLoader {
 
     @Published private(set) var records: FeedLoadResult = FeedLoadResult(
         allRecords: [], canLoadOlder: true)
+    
+    private var isFetching: Bool = false
 
     private let useGroupedNotificationsApi: Bool
     private let cacheManager: any NotificationsCacheManager
@@ -105,7 +107,7 @@ final public class GroupedNotificationFeedLoader {
         Task {
             do {
                 try await loadCached()
-                loadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
+                await asyncLoadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
             } catch {
                 presentError?(error)
             }
@@ -146,22 +148,16 @@ final public class GroupedNotificationFeedLoader {
         return deduped
     }
     
-    public func loadMore(
-        olderThan: String?,
-        newerThan: String?
-    ) {
-        let request = FeedLoadRequest(
-            olderThan: olderThan, newerThan: newerThan)
-        Task {
-            let newlyFetched = try await load(request)
-            await updateAfterInserting(newlyFetchedResults: newlyFetched, at: request.resultsInsertionPoint)
-        }
-    }
 
     public func asyncLoadMore(
         olderThan: String?,
         newerThan: String?
     ) async {
+        guard !isFetching else { return }
+        isFetching = true
+        defer {
+            isFetching = false
+        }
         let request = FeedLoadRequest(
             olderThan: olderThan, newerThan: newerThan)
         do {
@@ -173,6 +169,11 @@ final public class GroupedNotificationFeedLoader {
     }
     
     private func loadCached() async throws {
+        guard !isFetching else { return }
+        isFetching = true
+        defer {
+            isFetching = false
+        }
         try await replaceRecordsAfterFiltering(rowViewModels(from: cacheManager.currentResults), canLoadOlder: true)
     }
 
