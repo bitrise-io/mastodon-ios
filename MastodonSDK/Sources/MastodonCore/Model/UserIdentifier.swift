@@ -14,7 +14,7 @@ public protocol UserIdentifier {
 }
 
 public extension UserIdentifier {
-    var uniqueUserDomainIdentifier: String {
+    var globallyUniqueUserIdentifier: String {
         "\(userID)@\(domain)"
     }
 }

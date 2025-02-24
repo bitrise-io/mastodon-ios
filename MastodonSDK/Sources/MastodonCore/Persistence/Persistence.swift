@@ -15,22 +15,18 @@ public enum Persistence {
     case notificationsAll(UserIdentifier)
     case accounts(UserIdentifier)
 
-    private func uniqueUserDomainIdentifier(for userIdentifier: UserIdentifier) -> String {
-        "\(userIdentifier.userID)@\(userIdentifier.domain)"
-    }
-
     private var filename: String {
         switch self {
             case .searchHistory(let userIdentifier):
-                return "search_history_\(uniqueUserDomainIdentifier(for: userIdentifier))"
+                return "search_history_\(userIdentifier.globallyUniqueUserIdentifier))"
             case let .homeTimeline(userIdentifier):
-                return "home_timeline_\(uniqueUserDomainIdentifier(for: userIdentifier))"
+                return "home_timeline_\(userIdentifier.globallyUniqueUserIdentifier)"
             case let .notificationsMentions(userIdentifier):
-                return "notifications_mentions_\(userIdentifier.uniqueUserDomainIdentifier)"
+                return "notifications_mentions_\(userIdentifier.globallyUniqueUserIdentifier)"
             case let .notificationsAll(userIdentifier):
-                return "notifications_all_\(uniqueUserDomainIdentifier(for: userIdentifier))"
+                return "notifications_all_\(userIdentifier.globallyUniqueUserIdentifier)"
             case .accounts(let userIdentifier):
-                return "account_\(uniqueUserDomainIdentifier(for: userIdentifier))"
+                return "account_\(userIdentifier.globallyUniqueUserIdentifier)"
         }
     }
 

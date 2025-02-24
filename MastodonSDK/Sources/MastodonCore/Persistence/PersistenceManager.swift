@@ -50,7 +50,7 @@ public class PersistenceManager {
         let account = FileManager
             .default
             .accounts(for: authentication.userIdentifier())
-            .first(where: { $0.id == authentication.userID })
+            .first(where: { $0.id == authentication.userID && $0.domain == authentication.domain })
         return account
     }
     
