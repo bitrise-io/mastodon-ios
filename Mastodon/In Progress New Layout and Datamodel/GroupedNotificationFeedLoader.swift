@@ -47,11 +47,16 @@ final public class GroupedNotificationFeedLoader {
 
     @Published private(set) var records: FeedLoadResult = FeedLoadResult(
         allRecords: [], canLoadOlder: true)
+    var lastReadMarker: LastReadMarkers.MarkerPosition? {
+        return cacheManager?.currentLastReadMarker
+    }
     
     private var isFetching: Bool = false
 
     private let useGroupedNotificationsApi: Bool
-    private let cacheManager: any NotificationsCacheManager
+    private let cacheManager: (any NotificationsCacheManager)?
+    
+    private let user: MastodonUserIdentifier?
     private let kind: MastodonFeedKind
     private let navigateToScene:
         ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void)?
@@ -59,18 +64,18 @@ final public class GroupedNotificationFeedLoader {
 
     private var activeFilterBoxSubscription: AnyCancellable?
 
-    init(
-        kind: MastodonFeedKind,
+    init(kind: MastodonFeedKind,
         navigateToScene: (
             (SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void
         )?, presentError: ((Error) -> Void)?
     ) {
+        self.user = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.userIdentifier()
         self.kind = kind
         self.navigateToScene = navigateToScene
         self.presentError = presentError
         
         let useGrouped: Bool
-        let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value?.uniqueUserDomainIdentifier ?? "ERROR_no_user_found"
+       
         switch kind {
         case .notificationsAll, .notificationsMentionsOnly:
             if let currentInstance = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.instanceConfiguration {
@@ -82,10 +87,15 @@ final public class GroupedNotificationFeedLoader {
             useGrouped = false
         }
         self.useGroupedNotificationsApi = useGrouped
-        if useGrouped {
-            self.cacheManager = GroupedNotificationCacheManager(feedKind: kind, userAcct: currentUser)
+        if let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value {
+            let currentUserIdentifier = MastodonUserIdentifier(authenticationBox: authBox)
+            if useGrouped {
+                self.cacheManager = GroupedNotificationCacheManager(feedKind: kind, userIdentifier: currentUserIdentifier)
+            } else {
+                self.cacheManager = UngroupedNotificationCacheManager(feedKind: kind, userIdentifier: currentUserIdentifier)
+            }
         } else {
-            self.cacheManager = UngroupedNotificationCacheManager(feedKind: kind, userAcct: currentUser)
+            self.cacheManager = nil
         }
         
         activeFilterBoxSubscription = StatusFilterService.shared
@@ -107,11 +117,25 @@ final public class GroupedNotificationFeedLoader {
         Task {
             do {
                 try await loadCached()
+            } catch {
+            }
+            do {
+                if let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value {
+                    let markers = try await APIService.shared.lastReadMarkers(authenticationBox: authBox)
+                    cacheManager?.didFetchMarkers(markers)
+                }
+            } catch {
+            }
+            do {
                 await asyncLoadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
             } catch {
                 presentError?(error)
             }
         }
+    }
+    
+    public func commitToCache() async {
+        await cacheManager?.commitToCache()
     }
 
     private func replaceRecordsAfterFiltering(_ unfiltered: [NotificationRowViewModel], canLoadOlder: Bool? = nil) async {
@@ -169,7 +193,7 @@ final public class GroupedNotificationFeedLoader {
     }
     
     private func loadCached() async throws {
-        guard !isFetching else { return }
+        guard !isFetching, let cacheManager else { return }
         isFetching = true
         defer {
             isFetching = false
@@ -198,6 +222,7 @@ final public class GroupedNotificationFeedLoader {
 extension GroupedNotificationFeedLoader {
     private func updateAfterInserting(newlyFetchedResults: NotificationsResultType,
                                       at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) async {
+        guard let cacheManager else { assertionFailure(); return }
         do {
             cacheManager.updateByInserting(newlyFetched: newlyFetchedResults, at: insertionPoint)
             let unfiltered = try rowViewModels(from: cacheManager.currentResults)
@@ -311,6 +336,20 @@ extension GroupedNotificationFeedLoader {
                 assertionFailure("unexpected results type")
                 return []
             }
+        }
+    }
+}
+
+extension GroupedNotificationFeedLoader {
+    public func markAsRead(_ identifier: Mastodon.Entity.NotificationGroup.ID) {
+        cacheManager?.updateToNewerMarker(.local(lastReadID: identifier))
+    }
+    
+    public func isUnread(_ identifier: Mastodon.Entity.NotificationGroup.ID) -> Bool {
+        if let lastRead = cacheManager?.currentLastReadMarker?.lastReadID {
+            return identifier > lastRead
+        } else {
+            return true
         }
     }
 }

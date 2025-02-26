@@ -2,17 +2,19 @@
 
 import Boutique
 import MastodonSDK
+import MastodonCore
 
 @MainActor
 protocol NotificationsCacheManager<T> {
     associatedtype T: NotificationsResultType
     
     var currentResults: T? { get }
-    var currentMarker: Mastodon.Entity.Marker? { get }
+    var currentLastReadMarker: LastReadMarkers.MarkerPosition? { get }
     var mostRecentlyFetchedResults: T? { get }
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
-    func updateToNewerMarker(_ newMarker: Mastodon.Entity.Marker)
-    func commitToCache(forUserAcct userAcct: String) async
+    func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker)
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition)
+    func commitToCache() async
 }
 
 protocol NotificationsResultType {}
@@ -22,33 +24,40 @@ extension Array<Mastodon.Entity.Notification>: NotificationsResultType {}
 @MainActor
 class UngroupedNotificationCacheManager: NotificationsCacheManager {
     typealias T = [Mastodon.Entity.Notification]
+    private let userIdentifier: MastodonUserIdentifier
+    private let feedKind: MastodonFeedKind
+    private let lastReadMarkerStore: Store<LastReadMarkers>
     private let cachedNotifications: Store<Mastodon.Entity.Notification>
     
     private var staleResults: T?
-    private var staleMarker: Mastodon.Entity.Marker?
+    private var staleMarkers: LastReadMarkers?
     
     internal var mostRecentlyFetchedResults: T?
-    private var mostRecentlyFetchedMarker: Mastodon.Entity.Marker?
+    private var mostRecentMarkers: LastReadMarkers?
     
-    init(feedKind: MastodonFeedKind, userAcct: String) {
-        self.cachedNotifications = Store.ungroupedNotificationStore(forKind: feedKind, forUserAcct: userAcct)
+    init(feedKind: MastodonFeedKind, userIdentifier: MastodonUserIdentifier) {
+        self.feedKind = feedKind
+        self.userIdentifier = userIdentifier
+        lastReadMarkerStore = Store.lastReadMarkersStore()
+        self.cachedNotifications = Store.ungroupedNotificationStore(forKind: feedKind, forUser: userIdentifier)
         self.staleResults = cachedNotifications.items
         switch feedKind {
         case .notificationsAll, .notificationsMentionsOnly:
-            self.staleMarker = LastReadMarkerCache().getCachedMarker(forUserAcct: userAcct)
+            self.staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
         case .notificationsWithAccount:
-            self.staleMarker = nil
+            self.staleMarkers = nil
         }
         self.mostRecentlyFetchedResults = nil
-        self.mostRecentlyFetchedMarker = nil
+        self.mostRecentMarkers = nil
     }
     
     var currentResults: T? {
         return mostRecentlyFetchedResults ?? staleResults
     }
     
-    var currentMarker: Mastodon.Entity.Marker? {
-        return mostRecentlyFetchedMarker ?? staleMarker ?? nil
+    var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
+        guard let markers = mostRecentMarkers ?? staleMarkers else { return nil }
+        return markers.lastRead(forKind: feedKind)
     }
     
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
@@ -79,15 +88,23 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
             mostRecentlyFetchedResults = updatedMostRecentChunk
         }
     }
- 
     
-    func updateToNewerMarker(_ newMarker: Mastodon.Entity.Marker) {
-        mostRecentlyFetchedMarker = newMarker
+    func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
+        var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        if let notifications = updatedMarkers.notifications {
+            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+        }
+        mostRecentMarkers = updatable
+    }
+ 
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
+        let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
     }
     
-    func commitToCache(forUserAcct userAcct: String) async {
-        if let mostRecentlyFetchedMarker {
-            LastReadMarkerCache().setCachedMarker(mostRecentlyFetchedMarker, forUserAcct: userAcct)
+    func commitToCache() async {
+        if let mostRecentMarkers {
+            try? await lastReadMarkerStore.insert(mostRecentMarkers)
         }
         if let mostRecentlyFetchedResults {
             try? await cachedNotifications
@@ -104,30 +121,39 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
 class GroupedNotificationCacheManager: NotificationsCacheManager {
     typealias T = Mastodon.Entity.GroupedNotificationsResults
     
+    private let userIdentifier: MastodonUserIdentifier
+    private let feedKind: MastodonFeedKind
+    
     private var staleResults: T?
-    private var staleMarker: Mastodon.Entity.Marker?
+    private var staleMarkers: LastReadMarkers?
     
     internal var mostRecentlyFetchedResults: T?
-    private var mostRecentlyFetchedMarker: Mastodon.Entity.Marker?
+    private var mostRecentMarkers: LastReadMarkers?
     
+    private let lastReadMarkerStore: Store<LastReadMarkers>
     private let notificationGroupStore: Store<Mastodon.Entity.NotificationGroup>
     private let fullAccountStore: Store<Mastodon.Entity.Account>
     private let partialAccountStore: Store<Mastodon.Entity.PartialAccountWithAvatar>
     private let statusStore: Store<Mastodon.Entity.Status>
     
-    init(feedKind: MastodonFeedKind, userAcct: String) {
-        notificationGroupStore = Store.notificationGroupStore(forKind: feedKind, forUserAcct: userAcct)
-        fullAccountStore = Store.notificationRelevantFullAccountStore(forKind: feedKind, forUserAcct: userAcct)
-        partialAccountStore = Store.notificationRelevantPartialAccountStore(forKind: feedKind, forUserAcct: userAcct)
-        statusStore = Store.notificationRelevantStatusStore(forKind: feedKind, forUserAcct: userAcct)
+    init(feedKind: MastodonFeedKind, userIdentifier: MastodonUserIdentifier) {
+        
+        self.feedKind = feedKind
+        self.userIdentifier = userIdentifier
+        
+        lastReadMarkerStore = Store.lastReadMarkersStore()
+        notificationGroupStore = Store.notificationGroupStore(forKind: feedKind, forUser: userIdentifier)
+        fullAccountStore = Store.notificationRelevantFullAccountStore(forKind: feedKind, forUser: userIdentifier)
+        partialAccountStore = Store.notificationRelevantPartialAccountStore(forKind: feedKind, forUser: userIdentifier)
+        statusStore = Store.notificationRelevantStatusStore(forKind: feedKind, forUser: userIdentifier)
         
         staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroupStore.items, fullAccounts: fullAccountStore.items, partialAccounts: partialAccountStore.items, statuses: statusStore.items)
        
         switch feedKind {
         case .notificationsAll, .notificationsMentionsOnly:
-            staleMarker = LastReadMarkerCache().getCachedMarker(forUserAcct: userAcct)
+            staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
         case .notificationsWithAccount:
-            staleMarker = nil
+            staleMarkers = nil
         }
     }
     
@@ -202,19 +228,37 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         }
     }
     
-    func updateToNewerMarker(_ newMarker: MastodonSDK.Mastodon.Entity.Marker) {
-        mostRecentlyFetchedMarker = newMarker
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
+        let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
+    }
+    
+    func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
+        var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        if let notifications = updatedMarkers.notifications {
+            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+        }
+        mostRecentMarkers = updatable
     }
     
     var currentResults: T? {
         return mostRecentlyFetchedResults ?? staleResults
     }
     
-    var currentMarker: Mastodon.Entity.Marker? {
-        return mostRecentlyFetchedMarker ?? staleMarker
+    var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
+        guard let markers = mostRecentMarkers ?? staleMarkers else {
+            return nil
+        }
+        return markers.lastRead(forKind: feedKind)
     }
     
-    func commitToCache(forUserAcct userAcct: String) async {
+    func commitToCache() async {
+        if let mostRecentMarkers {
+            do {
+                try await lastReadMarkerStore.insert(mostRecentMarkers)
+            } catch {
+            }
+        }
         if let mostRecentlyFetchedResults {
             try? await notificationGroupStore
                 .removeAll()

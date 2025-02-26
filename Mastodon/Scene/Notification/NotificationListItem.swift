@@ -16,6 +16,15 @@ enum NotificationListItem {
     case notification(MastodonFeedItemIdentifier)  // TODO: remove
     case groupedNotification(NotificationRowViewModel)
     case bottomLoader
+    
+    var rowViewModel: NotificationRowViewModel? {
+        switch self {
+        case .filteredNotificationsInfo, .notification, .bottomLoader:
+            return nil
+        case .groupedNotification(let model):
+            return model
+        }
+    }
 
     var fetchAnchor: MastodonFeedItemIdentifier? {
         switch self {

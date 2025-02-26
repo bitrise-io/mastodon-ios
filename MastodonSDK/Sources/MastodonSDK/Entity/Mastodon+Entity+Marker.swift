@@ -20,8 +20,8 @@ extension Mastodon.Entity {
         public static let storageKey = "last_read_marker"
         
         // Base
-        public let home: Position
-        public let notifications: Position
+        public let home: Position?
+        public let notifications: Position?
     }
 }
 

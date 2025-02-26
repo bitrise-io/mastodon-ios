@@ -31,4 +31,9 @@ public struct MastodonUserIdentifier: UserIdentifier {
         self.domain = domain
         self.userID = userID
     }
+    
+    public init(authenticationBox: MastodonAuthenticationBox) {
+        self.domain = authenticationBox.domain
+        self.userID = authenticationBox.userID
+    }
 }

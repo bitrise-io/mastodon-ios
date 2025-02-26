@@ -119,42 +119,37 @@ struct NotificationListView: View {
                 .fixedSize()
                 Spacer()
             }
-
-            List {
-                ForEach(viewModel.notificationItems) { item in
-                    rowView(item)
-                        .onAppear {
-                            switch item {
-                            case .groupedNotification(let viewModel):
-                                viewModel.prepareForDisplay()
-                            case .bottomLoader:
-                                loadMore()
-                            default:
-                                break
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(viewModel.notificationItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
+                        let isUnread = viewModel.isUnread(item)
+                        rowView(item, isUnread: isUnread ?? false)
+                            .onAppear {
+                                didAppear(item)
                             }
-                        }
-                        .onTapGesture {
-                            didTap(item: item)
-                        }
+                            .onDisappear {
+                                didDisappear(item, wasUnread: isUnread ?? false)
+                            }
+                            .onTapGesture {
+                                didTap(item: item)
+                            }
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.refreshFeedFromTop()
+                }
+                .onAppear() {
+                    viewDidAppear()
+                }
+                .onDisappear() {
+                    viewDidDisappear()
                 }
             }
-            .listStyle(.plain)
-            .refreshable {
-                await viewModel.refreshFeedFromTop()
-            }
-        }
-        .onAppear() {
-            NotificationService.shared.clearNotificationCountForActiveUser()
-            Task {
-                await viewModel.refreshFeedFromTop()
-            }
-        }
-        .onDisappear() {
-            NotificationService.shared.clearNotificationCountForActiveUser()
         }
     }
 
-    @ViewBuilder func rowView(_ notificationListItem: NotificationListItem)
+    @ViewBuilder func rowView(_ notificationListItem: NotificationListItem, isUnread: Bool)
         -> some View
     {
         switch notificationListItem {
@@ -173,17 +168,60 @@ struct NotificationListView: View {
         case .notification:
             Text("obsolete item")
         case .groupedNotification(let viewModel):
-            // TODO: implement unread using Mastodon.Entity.Marker
             NotificationRowView(viewModel: viewModel)
                 .padding(.vertical, 4)
                 .listRowBackground(
-                    Rectangle()
-                        .fill(viewModel.usePrivateBackground ?  Asset.Colors.accent.swiftUIColor : .clear)
-                        .opacity(0.1)
+                    backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
                 )
         }
     }
+    
+    
+    @ViewBuilder func backgroundView(isPrivate: Bool, isUnread: Bool) -> some View {
+        HStack(spacing: 0) {
+            Spacer().frame(width: 3)
+            if isUnread {
+                Rectangle()
+                    .fill(Asset.Colors.accent.swiftUIColor)
+                    .frame(width: 5)
+            }
+            Rectangle()
+                .fill(isPrivate ?  Asset.Colors.accent.swiftUIColor : .clear)
+                .opacity(0.1)
+        }
+    }
+    
+    func didAppear(_ item: NotificationListItem) {
+        switch item {
+        case .groupedNotification(let viewModel):
+            viewModel.prepareForDisplay()
+        case .bottomLoader:
+            loadMore()
+        default:
+            break
+        }
+    }
 
+    func didDisappear(_ item: NotificationListItem, wasUnread: Bool) {
+        if wasUnread {
+            viewModel.markAsRead(item)
+        }
+    }
+    
+    func viewDidAppear() {
+        NotificationService.shared.clearNotificationCountForActiveUser()
+        Task {
+            await viewModel.refreshFeedFromTop()
+        }
+    }
+    
+    func viewDidDisappear() {
+        NotificationService.shared.clearNotificationCountForActiveUser()
+        Task {
+            await viewModel.commitToCache()
+        }
+    }
+    
     func loadMore() {
         viewModel.loadOlder()
     }
@@ -231,11 +269,31 @@ private class NotificationListViewModel: ObservableObject {
 
     @Published var displayedNotifications: ListType = .everything {
         didSet {
-            createNewFeedLoader()
+            Task {
+                await feedLoader.commitToCache()
+                createNewFeedLoader()
+            }
         }
     }
     @Published var notificationItems: [NotificationListItem] = []
-
+    
+    private var firstUnreadItem: NotificationListItem? {
+        guard let marker =  feedLoader.lastReadMarker else { return nil }
+        let firstUnread = notificationItems.reversed().first { item in
+            switch item {
+            case .groupedNotification(let itemViewModel):
+                if let itemNewestID =  itemViewModel.newestID {
+                    return itemNewestID > marker.lastReadID
+                } else {
+                    return false
+                }
+            default:
+                return false
+            }
+        }
+        return firstUnread
+    }
+    
     var filteredNotificationsViewModel =
         FilteredNotificationsRowView.ViewModel(policy: nil)
     private var notificationPolicyBannerRow: [NotificationListItem] {
@@ -250,8 +308,7 @@ private class NotificationListViewModel: ObservableObject {
     }
 
     private var feedSubscription: AnyCancellable?
-    private var feedLoader = GroupedNotificationFeedLoader(
-        kind: .notificationsAll, navigateToScene: { _, _ in },
+    private var feedLoader = GroupedNotificationFeedLoader(kind: .notificationsAll, navigateToScene: { _, _ in },
         presentError: { _ in })
 
     fileprivate var navigateToScene:
@@ -306,6 +363,36 @@ private class NotificationListViewModel: ObservableObject {
             await feedLoader.asyncLoadMore(olderThan: nil, newerThan: nil)
         }
     }
+    
+    func isUnread(_ item: NotificationListItem) -> Bool? {
+        switch item {
+        case .bottomLoader, .filteredNotificationsInfo:
+            return nil
+        case .groupedNotification(let viewModel):
+            if let id = viewModel.newestID {
+                return feedLoader.isUnread(id)
+            } else {
+                return false
+            }
+        case .notification:
+            assert(false)
+            return nil
+        }
+    }
+    
+    func markAsRead(_ item: NotificationListItem) {
+        switch item {
+        case .bottomLoader, .filteredNotificationsInfo:
+            break
+        case .groupedNotification(let viewModel):
+            if let id = viewModel.newestID {
+                feedLoader.markAsRead(id)
+            }
+        case .notification:
+            assert(false)
+            break
+        }
+    }
 
     private func createNewFeedLoader() {
         fetchFilteredNotificationsPolicy()
@@ -338,5 +425,9 @@ private class NotificationListViewModel: ObservableObject {
         Task {
             await feedLoader.asyncLoadMore(olderThan: oldestKnown, newerThan: nil)
         }
+    }
+    
+    public func commitToCache() async {
+        await feedLoader.commitToCache()
     }
 }
