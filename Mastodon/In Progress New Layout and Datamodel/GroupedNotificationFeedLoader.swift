@@ -53,7 +53,7 @@ final public class GroupedNotificationFeedLoader {
     
     private var isFetching: Bool = false
 
-    private let useGroupedNotificationsApi: Bool
+    public let useGroupedNotificationsApi: Bool
     private let cacheManager: (any NotificationsCacheManager)?
     
     private let user: MastodonUserIdentifier?

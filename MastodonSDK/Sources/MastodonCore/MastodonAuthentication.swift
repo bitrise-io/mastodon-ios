@@ -44,7 +44,7 @@ public struct MastodonAuthentication: Codable, Hashable, UserIdentifier {
         
         public var canGroupNotifications: Bool {
             switch self {
-            case let .v1(instance):
+            case let .v1(_):
                 return false
             case let .v2(instance, _):
                 guard let apiVersion = instance.apiVersions?["mastodon"] else { return false }

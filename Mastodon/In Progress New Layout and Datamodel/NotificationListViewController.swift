@@ -41,6 +41,10 @@ class NotificationListViewController: UIHostingController<NotificationListView>
             "init(coder:) not implemented for NotificationListViewController")
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        viewModel.checkCanGroupNotifications()
+    }
+    
     @objc private func showNotificationPolicySettings(_ sender: Any) {
         guard let policy = viewModel.filteredNotificationsViewModel.policy else { return }
         Task {
@@ -391,6 +395,16 @@ private class NotificationListViewModel: ObservableObject {
         case .notification:
             assert(false)
             break
+        }
+    }
+    
+    func checkCanGroupNotifications() {
+        guard let currentInstance = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.instanceConfiguration else {
+            presentError?(APIService.APIError.implicit(.authenticationMissing))
+            return
+        }
+        if currentInstance.canGroupNotifications, !feedLoader.useGroupedNotificationsApi {
+            createNewFeedLoader()
         }
     }
 
