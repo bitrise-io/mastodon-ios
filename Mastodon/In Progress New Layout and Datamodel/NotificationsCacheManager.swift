@@ -121,6 +121,8 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
 class GroupedNotificationCacheManager: NotificationsCacheManager {
     typealias T = Mastodon.Entity.GroupedNotificationsResults
     
+    private let maxNotificationsListLength = 1000
+    
     private let userIdentifier: MastodonUserIdentifier
     private let feedKind: MastodonFeedKind
     
@@ -184,6 +186,15 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         }
         let dedupedNewChunk = updatedNewerChunk.removingDuplicates()
         
+        func truncate(notificationGroups: [Mastodon.Entity.NotificationGroup]) -> [Mastodon.Entity.NotificationGroup] {
+            switch insertionPoint {
+            case .start, .replace:
+                return Array(notificationGroups.prefix(maxNotificationsListLength))
+            case .end:
+                return Array(notificationGroups.suffix(maxNotificationsListLength))
+            }
+        }
+        
         let updatedNewerAccounts: [Mastodon.Entity.Account]
         let updatedNewerPartialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]?
         let updatedNewerStatuses: [Mastodon.Entity.Status]
@@ -192,40 +203,53 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             updatedNewerPartialAccounts = ((newlyFetched.partialAccounts ?? []) + (previouslyFetched.partialAccounts ?? [])).removingDuplicates()
             updatedNewerStatuses = (newlyFetched.statuses + previouslyFetched.statuses).removingDuplicates()
         } else {
-            updatedNewerAccounts = newlyFetched.accounts
-            updatedNewerPartialAccounts = newlyFetched.partialAccounts
-            updatedNewerStatuses = newlyFetched.statuses
+            updatedNewerAccounts = newlyFetched.accounts.removingDuplicates()
+            updatedNewerPartialAccounts = newlyFetched.partialAccounts?.removingDuplicates()
+            updatedNewerStatuses = newlyFetched.statuses.removingDuplicates()
         }
        
+        let truncatedGroups: [Mastodon.Entity.NotificationGroup]
+        let allAccounts: [Mastodon.Entity.Account]
+        let allPartialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
+        let allStatuses: [Mastodon.Entity.Status]
+        
         if let staleResults, let combinedGroups = combineListsIfOverlapping(olderFeed: staleResults.notificationGroups, newerFeed: dedupedNewChunk) {
-            let accountsMap = (staleResults.accounts + updatedNewerAccounts).reduce(into: [ String : Mastodon.Entity.Account ]()) { partialResult, account in
-                partialResult[account.id] = account
-            }
-            let partialAccountsMap = ((staleResults.partialAccounts ?? []) + (updatedNewerPartialAccounts ?? [])).reduce(into: [ String : Mastodon.Entity.PartialAccountWithAvatar ]()) { partialResult, account in
-                partialResult[account.id] = account
-            }
-            let statusesMap = (staleResults.statuses + updatedNewerStatuses).reduce(into: [ String : Mastodon.Entity.Status ]()) { partialResult, status in
-                partialResult[status.id] = status
-            }
-            
-            var allRelevantAccountIds = Set<String>()
-            for group in combinedGroups {
-                for accountID in group.sampleAccountIDs {
-                    allRelevantAccountIds.insert(accountID)
-                }
-            }
-            let accounts = allRelevantAccountIds.compactMap { accountsMap[$0] }
-            let partialAccounts = allRelevantAccountIds.compactMap { partialAccountsMap[$0] }
-            let statuses = combinedGroups.compactMap { group -> Mastodon.Entity.Status? in
-                guard let statusID = group.statusID else { return nil }
-                return statusesMap[statusID]
-            }
-            
-            mostRecentlyFetchedResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: Array(combinedGroups), fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
+            truncatedGroups = truncate(notificationGroups: combinedGroups)
+            allAccounts = staleResults.accounts + updatedNewerAccounts
+            allPartialAccounts = (staleResults.partialAccounts ?? []) + (updatedNewerPartialAccounts ?? [])
+            allStatuses = staleResults.statuses + updatedNewerStatuses
             self.staleResults = nil
         } else {
-            mostRecentlyFetchedResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: dedupedNewChunk, fullAccounts: updatedNewerAccounts.removingDuplicates(), partialAccounts: updatedNewerPartialAccounts?.removingDuplicates(), statuses: updatedNewerStatuses.removingDuplicates())
+            truncatedGroups = truncate(notificationGroups: dedupedNewChunk)
+            allAccounts = updatedNewerAccounts
+            allPartialAccounts = updatedNewerPartialAccounts ?? []
+            allStatuses = updatedNewerStatuses
         }
+        
+        let accountsMap = allAccounts.reduce(into: [ String : Mastodon.Entity.Account ]()) { partialResult, account in
+            partialResult[account.id] = account
+        }
+        let partialAccountsMap = allPartialAccounts.reduce(into: [ String : Mastodon.Entity.PartialAccountWithAvatar ]()) { partialResult, account in
+            partialResult[account.id] = account
+        }
+        let statusesMap = allStatuses.reduce(into: [ String : Mastodon.Entity.Status ]()) { partialResult, status in
+            partialResult[status.id] = status
+        }
+        
+        var allRelevantAccountIds = Set<String>()
+        for group in truncatedGroups {
+            for accountID in group.sampleAccountIDs {
+                allRelevantAccountIds.insert(accountID)
+            }
+        }
+        let accounts = allRelevantAccountIds.compactMap { accountsMap[$0] }
+        let partialAccounts = allRelevantAccountIds.compactMap { partialAccountsMap[$0] }
+        let statuses = truncatedGroups.compactMap { group -> Mastodon.Entity.Status? in
+            guard let statusID = group.statusID else { return nil }
+            return statusesMap[statusID]
+        }
+        
+        mostRecentlyFetchedResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: Array(truncatedGroups), fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
     }
     
     func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
