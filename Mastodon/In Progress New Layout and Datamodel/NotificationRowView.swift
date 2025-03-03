@@ -113,76 +113,60 @@ extension GroupedNotificationType {
     {
         guard let authorName = sourceAccounts.authorName else { return nil }
         let totalAuthorCount = sourceAccounts.totalActorCount
-        // TODO: L10n strings
         switch authorName {
         case .me:
             assert(totalAuthorCount == 1)
             //assert(self == .poll)
-            return "Your poll has ended"
+            return AttributedString(L10n.Scene.Notification.GroupedNotificationDescription.yourPollHasEnded)
         case .other(let firstAuthorName):
-            let nameComponent = boldedNameStringComponent(firstAuthorName)
-            var composedString: AttributedString
+            var plainString: String
             if totalAuthorCount == 1 {
                 switch self {
                 case .favourite:
-                    composedString =
-                        nameComponent + AttributedString(" favorited:")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameFavourited(firstAuthorName)
                 case .follow:
-                    composedString =
-                        nameComponent + AttributedString(" followed you")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameFollowedYou(firstAuthorName)
                 case .followRequest:
-                    composedString =
-                        nameComponent
-                        + AttributedString(" requested to follow you")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRequestedToFollowYou(firstAuthorName)
                 case .reblog:
-                    composedString =
-                        nameComponent + AttributedString(" boosted:")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameBoosted(firstAuthorName)
                 case .mention:
-                    composedString =
-                        nameComponent + AttributedString(" mentioned you:")
-                case .poll:
-                    composedString =
-                        nameComponent
-                        + AttributedString(" ran a poll that you voted in")  // TODO: add count of how many others voted
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameMentionedYou(firstAuthorName)
+                case .poll(let status):
+                    let votersCount = status?.poll?.votersCount ?? 0
+                    let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount)
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRanPoll(firstAuthorName, pollDescription)
                 case .status:
-                    composedString =
-                        nameComponent + AttributedString(" posted:")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNamePosted(firstAuthorName)
                 case .adminSignUp:
-                    composedString =
-                        nameComponent + AttributedString(" signed up")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameSignedUp(firstAuthorName)
                 default:
-                    composedString =
-                        nameComponent + AttributedString("did something?")
+                    plainString = "\(firstAuthorName) did something"
                 }
             } else {
+                let actorsList = sourceAccounts.authorsDescription ?? firstAuthorName
                 switch self {
                 case .favourite:
-                    composedString =
-                        nameComponent
-                        + AttributedString(
-                            " and \(totalAuthorCount - 1) others favorited:")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleFavourited(actorsList)
                 case .follow:
-                    composedString =
-                        nameComponent
-                        + AttributedString(
-                            " and \(totalAuthorCount - 1) others followed you")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleFollowedYou(actorsList)
                 case .reblog:
-                    composedString =
-                        nameComponent
-                        + AttributedString(
-                            " and \(totalAuthorCount - 1) others boosted:")
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleBoosted(actorsList)
                 default:
-                    composedString =
-                        nameComponent
-                        + AttributedString(
-                            " and \(totalAuthorCount - 1) others did something")
+                    plainString = "\(actorsList) did something"
                 }
             }
-            let nameStyling = AttributeContainer.font(
-                .system(.body, weight: .bold))
-            let nameContainer = AttributeContainer.personNameComponent(
-                .givenName)
-            composedString.replaceAttributes(nameContainer, with: nameStyling)
+            
+            var composedString = AttributedString(plainString)
+            if let range = composedString.range(of: firstAuthorName) {
+                let authorNameComponent = stylableNameComponent(firstAuthorName)
+                composedString.replaceSubrange(range, with: authorNameComponent)
+                let nameStyling = AttributeContainer.font(
+                    .system(.body, weight: .bold))
+                let nameContainer = AttributeContainer.personNameComponent(
+                    .givenName)
+                composedString.replaceAttributes(nameContainer, with: nameStyling)
+            }
             return composedString
         }
     }
@@ -193,7 +177,7 @@ extension Mastodon.Entity.Report {
     // "Someone reported X posts from someone else for rule violation"
     var summary: AttributedString {
         if let targetedAccountName = targetAccount?.displayNameWithFallback {
-            let boldedName = boldedNameStringComponent(targetedAccountName)
+            let boldedName = stylableNameComponent(targetedAccountName)
             if let postCount = flaggedStatusIDs?.count {
                 return AttributedString(
                     "Someone reported \(postCount) posts from ") + boldedName
@@ -778,7 +762,7 @@ enum NotificationViewComponent: Identifiable {
     }
 }
 
-func boldedNameStringComponent(_ name: String) -> AttributedString {
+func stylableNameComponent(_ name: String) -> AttributedString {
     let nameComponent = PersonNameComponents(givenName: name).formatted(
         .name(style: .long).attributed)
     return nameComponent

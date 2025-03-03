@@ -755,7 +755,8 @@ extension NotificationSourceAccounts {
             return nil
         case .other(let name):
             if totalActorCount > 1 {
-                return "\(name) and \(totalActorCount - 1) others"
+                let formatter = ListFormatter()
+                return formatter.string(from: [name, L10n.Plural.Count.others(totalActorCount - 1)])
             } else {
                 return name
             }

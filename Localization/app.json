@@ -734,6 +734,20 @@
                 "Everything": "Everything",
                 "Mentions": "Mentions"
             },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Your poll has ended",
+                "single_name_ran_poll": "%@ ran %@",
+                "single_name_mentioned_you": "%@ mentioned you",
+                "single_name_requested_to_follow_you": "%@ requested to follow you",
+                "single_name_posted": "%@ posted:",
+                "single_name_boosted": "%@ boosted:",
+                "single_name_favourited": "%@ favourited:",
+                "single_name_followed_you": "%@ followed you",
+                "multiple_people_boosted": "%@ boosted:",
+                "multiple_people_favourited": "%@ favourited:",
+                "multiple_people_followed_you": "%@ followed you",
+                "single_name_signed_up": "%@ signed up"
+            },
             "notification_description": {
                 "followed_you": "followed you",
                 "favorited_your_post": "favorited your post",
