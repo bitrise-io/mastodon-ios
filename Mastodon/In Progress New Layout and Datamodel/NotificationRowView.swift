@@ -8,9 +8,6 @@ import MastodonSDK
 import MetaTextKit
 import SwiftUI
 
-// TODO: all strings need localization
-
-
 enum AuthorName {
     case me
     case other(named: String, emojis: [MastodonContent.Shortcode : String ])
@@ -170,20 +167,23 @@ extension GroupedNotificationType {
 }
 
 extension Mastodon.Entity.Report {
-    // TODO: localization (inc. plurals)
     // "Someone reported X posts from someone else for rule violation"
     var summary: AttributedString {
         if let targetedAccountName = targetAccount?.displayNameWithFallback {
+            let summaryPlainstring: String
+            if let postCount = flaggedStatusIDs?.count {
+                let postsString = L10n.Plural.Count.post(postCount)
+                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForRuleViolation(postsString, targetedAccountName)
+            } else {
+                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForRuleViolation(targetedAccountName)
+            }
+            var attributedString = AttributedString(summaryPlainstring)
             let boldedName = styledNameComponent(targetedAccountName, style: AttributeContainer.font(
                 .system(.body, weight: .bold)), emojis: targetAccount?.emojiMeta)
-            if let postCount = flaggedStatusIDs?.count {
-                return AttributedString(
-                    "Someone reported \(postCount) posts from ") + boldedName
-                    + AttributedString(" for rule violation.")
-            } else {
-                return AttributedString("Someone reported ") + boldedName
-                    + AttributedString(" for rule violation.")
+            if let nameRange = attributedString.range(of: targetedAccountName) {
+                attributedString.replaceSubrange(nameRange, with: boldedName)
             }
+            return attributedString
         } else {
             return AttributedString("RULE VIOLATION REPORT")
         }

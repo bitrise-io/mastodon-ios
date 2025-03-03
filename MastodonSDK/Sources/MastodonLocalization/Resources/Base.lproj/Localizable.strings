@@ -355,6 +355,8 @@ Please retry in a few minutes.";
 "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFavourited" = "%@ favourited:";
 "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFollowedYou" = "%@ followed you";
 "Scene.Notification.GroupedNotificationDescription.SingleNameSignedUp" = "%@ signed up";
+"Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccountForRuleViolation" = "Someone reported %@ for rule violation.";
+"Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccountForRuleViolation" = "Someone reported %@ from %@ for rule violation.";
 "Scene.Notification.NotificationDescription.FavoritedYourPost" = "favorited your post";
 "Scene.Notification.NotificationDescription.FollowedYou" = "followed you";
 "Scene.Notification.NotificationDescription.MentionedYou" = "mentioned you";
