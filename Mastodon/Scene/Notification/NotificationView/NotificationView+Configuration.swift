@@ -641,7 +641,7 @@ extension AccountInfo {
             return .me
         } else {
             guard let fullAccount else { return nil }
-            return .other(named: fullAccount.displayNameWithFallback)
+            return .other(named: fullAccount.displayNameWithFallback, emojis: fullAccount.emojiMeta)
         }
     }
 }

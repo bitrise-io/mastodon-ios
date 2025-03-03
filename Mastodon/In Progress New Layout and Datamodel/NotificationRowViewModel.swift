@@ -753,7 +753,7 @@ extension NotificationSourceAccounts {
         switch authorName {
         case .me, .none:
             return nil
-        case .other(let name):
+        case .other(let name, _):
             if totalActorCount > 1 {
                 let formatter = ListFormatter()
                 return formatter.string(from: [name, L10n.Plural.Count.others(totalActorCount - 1)])

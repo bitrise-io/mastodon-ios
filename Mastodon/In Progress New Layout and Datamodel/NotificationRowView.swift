@@ -13,13 +13,13 @@ import SwiftUI
 
 enum AuthorName {
     case me
-    case other(named: String)
+    case other(named: String, emojis: [MastodonContent.Shortcode : String ])
 
-    var string: String {
+    var plainString: String {
         switch self {
         case .me:
             return "You"
-        case .other(let name):
+        case .other(let name, _):
             return name
         }
     }
@@ -118,7 +118,7 @@ extension GroupedNotificationType {
             assert(totalAuthorCount == 1)
             //assert(self == .poll)
             return AttributedString(L10n.Scene.Notification.GroupedNotificationDescription.yourPollHasEnded)
-        case .other(let firstAuthorName):
+        case .other(let firstAuthorName, let emojis):
             var plainString: String
             if totalAuthorCount == 1 {
                 switch self {
@@ -159,13 +159,10 @@ extension GroupedNotificationType {
             
             var composedString = AttributedString(plainString)
             if let range = composedString.range(of: firstAuthorName) {
-                let authorNameComponent = stylableNameComponent(firstAuthorName)
-                composedString.replaceSubrange(range, with: authorNameComponent)
                 let nameStyling = AttributeContainer.font(
                     .system(.body, weight: .bold))
-                let nameContainer = AttributeContainer.personNameComponent(
-                    .givenName)
-                composedString.replaceAttributes(nameContainer, with: nameStyling)
+                let authorNameComponent = styledNameComponent(firstAuthorName, style: nameStyling, emojis: emojis)
+                composedString.replaceSubrange(range, with: authorNameComponent)
             }
             return composedString
         }
@@ -177,7 +174,8 @@ extension Mastodon.Entity.Report {
     // "Someone reported X posts from someone else for rule violation"
     var summary: AttributedString {
         if let targetedAccountName = targetAccount?.displayNameWithFallback {
-            let boldedName = stylableNameComponent(targetedAccountName)
+            let boldedName = styledNameComponent(targetedAccountName, style: AttributeContainer.font(
+                .system(.body, weight: .bold)), emojis: targetAccount?.emojiMeta)
             if let postCount = flaggedStatusIDs?.count {
                 return AttributedString(
                     "Someone reported \(postCount) posts from ") + boldedName
@@ -762,9 +760,9 @@ enum NotificationViewComponent: Identifiable {
     }
 }
 
-func stylableNameComponent(_ name: String) -> AttributedString {
-    let nameComponent = PersonNameComponents(givenName: name).formatted(
-        .name(style: .long).attributed)
+func styledNameComponent(_ name: String, style: AttributeContainer, emojis: [MastodonContent.Shortcode: String]?) -> AttributedString {
+    var nameComponent = attributedString(fromHtml: name, emojis: emojis ?? [:])
+    nameComponent.setAttributes(style)
     return nameComponent
 }
 
