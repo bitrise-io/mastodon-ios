@@ -61,7 +61,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
                 try await cachedNotifications.itemsHaveLoaded()
                 staleResults = cachedNotifications.items
             } catch {
-                debugPrint("error reading notifications cache: \(error)")
+                assertionFailure("error reading notifications cache: \(error)")
             }
             return mostRecentlyFetchedResults ?? staleResults
         }
@@ -280,7 +280,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
             staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroupStore.items, fullAccounts: fullAccountStore.items, partialAccounts: partialAccountStore.items, statuses: statusStore.items)
         } catch {
-            debugPrint("error loading notifications caches: \(error)")
+            assertionFailure("error loading notifications caches: \(error)")
         }
         return mostRecentlyFetchedResults ?? staleResults
     }
@@ -320,7 +320,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
                     .insert(mostRecentlyFetchedResults.statuses)
                     .run()
             } catch {
-                debugPrint("error comitting to store \(error)")
+                assertionFailure("error comitting to store \(error)")
             }
         }
     }
