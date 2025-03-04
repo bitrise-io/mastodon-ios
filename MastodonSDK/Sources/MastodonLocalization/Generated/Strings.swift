@@ -1013,6 +1013,30 @@ public enum L10n {
         /// Your poll has ended
         public static let yourPollHasEnded = L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.YourPollHasEnded", fallback: "Your poll has ended")
       }
+      public enum Headers {
+        /// Boost
+        public static let boost = L10n.tr("Localizable", "Scene.Notification.Headers.Boost", fallback: "Boost")
+        /// Edit
+        public static let edit = L10n.tr("Localizable", "Scene.Notification.Headers.Edit", fallback: "Edit")
+        /// Favourite
+        public static let favourite = L10n.tr("Localizable", "Scene.Notification.Headers.Favourite", fallback: "Favourite")
+        /// Follow
+        public static let follow = L10n.tr("Localizable", "Scene.Notification.Headers.Follow", fallback: "Follow")
+        /// Follow request
+        public static let followRequest = L10n.tr("Localizable", "Scene.Notification.Headers.FollowRequest", fallback: "Follow request")
+        /// Warning
+        public static let moderationWarning = L10n.tr("Localizable", "Scene.Notification.Headers.ModerationWarning", fallback: "Warning")
+        /// Poll
+        public static let poll = L10n.tr("Localizable", "Scene.Notification.Headers.Poll", fallback: "Poll")
+        /// Report
+        public static let report = L10n.tr("Localizable", "Scene.Notification.Headers.Report", fallback: "Report")
+        /// Domain block
+        public static let severedRelationships = L10n.tr("Localizable", "Scene.Notification.Headers.SeveredRelationships", fallback: "Domain block")
+        /// Signup
+        public static let signUp = L10n.tr("Localizable", "Scene.Notification.Headers.SignUp", fallback: "Signup")
+        /// Post
+        public static let status = L10n.tr("Localizable", "Scene.Notification.Headers.Status", fallback: "Post")
+      }
       public enum Keyobard {
         /// Show Everything
         public static let showEverything = L10n.tr("Localizable", "Scene.Notification.Keyobard.ShowEverything", fallback: "Show Everything")

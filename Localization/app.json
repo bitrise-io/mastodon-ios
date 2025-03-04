@@ -734,6 +734,19 @@
                 "Everything": "Everything",
                 "Mentions": "Mentions"
             },
+            "headers": {
+                "report": "Report",
+                "sign_up": "Signup",
+                "favourite": "Favourite",
+                "follow": "Follow",
+                "follow_request": "Follow request",
+                "moderation_warning": "Warning",
+                "poll": "Poll",
+                "boost": "Boost",
+                "severed_relationships": "Domain block",
+                "status": "Post",
+                "edit": "Edit"
+            }
             "grouped_notification_description": {
                 "your_poll_has_ended": "Your poll has ended",
                 "single_name_ran_poll": "%@ ran %@",
