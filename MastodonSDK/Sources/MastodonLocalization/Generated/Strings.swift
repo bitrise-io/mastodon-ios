@@ -257,6 +257,8 @@ public enum L10n {
         public static let editInfo = L10n.tr("Localizable", "Common.Controls.Friendship.EditInfo", fallback: "Edit Info")
         /// Follow
         public static let follow = L10n.tr("Localizable", "Common.Controls.Friendship.Follow", fallback: "Follow")
+        /// Follow back
+        public static let followBack = L10n.tr("Localizable", "Common.Controls.Friendship.FollowBack", fallback: "Follow back")
         /// Following
         public static let following = L10n.tr("Localizable", "Common.Controls.Friendship.Following", fallback: "Following")
         /// Hide Boosts

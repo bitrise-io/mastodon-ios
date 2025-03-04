@@ -244,6 +244,7 @@
             },
             "friendship": {
                 "follow": "Follow",
+                "follow_back": "Follow back",
                 "following": "Following",
                 "mutual": "Mutual"
                 "request": "Request",

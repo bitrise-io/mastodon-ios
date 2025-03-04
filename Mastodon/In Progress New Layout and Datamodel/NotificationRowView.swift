@@ -381,7 +381,7 @@ enum RelationshipElement: Equatable {
             if theirAccountIsLocked {
                 return L10n.Common.Controls.Friendship.request
             } else {
-                return L10n.Common.Controls.Friendship.follow
+                return L10n.Common.Controls.Friendship.followBack
             }
         case .iFollowThem(let theyFollowMe):
             if theyFollowMe {
