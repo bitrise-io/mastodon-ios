@@ -198,7 +198,8 @@ final public class GroupedNotificationFeedLoader {
         defer {
             isFetching = false
         }
-        try await replaceRecordsAfterFiltering(rowViewModels(from: cacheManager.currentResults), canLoadOlder: true)
+        let currentResults = await cacheManager.currentResults()
+        try await replaceRecordsAfterFiltering(rowViewModels(from: currentResults), canLoadOlder: true)
     }
 
     private func load(_ request: FeedLoadRequest) async throws
@@ -225,7 +226,8 @@ extension GroupedNotificationFeedLoader {
         guard let cacheManager else { assertionFailure(); return }
         do {
             cacheManager.updateByInserting(newlyFetched: newlyFetchedResults, at: insertionPoint)
-            let unfiltered = try rowViewModels(from: cacheManager.currentResults)
+            let currentResults = await cacheManager.currentResults()
+            let unfiltered = try rowViewModels(from: currentResults)
             
             let canLoadOlder: Bool? = {
                 switch insertionPoint {

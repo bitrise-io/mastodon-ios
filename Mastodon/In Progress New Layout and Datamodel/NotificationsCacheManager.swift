@@ -8,7 +8,7 @@ import MastodonCore
 protocol NotificationsCacheManager<T> {
     associatedtype T: NotificationsResultType
     
-    var currentResults: T? { get }
+    func currentResults() async -> T?
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? { get }
     var mostRecentlyFetchedResults: T? { get }
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
@@ -40,19 +40,31 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         self.userIdentifier = userIdentifier
         lastReadMarkerStore = Store.lastReadMarkersStore()
         self.cachedNotifications = Store.ungroupedNotificationStore(forKind: feedKind, forUser: userIdentifier)
-        self.staleResults = cachedNotifications.items
-        switch feedKind {
-        case .notificationsAll, .notificationsMentionsOnly:
-            self.staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
-        case .notificationsWithAccount:
-            self.staleMarkers = nil
-        }
+        staleResults = nil
+        staleMarkers = nil
         self.mostRecentlyFetchedResults = nil
         self.mostRecentMarkers = nil
     }
     
-    var currentResults: T? {
-        return mostRecentlyFetchedResults ?? staleResults
+    func currentResults() async -> T? {
+        if let mostRecentlyFetchedResults {
+            return mostRecentlyFetchedResults
+        } else {
+            do {
+                switch feedKind {
+                case .notificationsAll, .notificationsMentionsOnly:
+                    try await lastReadMarkerStore.itemsHaveLoaded()
+                    self.staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
+                case .notificationsWithAccount:
+                    self.staleMarkers = nil
+                }
+                try await cachedNotifications.itemsHaveLoaded()
+                staleResults = cachedNotifications.items
+            } catch {
+                debugPrint("error reading notifications cache: \(error)")
+            }
+            return mostRecentlyFetchedResults ?? staleResults
+        }
     }
     
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
@@ -148,15 +160,8 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         fullAccountStore = Store.notificationRelevantFullAccountStore(forKind: feedKind, forUser: userIdentifier)
         partialAccountStore = Store.notificationRelevantPartialAccountStore(forKind: feedKind, forUser: userIdentifier)
         statusStore = Store.notificationRelevantStatusStore(forKind: feedKind, forUser: userIdentifier)
-        
-        staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroupStore.items, fullAccounts: fullAccountStore.items, partialAccounts: partialAccountStore.items, statuses: statusStore.items)
-       
-        switch feedKind {
-        case .notificationsAll, .notificationsMentionsOnly:
-            staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
-        case .notificationsWithAccount:
-            staleMarkers = nil
-        }
+        staleMarkers = nil
+        staleResults = nil
     }
     
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
@@ -265,15 +270,28 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         mostRecentMarkers = updatable
     }
     
-    var currentResults: T? {
+    func currentResults() async -> T? {
+        do {
+            try await lastReadMarkerStore.itemsHaveLoaded()
+            try await notificationGroupStore.itemsHaveLoaded()
+            try await fullAccountStore.itemsHaveLoaded()
+            try await partialAccountStore.itemsHaveLoaded()
+            try await statusStore.itemsHaveLoaded()
+            staleMarkers = lastReadMarkerStore.items.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
+            staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroupStore.items, fullAccounts: fullAccountStore.items, partialAccounts: partialAccountStore.items, statuses: statusStore.items)
+        } catch {
+            debugPrint("error loading notifications caches: \(error)")
+        }
         return mostRecentlyFetchedResults ?? staleResults
     }
     
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
-        guard let markers = mostRecentMarkers ?? staleMarkers else {
+        switch feedKind {
+        case .notificationsAll, .notificationsMentionsOnly:
+            return (mostRecentMarkers ?? staleMarkers)?.lastRead(forKind: feedKind)
+        case .notificationsWithAccount:
             return nil
         }
-        return markers.lastRead(forKind: feedKind)
     }
     
     func commitToCache() async {
@@ -284,22 +302,26 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             }
         }
         if let mostRecentlyFetchedResults {
-            try? await notificationGroupStore
-                .removeAll()
-                .insert(mostRecentlyFetchedResults.notificationGroups)
-                .run()
-            try? await fullAccountStore
-                .removeAll()
-                .insert(mostRecentlyFetchedResults.accounts)
-                .run()
-            try? await partialAccountStore
-                .removeAll()
-                .insert(mostRecentlyFetchedResults.partialAccounts ?? [])
-                .run()
-            try? await statusStore
-                .removeAll()
-                .insert(mostRecentlyFetchedResults.statuses)
-                .run()
+            do {
+                try await notificationGroupStore
+                    .removeAll()
+                    .insert(mostRecentlyFetchedResults.notificationGroups)
+                    .run()
+                try await fullAccountStore
+                    .removeAll()
+                    .insert(mostRecentlyFetchedResults.accounts)
+                    .run()
+                try await partialAccountStore
+                    .removeAll()
+                    .insert(mostRecentlyFetchedResults.partialAccounts ?? [])
+                    .run()
+                try await statusStore
+                    .removeAll()
+                    .insert(mostRecentlyFetchedResults.statuses)
+                    .run()
+            } catch {
+                debugPrint("error comitting to store \(error)")
+            }
         }
     }
 }
