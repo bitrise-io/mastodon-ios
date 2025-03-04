@@ -29,34 +29,26 @@ extension GroupedNotificationType {
         case avatar
     }
     
-    func mainIconStyle(
-        grouped: Bool
-    ) -> MainIconStyle? {
+    var mainIconStyle: MainIconStyle? {
         switch self {
         case .mention, .status:
             return .avatar
         default:
-            if let iconName = iconSystemName(grouped: grouped) {
+            if let iconName = iconSystemName {
                 return .icon(name: iconName, color: iconColor)
             }
         }
         return nil
     }
 
-    func iconSystemName(
-        grouped: Bool = false
-    ) -> String? {
+    var iconSystemName: String? {
         switch self {
         case .favourite:
             return "star.fill"
         case .reblog:
             return "arrow.2.squarepath"
         case .follow:
-            if grouped {
-                return "person.2.badge.plus.fill"
-            } else {
-                return "person.fill.badge.plus"
-            }
+            return "person.fill.badge.plus"
         case .poll:
             return "chart.bar.yaxis"
         case .adminReport:
@@ -120,37 +112,37 @@ extension GroupedNotificationType {
             if totalAuthorCount == 1 {
                 switch self {
                 case .favourite:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameFavourited(firstAuthorName)
+                    plainString = firstAuthorName
                 case .follow:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameFollowedYou(firstAuthorName)
+                    plainString = firstAuthorName
                 case .followRequest:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRequestedToFollowYou(firstAuthorName)
+                    plainString = firstAuthorName
                 case .reblog:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameBoosted(firstAuthorName)
+                    plainString = firstAuthorName
                 case .mention:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameMentionedYou(firstAuthorName)
+                    plainString = firstAuthorName
                 case .poll(let status):
                     let votersCount = status?.poll?.votersCount ?? 0
                     let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount)
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRanPoll(firstAuthorName, pollDescription)
                 case .status:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNamePosted(firstAuthorName)
+                    plainString = firstAuthorName
                 case .adminSignUp:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameSignedUp(firstAuthorName)
+                    plainString = firstAuthorName
                 default:
-                    plainString = "\(firstAuthorName) did something"
+                    plainString = firstAuthorName
                 }
             } else {
                 let actorsList = sourceAccounts.authorsDescription ?? firstAuthorName
                 switch self {
                 case .favourite:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleFavourited(actorsList)
+                    plainString = actorsList
                 case .follow:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleFollowedYou(actorsList)
+                    plainString = actorsList
                 case .reblog:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleBoosted(actorsList)
+                    plainString = actorsList
                 default:
-                    plainString = "\(actorsList) did something"
+                    plainString = actorsList
                 }
             }
             
@@ -457,6 +449,8 @@ struct NotificationSourceAccounts {
     }
 }
 
+fileprivate let avatarSpacing: CGFloat = 8
+
 struct FilteredNotificationsRowView: View {
     class ViewModel: ObservableObject {
         var policy: Mastodon.Entity.NotificationPolicy? = nil {
@@ -497,7 +491,7 @@ struct FilteredNotificationsRowView: View {
     }
 
     var body: some View {
-        HStack {
+        HStack(spacing: avatarSpacing) {
             // LEFT GUTTER WITH TOP-ALIGNED ICON
             VStack {
                 Spacer()
@@ -539,20 +533,25 @@ let actionSuperheaderHeight: CGFloat = 20
 
 struct NotificationRowView: View {
     @ObservedObject var viewModel: NotificationRowViewModel
-
+    
     var body: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .top, spacing: avatarSpacing) {
             if let iconStyle = viewModel.iconStyle {
                 // LEFT GUTTER WITH TOP-ALIGNED ICON or AVATAR
                 VStack(spacing: 4) {
                     if let actionSuperheader = viewModel.actionSuperheader {
                         HStack {
                             Spacer()
-                            Image(systemName: actionSuperheader.iconName)
-                                .font(.subheadline)
-                                .bold()
-                                .foregroundStyle(actionSuperheader.color)
-                                .frame(height: actionSuperheaderHeight)
+                            if let iconName = actionSuperheader.iconName {
+                                Image(systemName: iconName)
+                                    .font(.subheadline)
+                                    .bold()
+                                    .foregroundStyle(actionSuperheader.color)
+                                    .frame(height: actionSuperheaderHeight)
+                            } else {
+                                Spacer()
+                                    .frame(height: actionSuperheaderHeight)
+                            }
                         }
                     }
                     
@@ -569,31 +568,38 @@ struct NotificationRowView: View {
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
-
+            
             // VSTACK OF HEADER AND CONTENT COMPONENT VIEWS
             VStack(spacing: 4) {
                 if let actionSuperheader = viewModel.actionSuperheader {
-                    componentView(.weightedText(actionSuperheader.text, .bold))
-                        .font(.subheadline)
-                        .foregroundColor(actionSuperheader.color)
-                        .frame(height: actionSuperheaderHeight)
+                    HStack {
+                        componentView(.weightedText(actionSuperheader.text, .bold))
+                            .font(.subheadline)
+                            .foregroundColor(actionSuperheader.color)
+                            .frame(height: actionSuperheaderHeight)
+                        if let timestamp = viewModel.timestamp {
+                            Spacer().frame(maxWidth: .infinity)
+                            componentView(.timeSinceLabel(timestamp))
+                                .foregroundColor(actionSuperheader.color)
+                        }
+                    }
                 }
                 
                 ForEach(viewModel.headerComponents) {
                     componentView($0)
                 }
-
+                
                 if !viewModel.contentComponents.isEmpty {
                     Spacer().frame(height: 2)
                 }
-
+                
                 ForEach(viewModel.contentComponents) {
                     componentView($0)
                 }
             }
         }
     }
-
+    
     @ViewBuilder
     func componentView(_ component: NotificationViewComponent) -> some View {
         switch component {
@@ -602,6 +608,11 @@ struct NotificationRowView: View {
         case .text(let string):
             Text(string)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        case .timeSinceLabel(let date):
+            Text(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
+                .font(.subheadline)
+                .frame(height: actionSuperheaderHeight)
+                .fixedSize(horizontal: true, vertical: false)
         case .weightedText(let string, let weight):
             textComponent(string, fontWeight: weight)
         case .status(let statusViewModel):
@@ -631,7 +642,6 @@ struct NotificationRowView: View {
     }
 
     @ScaledMetric private var smallAvatarSize: CGFloat = 32
-    private let avatarSpacing: CGFloat = 8
 
     @ViewBuilder
     func avatarRow(
@@ -737,6 +747,7 @@ func textComponent(_ string: String, fontWeight: SwiftUICore.Font.Weight?)
 enum NotificationViewComponent: Identifiable {
     case avatarRow(NotificationSourceAccounts, RelationshipElement)
     case text(AttributedString)
+    case timeSinceLabel(Date)
     case weightedText(String, SwiftUICore.Font.Weight)
     case status(Mastodon.Entity.Status.ViewModel)
     case hyperlinkButton(String, URL?)
@@ -748,6 +759,8 @@ enum NotificationViewComponent: Identifiable {
             return "avatar_row"
         case .text(let string):
             return string.description
+        case .timeSinceLabel(_):
+            return "time_label"
         case .weightedText(let string, _):
             return string
         case .status:

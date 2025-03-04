@@ -10,6 +10,7 @@ import SwiftUICore
 
 class NotificationRowViewModel: ObservableObject {
     let identifier: MastodonFeedItemIdentifier
+    let timestamp: Date?
     let oldestID: String?
     let newestID: String?
     let type: GroupedNotificationType
@@ -20,7 +21,7 @@ class NotificationRowViewModel: ObservableObject {
     let defaultNavigation: (() -> Void)?
     let iconStyle: GroupedNotificationType.MainIconStyle?
     let usePrivateBackground: Bool
-    let actionSuperheader: (iconName: String, text: String, color: Color)?
+    let actionSuperheader: (iconName: String?, text: String, color: Color)?
     
     @Published public var headerComponents: [NotificationViewComponent] = []
     public var contentComponents: [NotificationViewComponent] = []
@@ -51,11 +52,12 @@ class NotificationRowViewModel: ObservableObject {
     ) {
 
         self.identifier = .notificationGroup(id: notificationInfo.id)
+        self.timestamp = notificationInfo.timestamp
         self.oldestID = notificationInfo.oldestNotificationID
         self.newestID = notificationInfo.newestNotificationID
         self.type = notificationInfo.groupedNotificationType
         self.author = notificationInfo.sourceAccounts.primaryAuthorAccount
-        self.iconStyle = notificationInfo.groupedNotificationType.mainIconStyle(grouped: notificationInfo.sourceAccounts.totalActorCount > 1)
+        self.iconStyle = notificationInfo.groupedNotificationType.mainIconStyle
         self.navigateToScene = navigateToScene
         self.presentError = presentError
         self.defaultNavigation = notificationInfo.defaultNavigation
@@ -65,7 +67,7 @@ class NotificationRowViewModel: ObservableObject {
         switch notificationInfo.groupedNotificationType {
 
         case .follow, .followRequest:
-            actionSuperheader = nil
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             let avatarRowAdditionalElement: RelationshipElement
             if notificationInfo.sourceAccounts
                 .primaryAuthorAccount != nil
@@ -107,8 +109,8 @@ class NotificationRowViewModel: ObservableObject {
                 actionSuperheader = nil
                 headerTextComponents = [._other("POST BY UNKNOWN ACCOUNT")]
             }
-        case .reblog, .favourite:
-            actionSuperheader = nil
+        case .reblog(let statusViewModel), .favourite(let statusViewModel):
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: statusViewModel?.visibility == .direct)
             if let statusViewModel = notificationInfo.statusViewModel {
                 avatarRow = .avatarRow(
                     notificationInfo.sourceAccounts,
@@ -126,8 +128,8 @@ class NotificationRowViewModel: ObservableObject {
                     ._other("REBLOGGED/FAVOURITED BY UNKNOWN ACCOUNT")
                 ]
             }
-        case .poll, .update:
-            actionSuperheader = nil
+        case .poll(let statusViewModel), .update(let statusViewModel):
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: statusViewModel?.visibility == .direct)
             if let statusViewModel =
                 notificationInfo.statusViewModel
             {
@@ -145,7 +147,7 @@ class NotificationRowViewModel: ObservableObject {
                 ]
             }
         case .adminSignUp:
-            actionSuperheader = nil
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             avatarRow = .avatarRow(
                 notificationInfo.sourceAccounts,
                 .noneNeeded)
@@ -155,7 +157,7 @@ class NotificationRowViewModel: ObservableObject {
                         notificationInfo.sourceAccounts) ?? "")
             ]
         case .adminReport(let report):
-            actionSuperheader = nil
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = report?.summary {
                 headerTextComponents = [.text(summary)]
             }
@@ -165,7 +167,7 @@ class NotificationRowViewModel: ObservableObject {
                 contentComponents = [.text(comment)]
             }
         case .severedRelationships(let severanceEvent):
-            actionSuperheader = nil
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = severanceEvent?.summary(myDomain: myAccountDomain)
             {
                 headerTextComponents = [.text(summary)]
@@ -184,7 +186,7 @@ class NotificationRowViewModel: ObservableObject {
                         notificationID: notificationInfo.newestNotificationID))
             ]
         case .moderationWarning(let accountWarning):
-            actionSuperheader = nil
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             headerTextComponents = [
                 .weightedText(
                     (accountWarning?.action ?? .none).actionDescription,
@@ -220,21 +222,44 @@ class NotificationRowViewModel: ObservableObject {
         resetHeaderComponents()
     }
     
-    static func actionSuperheader(_ notificationType: GroupedNotificationType, isReply: Bool, isPrivateStatus: Bool?) -> (iconName: String, text: String, color: Color)? {
-        guard let isPrivateStatus else { return nil }
+    static func actionSuperheader(_ notificationType: GroupedNotificationType, isReply: Bool, isPrivateStatus: Bool?) -> (iconName: String?, text: String, color: Color)? {
+        let isPrivateStatus = isPrivateStatus ?? false
+        let color = isPrivateStatus ? Asset.Colors.accent.swiftUIColor : .secondary
         switch notificationType {
         case .mention:
             switch (isReply, isPrivateStatus) {
             case (true, false):
-                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.reply, color: .gray)
+                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.reply, color: color)
             case (true, true):
-                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.privateReply, color: Asset.Colors.accent.swiftUIColor)
+                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.privateReply, color: color)
             case (false, false):
-                return (iconName: "at", text: L10n.Common.Controls.Status.mention, color: .gray)
+                return (iconName: "at", text: L10n.Common.Controls.Status.mention, color: color)
             case (false, true):
-                return (iconName: "at", text: L10n.Common.Controls.Status.privateMention, color: Asset.Colors.accent.swiftUIColor)
+                return (iconName: "at", text: L10n.Common.Controls.Status.privateMention, color: color)
             }
-        default:
+        case .adminReport:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.report, color: color)
+        case .adminSignUp:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.signUp, color: color)
+        case .favourite:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.favourite, color: color)
+        case .follow:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.follow, color: color)
+        case .followRequest:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.followRequest, color: color)
+        case .moderationWarning:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.moderationWarning, color: .red)
+        case .poll:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.poll, color: color)
+        case .reblog:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.boost, color: color)
+        case .severedRelationships:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.severedRelationships, color: color)
+        case .status:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.status, color: color)
+        case .update:
+            return (iconName: nil, text: L10n.Scene.Notification.Headers.edit, color: color)
+        case ._other:
             return nil
         }
     }
@@ -249,7 +274,7 @@ class NotificationRowViewModel: ObservableObject {
                 default:
                     break
                 }
-            case .text, .weightedText, .status, .hyperlinkButton, ._other:
+            case .text, .weightedText, .status, .hyperlinkButton, ._other, .timeSinceLabel:
                 break
             }
         }
@@ -493,6 +518,7 @@ extension NotificationRowViewModel {
 
             let info = GroupedNotificationInfo(
                 id: group.id,
+                timestamp: group.latestPageNotificationAt,
                 oldestNotificationID: group.pageNewestID ?? "",
                 newestNotificationID: group.pageOldestID ?? "",
                 groupedNotificationType: type,
@@ -580,6 +606,7 @@ extension NotificationRowViewModel {
             
             let info = GroupedNotificationInfo(
                 id: notification.id,
+                timestamp: notification.createdAt,
                 oldestNotificationID: notification.id,
                 newestNotificationID: notification.id,
                 groupedNotificationType: GroupedNotificationType(

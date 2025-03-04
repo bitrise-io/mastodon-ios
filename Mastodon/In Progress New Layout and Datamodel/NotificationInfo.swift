@@ -49,6 +49,7 @@ struct GroupedNotificationInfo {
     }
 
     let id: String
+    let timestamp: Date?
     let oldestNotificationID: String
     let newestNotificationID: String
 
