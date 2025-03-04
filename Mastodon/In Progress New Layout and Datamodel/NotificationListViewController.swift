@@ -174,9 +174,9 @@ struct NotificationListView: View {
         case .groupedNotification(let viewModel):
             NotificationRowView(viewModel: viewModel)
                 .padding(.vertical, 4)
-                .listRowBackground(
-                    backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
-                )
+//                .listRowBackground(
+//                    backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
+//                )
         }
     }
     
