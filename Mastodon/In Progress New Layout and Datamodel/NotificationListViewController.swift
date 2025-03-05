@@ -18,18 +18,19 @@ class NotificationListViewController: UIHostingController<NotificationListView>
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle"), style: .plain, target: self, action: #selector(showNotificationPolicySettings))
 
-        viewModel.presentError = { error in
+        viewModel.presentError = { [weak self] error in
             let alert = UIAlertController(
                 title: "Error", message: error.localizedDescription,
                 preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
-            self.sceneCoordinator?.rootViewController?.topMost?.present(
+            self?.sceneCoordinator?.rootViewController?.topMost?.present(
                 alert, animated: true)
         }
 
         viewModel.navigateToScene = { [weak self] scene, transition in
             guard let self else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 self.sceneCoordinator?.present(
                     scene: scene, from: self, transition: transition)
             }
@@ -273,9 +274,10 @@ private class NotificationListViewModel: ObservableObject {
 
     @Published var displayedNotifications: ListType = .everything {
         didSet {
-            Task {
-                await feedLoader.commitToCache()
-                createNewFeedLoader()
+            Task { [weak self] in
+                guard let self else { return }
+                await self.feedLoader.commitToCache()
+                self.createNewFeedLoader()
             }
         }
     }
