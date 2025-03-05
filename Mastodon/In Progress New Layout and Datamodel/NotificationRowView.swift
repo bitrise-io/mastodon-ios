@@ -641,7 +641,11 @@ struct NotificationRowView: View {
     ) -> Int {
         let maxAvatarCount = Int(
             floor(fittingWidth / (smallAvatarSize + avatarSpacing)))
-        return maxAvatarCount
+        if maxAvatarCount < totalActorCount {
+            return maxAvatarCount - 1
+        } else {
+            return maxAvatarCount
+        }
     }
 
     @ScaledMetric private var smallAvatarSize: CGFloat = 32
@@ -656,17 +660,28 @@ struct NotificationRowView: View {
                 fittingWidth: geom.size.width,
                 totalAvatarCount: accountInfo.avatarUrls.count,
                 totalActorCount: accountInfo.totalActorCount)
-            HStack(alignment: .center) {
-                ForEach(
-                    accountInfo.accounts.prefix(maxAvatarCount), id: \.self.id
-                ) { account in
-                    AvatarView(author: account, goToProfile: viewModel.navigateToProfile(_:))
-                    .frame(width: smallAvatarSize, height: smallAvatarSize)
-                    .onTapGesture {
-                        Task {
-                            try await viewModel.navigateToProfile(account)
-                        }
+            HStack(spacing: 0) {
+                HStack(alignment: .center, spacing: avatarSpacing) {
+                    ForEach(
+                        accountInfo.accounts.prefix(maxAvatarCount), id: \.self.id
+                    ) { account in
+                        AvatarView(author: account, goToProfile: viewModel.navigateToProfile(_:))
+                            .frame(width: smallAvatarSize, height: smallAvatarSize)
+                            .onTapGesture {
+                                Task {
+                                    try await viewModel.navigateToProfile(account)
+                                }
+                            }
                     }
+                }
+                if maxAvatarCount < accountInfo.totalActorCount {
+                    VStack {
+                        Spacer().frame(maxHeight: .infinity)
+                        Image(systemName: "ellipsis")
+                        .foregroundStyle(.secondary)
+                        .fontWeight(.light)
+                    }
+                    .frame(width: 0.75 * smallAvatarSize)
                 }
                 Spacer().frame(minWidth: 0, maxWidth: .infinity)
                 avatarRowTrailingElement(
