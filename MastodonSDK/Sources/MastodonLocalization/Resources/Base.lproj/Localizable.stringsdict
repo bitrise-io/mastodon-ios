@@ -143,6 +143,66 @@
 			<string>%ld others</string>
 		</dict>
 	</dict>
+	<key>plural.count.people_boosted</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count_people@</string>
+		<key>count_people</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>ld</string>
+			<key>one</key>
+			<string>one person boosted:</string>
+			<key>few</key>
+			<string>%ld people boosted:</string>
+			<key>many</key>
+			<string>%ld people boosted:</string>
+			<key>other</key>
+			<string>%ld people boosted:</string>
+		</dict>
+	</dict>
+	<key>plural.count.people_favourited</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count_people@</string>
+		<key>count_people</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>ld</string>
+			<key>one</key>
+			<string>one person favourited:</string>
+			<key>few</key>
+			<string>%ld people favourited:</string>
+			<key>many</key>
+			<string>%ld people favourited:</string>
+			<key>other</key>
+			<string>%ld people favourited:</string>
+		</dict>
+	</dict>
+	<key>plural.count.people_followed_you</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count_people@</string>
+		<key>count_people</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>ld</string>
+			<key>one</key>
+			<string>one person followed you</string>
+			<key>few</key>
+			<string>%ld people followed you</string>
+			<key>many</key>
+			<string>%ld people followed you</string>
+			<key>other</key>
+			<string>%ld people followed you</string>
+		</dict>
+	</dict>
 	<key>plural.count.poll_that_you_and_others_voted_in</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

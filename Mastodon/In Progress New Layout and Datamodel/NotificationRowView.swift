@@ -112,13 +112,13 @@ extension GroupedNotificationType {
             if totalAuthorCount == 1 {
                 switch self {
                 case .favourite:
-                    plainString = firstAuthorName
+                    plainString =  L10n.Scene.Notification.GroupedNotificationDescription.singleNameFavourited(firstAuthorName)
                 case .follow:
-                    plainString = firstAuthorName
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameFollowedYou(firstAuthorName)
                 case .followRequest:
-                    plainString = firstAuthorName
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRequestedToFollowYou(firstAuthorName)
                 case .reblog:
-                    plainString = firstAuthorName
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameBoosted(firstAuthorName)
                 case .mention:
                     plainString = firstAuthorName
                 case .poll(let status):
@@ -128,21 +128,20 @@ extension GroupedNotificationType {
                 case .status:
                     plainString = firstAuthorName
                 case .adminSignUp:
-                    plainString = firstAuthorName
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameSignedUp(firstAuthorName)
                 default:
                     plainString = firstAuthorName
                 }
             } else {
-                let actorsList = sourceAccounts.authorsDescription ?? firstAuthorName
                 switch self {
                 case .favourite:
-                    plainString = actorsList
+                    plainString = L10n.Plural.Count.peopleFavourited(totalAuthorCount)
                 case .follow:
-                    plainString = actorsList
+                    plainString = L10n.Plural.Count.peopleFollowedYou(totalAuthorCount)
                 case .reblog:
-                    plainString = actorsList
+                    plainString = L10n.Plural.Count.peopleBoosted(totalAuthorCount)
                 default:
-                    plainString = actorsList
+                    plainString = L10n.Plural.Count.others(totalAuthorCount)
                 }
             }
             

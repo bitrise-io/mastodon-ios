@@ -2115,6 +2115,18 @@ public enum L10n {
       public static func others(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.others", p1, fallback: "Plural format key: \"%#@count_others@\"")
       }
+      /// Plural format key: "%#@count_people@"
+      public static func peopleBoosted(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "plural.count.people_boosted", p1, fallback: "Plural format key: \"%#@count_people@\"")
+      }
+      /// Plural format key: "%#@count_people@"
+      public static func peopleFavourited(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "plural.count.people_favourited", p1, fallback: "Plural format key: \"%#@count_people@\"")
+      }
+      /// Plural format key: "%#@count_people@"
+      public static func peopleFollowedYou(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "plural.count.people_followed_you", p1, fallback: "Plural format key: \"%#@count_people@\"")
+      }
       /// Plural format key: "%#@poll_count@"
       public static func poll(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.poll", p1, fallback: "Plural format key: \"%#@poll_count@\"")

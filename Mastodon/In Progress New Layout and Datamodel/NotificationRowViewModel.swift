@@ -237,29 +237,7 @@ class NotificationRowViewModel: ObservableObject {
             case (false, true):
                 return (iconName: "at", text: L10n.Common.Controls.Status.privateMention, color: color)
             }
-        case .adminReport:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.report, color: color)
-        case .adminSignUp:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.signUp, color: color)
-        case .favourite:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.favourite, color: color)
-        case .follow:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.follow, color: color)
-        case .followRequest:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.followRequest, color: color)
-        case .moderationWarning:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.moderationWarning, color: .red)
-        case .poll:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.poll, color: color)
-        case .reblog:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.boost, color: color)
-        case .severedRelationships:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.severedRelationships, color: color)
-        case .status:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.status, color: color)
-        case .update:
-            return (iconName: nil, text: L10n.Scene.Notification.Headers.edit, color: color)
-        case ._other:
+        default:
             return nil
         }
     }
