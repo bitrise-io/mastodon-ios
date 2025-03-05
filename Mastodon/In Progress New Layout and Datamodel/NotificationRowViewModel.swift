@@ -84,12 +84,21 @@ class NotificationRowViewModel: ObservableObject {
                 .primaryAuthorAccount?
                 .displayNameWithFallback) != nil
             {
-                headerTextComponents = [
-                    .text(
-                        notificationInfo.groupedNotificationType
-                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
+                            ?? "", timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
                             ?? "")
-                ]
+                    ]
+                }
             }
         case .mention, .status:
             // TODO: eventually make this full status style, not inline
@@ -97,12 +106,21 @@ class NotificationRowViewModel: ObservableObject {
                 notificationInfo.statusViewModel
             {
                 actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: statusViewModel.isReplyToMe, isPrivateStatus: statusViewModel.visibility == .direct)
-                headerTextComponents = [
-                    .text(
-                        notificationInfo.groupedNotificationType
-                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
+                            ?? "", timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
                             ?? "")
-                ]
+                    ]
+                }
                 contentComponents = [.status(statusViewModel)]
                 needsPrivateBackground = statusViewModel.visibility == .direct
             } else {
@@ -115,12 +133,21 @@ class NotificationRowViewModel: ObservableObject {
                 avatarRow = .avatarRow(
                     notificationInfo.sourceAccounts,
                     .noneNeeded)
-                headerTextComponents = [
-                    .text(
-                        notificationInfo.groupedNotificationType
-                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
+                            ?? "", timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
                             ?? "")
-                ]
+                    ]
+                }
                 contentComponents = [.status(statusViewModel)]
                 needsPrivateBackground = statusViewModel.visibility == .direct
             } else {
@@ -133,12 +160,21 @@ class NotificationRowViewModel: ObservableObject {
             if let statusViewModel =
                 notificationInfo.statusViewModel
             {
-                headerTextComponents = [
-                    .text(
-                        notificationInfo.groupedNotificationType
-                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
+                            ?? "", timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(
+                            notificationInfo.groupedNotificationType
+                                .actionSummaryLabel(notificationInfo.sourceAccounts)
                             ?? "")
-                ]
+                    ]
+                }
                 contentComponents = [.status(statusViewModel)]
                 needsPrivateBackground = statusViewModel.visibility == .direct
             } else {
@@ -151,15 +187,33 @@ class NotificationRowViewModel: ObservableObject {
             avatarRow = .avatarRow(
                 notificationInfo.sourceAccounts,
                 .noneNeeded)
-            headerTextComponents = [
-                .text(
-                    notificationInfo.groupedNotificationType.actionSummaryLabel(
-                        notificationInfo.sourceAccounts) ?? "")
-            ]
+            if let timestamp = notificationInfo.timestamp {
+                headerTextComponents = [
+                    .textAndTimeLabel(
+                        notificationInfo.groupedNotificationType
+                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                        ?? "", timestamp)
+                ]
+            } else {
+                headerTextComponents = [
+                    .text(
+                        notificationInfo.groupedNotificationType
+                            .actionSummaryLabel(notificationInfo.sourceAccounts)
+                        ?? "")
+                ]
+            }
         case .adminReport(let report):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = report?.summary {
-                headerTextComponents = [.text(summary)]
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(summary, timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(summary)
+                    ]
+                }
             }
             if let comment = report?
                 .displayableComment
@@ -170,7 +224,15 @@ class NotificationRowViewModel: ObservableObject {
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = severanceEvent?.summary(myDomain: myAccountDomain)
             {
-                headerTextComponents = [.text(summary)]
+                if let timestamp = notificationInfo.timestamp {
+                    headerTextComponents = [
+                        .textAndTimeLabel(summary, timestamp)
+                    ]
+                } else {
+                    headerTextComponents = [
+                        .text(summary)
+                    ]
+                }
             } else {
                 headerTextComponents = [
                     ._other(
@@ -187,11 +249,18 @@ class NotificationRowViewModel: ObservableObject {
             ]
         case .moderationWarning(let accountWarning):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
-            headerTextComponents = [
-                .weightedText(
-                    (accountWarning?.action ?? .none).actionDescription,
-                    .regular)
-            ]
+            if let timestamp = notificationInfo.timestamp {
+                headerTextComponents = [
+                    .textAndTimeLabel(
+                        AttributedString((accountWarning?.action ?? .none).actionDescription), timestamp)
+                ]
+            } else {
+                headerTextComponents = [
+                    .weightedText(
+                        (accountWarning?.action ?? .none).actionDescription,
+                        .regular)
+                ]
+            }
 
             let learnMoreButton = NotificationViewComponent.hyperlinkButton(
                 L10n.Scene.Notification.Warning.learnMore,
@@ -252,7 +321,7 @@ class NotificationRowViewModel: ObservableObject {
                 default:
                     break
                 }
-            case .text, .weightedText, .status, .hyperlinkButton, ._other, .timeSinceLabel:
+            case .text, .weightedText, .status, .hyperlinkButton, ._other, .timeSinceLabel, .textAndTimeLabel:
                 break
             }
         }

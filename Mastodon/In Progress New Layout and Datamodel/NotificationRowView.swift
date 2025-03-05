@@ -571,17 +571,10 @@ struct NotificationRowView: View {
             // VSTACK OF HEADER AND CONTENT COMPONENT VIEWS
             VStack(spacing: 4) {
                 if let actionSuperheader = viewModel.actionSuperheader {
-                    HStack {
-                        componentView(.weightedText(actionSuperheader.text, .bold))
-                            .font(.subheadline)
-                            .foregroundColor(actionSuperheader.color)
-                            .frame(height: actionSuperheaderHeight)
-                        if let timestamp = viewModel.timestamp {
-                            Spacer().frame(maxWidth: .infinity)
-                            componentView(.timeSinceLabel(timestamp))
-                                .foregroundColor(actionSuperheader.color)
-                        }
-                    }
+                    componentView(.weightedText(actionSuperheader.text, .bold))
+                        .font(.subheadline)
+                        .foregroundColor(actionSuperheader.color)
+                        .frame(height: actionSuperheaderHeight)
                 }
                 
                 ForEach(viewModel.headerComponents) {
@@ -612,6 +605,7 @@ struct NotificationRowView: View {
                 .font(.subheadline)
                 .frame(height: actionSuperheaderHeight)
                 .fixedSize(horizontal: true, vertical: false)
+                .foregroundColor(.secondary)
         case .weightedText(let string, let weight):
             textComponent(string, fontWeight: weight)
         case .status(let statusViewModel):
@@ -629,6 +623,16 @@ struct NotificationRowView: View {
             .tint(Color(asset: Asset.Colors.accent))
         case ._other(let string):
             Text(string)
+        case .textAndTimeLabel(let string, let date):
+            HStack(alignment: .top, spacing: 2) {
+                Text(string)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
+                    .font(.subheadline)
+                    .frame(height: actionSuperheaderHeight)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .foregroundColor(.secondary)
+            }
         }
     }
 
@@ -746,6 +750,7 @@ func textComponent(_ string: String, fontWeight: SwiftUICore.Font.Weight?)
 enum NotificationViewComponent: Identifiable {
     case avatarRow(NotificationSourceAccounts, RelationshipElement)
     case text(AttributedString)
+    case textAndTimeLabel(AttributedString, Date)
     case timeSinceLabel(Date)
     case weightedText(String, SwiftUICore.Font.Weight)
     case status(Mastodon.Entity.Status.ViewModel)
@@ -768,6 +773,8 @@ enum NotificationViewComponent: Identifiable {
             return text
         case ._other(let string):
             return string
+        case .textAndTimeLabel(let string, _):
+            return string.description + "+date"
         }
     }
 }
