@@ -106,12 +106,10 @@ extension AccountListViewController: UITableViewDelegate {
 
                 Task { @MainActor in
                     do {
-                        try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: record)
-
                         let userIdentifier = record
-                        FileManager.default.invalidateHomeTimelineCache(for: userIdentifier)
-                        FileManager.default.invalidateNotificationsAll(for: userIdentifier)
-                        FileManager.default.invalidateNotificationsMentions(for: userIdentifier)
+                        try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: record)
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                       
                         self.sceneCoordinator?.setup()
 
                     } catch {
@@ -156,6 +154,9 @@ extension AccountListViewController: UITableViewDelegate {
                     self.sceneCoordinator?.showLoading()
                     for authenticationBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
                         try? await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
+                        let userIdentifier = authenticationBox.authentication.userIdentifier()
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                        self.sceneCoordinator?.setup()
                     }
                     self.sceneCoordinator?.hideLoading()
 

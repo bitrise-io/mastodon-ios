@@ -42,10 +42,6 @@ public class PersistenceManager {
         return coreDataStack.newTaskContext()
     }
     
-    public func cachedTimeline(_ timeline: Persistence) throws -> [MastodonStatus] {
-        return try FileManager.default.cached(timeline: timeline).map(MastodonStatus.fromEntity)
-    }
-    
     public func cachedAccount(for authentication: MastodonAuthentication) -> Mastodon.Entity.Account? {
         let account = FileManager
             .default
@@ -57,15 +53,38 @@ public class PersistenceManager {
     public func cacheAccount(_ account: Mastodon.Entity.Account, forUserID userID: MastodonUserIdentifier) {
         FileManager.default.store(account: account, forUserID: userID)
     }
+    
+    public func cached<T: Decodable>(_ cacheType: Persistence) throws -> [T] {
+        return try FileManager.default.cached(cacheType)
+    }
+    
+    public func cache<T: Encodable>(_ items: [T], for cacheType: Persistence) {
+        FileManager.default.cache(items, for: cacheType)
+    }
+
+    public func removeAllCaches(forUser user: UserIdentifier) {
+        FileManager.default.invalidate(cache: .accounts(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsAll(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsAllAccounts(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsAllPartialAccounts(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsAllStatuses(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsMentions(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsMentionsAccounts(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsMentionsPartialAccounts(user))
+        FileManager.default.invalidate(cache: .groupedNotificationsMentionsStatuses(user))
+        FileManager.default.invalidate(cache: .homeTimeline(user))
+        FileManager.default.invalidate(cache: .searchHistory(user))
+        FileManager.default.invalidate(cache: .notificationsAll(user))
+    }
 }
 
 private extension FileManager {
     static let cacheItemsLimit: Int = 100 // max number of items to cache
     
-    func cached<T: Decodable>(timeline: Persistence) throws -> [T] {
+    func cached<T: Decodable>(_ cacheType: Persistence) throws -> [T] {
         guard let cachesDirectory else { return [] }
         
-        let filePath = timeline.filepath(baseURL: cachesDirectory)
+        let filePath = cacheType.filepath(baseURL: cachesDirectory)
         
         guard let data = try? Data(contentsOf: filePath) else { return [] }
         
@@ -78,8 +97,7 @@ private extension FileManager {
         }
     }
     
-    
-    func cache<T: Encodable>(_ items: [T], timeline: Persistence) {
+    func cache<T: Encodable>(_ items: [T], for cacheType: Persistence) {
         guard let cachesDirectory else { return }
         
         let processableItems: [T]
@@ -92,17 +110,17 @@ private extension FileManager {
         do {
             let data = try JSONEncoder().encode(processableItems)
             
-            let filePath = timeline.filepath(baseURL: cachesDirectory)
+            let filePath = cacheType.filepath(baseURL: cachesDirectory)
             try data.write(to: filePath)
         } catch {
             debugPrint(error.localizedDescription)
         }
     }
     
-    func invalidate(timeline: Persistence) {
+    func invalidate(cache: Persistence) {
         guard let cachesDirectory else { return }
         
-        let filePath = timeline.filepath(baseURL: cachesDirectory)
+        let filePath = cache.filepath(baseURL: cachesDirectory)
         
         try? removeItem(at: filePath)
     }

@@ -30,19 +30,6 @@ public extension FileManager {
     func cacheNotificationsMentions(items: [Mastodon.Entity.Notification], for userIdentifier: UserIdentifier) {
         cache(items, timeline: .notificationsMentions(userIdentifier))
     }
-
-    // Delete
-    func invalidateHomeTimelineCache(for userId: UserIdentifier) {
-        invalidate(timeline: .homeTimeline(userId))
-    }
-
-    func invalidateNotificationsAll(for userId: UserIdentifier) {
-        invalidate(timeline: .notificationsAll(userId))
-    }
-
-    func invalidateNotificationsMentions(for userId: UserIdentifier) {
-        invalidate(timeline: .notificationsMentions(userId))
-    }
 }
 
 private extension FileManager {

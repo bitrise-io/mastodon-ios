@@ -92,8 +92,8 @@ final class HomeTimelineViewModel: NSObject {
         self.authenticationBox = authenticationBox
         self.dataController = FeedDataController(authenticationBox: authenticationBox, kind: .home(timeline: timelineContext))
         super.init()
-        let initialRecords = (try? PersistenceManager.shared.cachedTimeline(.homeTimeline(authenticationBox)).map {
-            MastodonFeed.fromStatus($0, kind: .home)
+        let initialRecords = (try? PersistenceManager.shared.cached(.homeTimeline(authenticationBox)).map {
+            MastodonFeed.fromStatus(MastodonStatus.fromEntity($0), kind: .home)
         }) ?? []
         Task {
             await self.dataController.setRecordsAfterFiltering(initialRecords)

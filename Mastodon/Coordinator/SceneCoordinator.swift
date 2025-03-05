@@ -626,9 +626,7 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
                     authentication: authenticationBox.authentication
                 )
                 let userIdentifier = authenticationBox
-                FileManager.default.invalidateHomeTimelineCache(for: userIdentifier)
-                FileManager.default.invalidateNotificationsAll(for: userIdentifier)
-                FileManager.default.invalidateNotificationsMentions(for: userIdentifier)
+                PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
                 self.setup()
             }
 

@@ -651,9 +651,8 @@ extension HomeTimelineViewController {
         Task { @MainActor in
             try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
             let userIdentifier = authenticationBox
-            FileManager.default.invalidateHomeTimelineCache(for: userIdentifier)
-            FileManager.default.invalidateNotificationsAll(for: userIdentifier)
-            FileManager.default.invalidateNotificationsMentions(for: userIdentifier)
+            PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+            self.sceneCoordinator?.setup()
             self.sceneCoordinator?.setup()
         }
     }

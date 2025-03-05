@@ -422,7 +422,7 @@ private class NotificationListViewModel: ObservableObject {
                 var updatedItems = records.allRecords.map {
                     NotificationListItem.groupedNotification($0)
                 }
-                if records.canLoadOlder {
+                if !records.allRecords.isEmpty && records.canLoadOlder {
                     updatedItems.append(.bottomLoader)
                 }
                 updatedItems = self.notificationPolicyBannerRow + updatedItems
