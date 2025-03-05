@@ -1,6 +1,5 @@
 // Copyright © 2025 Mastodon gGmbH. All rights reserved.
 
-import Boutique
 import MastodonSDK
 import MastodonCore
 
@@ -61,7 +60,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
                     staleResults = try PersistenceManager.shared.cached(.notificationsAll(userIdentifier))
                 case .notificationsMentionsOnly:
                     staleResults = try PersistenceManager.shared.cached(.notificationsMentions(userIdentifier))
-                case .notificationsWithAccount(let string):
+                case .notificationsWithAccount:
                     staleResults = nil
                 }
             } catch {
@@ -294,7 +293,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
                     accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsAccounts(userIdentifier))) ?? []
                     partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsPartialAccounts(userIdentifier))) ?? []
                     statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsStatuses(userIdentifier))) ?? []
-                case .notificationsWithAccount(let string):
+                case .notificationsWithAccount:
                     return mostRecentlyFetchedResults
                 }
                 staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroups, fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
