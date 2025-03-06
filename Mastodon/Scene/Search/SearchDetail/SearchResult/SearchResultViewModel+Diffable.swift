@@ -66,7 +66,7 @@ extension SearchResultViewModel {
                 
                 var snapshot = NSDiffableDataSourceSnapshot<SearchResultSection, SearchResultItem>()
                 snapshot.appendSections([.main])
-                snapshot.appendItems(items, toSection: .main)
+                snapshot.appendItems(items.removingDuplicates(), toSection: .main)
                 
                 if let currentState = self.stateMachine.currentState {
                     switch currentState {
