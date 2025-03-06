@@ -236,7 +236,7 @@ extension GroupedNotificationFeedLoader {
                 case .end:
                     return nil
                 case .replace:
-                    return nil
+                    return true
                 }
             }()
     
