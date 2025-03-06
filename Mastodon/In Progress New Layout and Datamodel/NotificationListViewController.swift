@@ -10,6 +10,7 @@ import SwiftUI
 class NotificationListViewController: UIHostingController<NotificationListView>
 {
     fileprivate var viewModel: NotificationListViewModel
+    private var picker = UISegmentedControl(items: [ ListType.everything.pickerLabel, ListType.mentions.pickerLabel ])
 
     init() {
         viewModel = NotificationListViewModel()
@@ -35,6 +36,14 @@ class NotificationListViewController: UIHostingController<NotificationListView>
                     scene: scene, from: self, transition: transition)
             }
         }
+        
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        picker.selectedSegmentIndex = 0
+        navigationItem.titleView = picker
+        NSLayoutConstraint.activate([
+            picker.widthAnchor.constraint(greaterThanOrEqualToConstant: 287)
+        ])
+        picker.addTarget(self, action: #selector(pickerValueChanged(_:)), for: .valueChanged)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -44,6 +53,10 @@ class NotificationListViewController: UIHostingController<NotificationListView>
     
     override func viewWillAppear(_ animated: Bool) {
         viewModel.checkCanGroupNotifications()
+    }
+    
+    @objc private func pickerValueChanged(_ sender: UISegmentedControl) {
+        viewModel.displayedNotifications = ListType(rawValue: sender.selectedSegmentIndex) ?? .everything
     }
     
     @objc private func showNotificationPolicySettings(_ sender: Any) {
@@ -69,9 +82,9 @@ extension NotificationListViewController: NotificationPolicyViewControllerDelega
     }
 }
 
-private enum ListType {
-    case everything
-    case mentions
+private enum ListType: Int {
+    case everything = 0
+    case mentions = 1
 
     var pickerLabel: String {
         switch self {
@@ -106,24 +119,6 @@ struct NotificationListView: View {
 
     var body: some View {
         VStack {
-            Spacer().frame(maxHeight: 8)
-
-            HStack {
-                Spacer()
-                Picker(selection: $viewModel.displayedNotifications) {
-                    ForEach(
-                        [ListType.everything, .mentions]
-                    ) {
-                        Text($0.pickerLabel)
-                            .tag($0)
-                    }
-                } label: {
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .fixedSize()
-                Spacer()
-            }
             ScrollViewReader { proxy in
                 List {
                     ForEach(viewModel.notificationItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
@@ -272,7 +267,7 @@ struct NotificationListView: View {
 @MainActor
 private class NotificationListViewModel: ObservableObject {
 
-    @Published var displayedNotifications: ListType = .everything {
+    var displayedNotifications: ListType = .everything {
         didSet {
             Task { [weak self] in
                 guard let self else { return }
