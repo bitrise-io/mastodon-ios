@@ -160,7 +160,7 @@ final public class GroupedNotificationFeedLoader {
     private func checkForDuplicates(_ rowViewModels: [NotificationRowViewModel]) -> [NotificationRowViewModel] {
         var added = Set<String>()
         var deduped = [NotificationRowViewModel]()
-        for (i, model) in rowViewModels.enumerated() {
+        for model in rowViewModels {
             let id = model.identifier.id
             if added.contains(id) {
                 continue
