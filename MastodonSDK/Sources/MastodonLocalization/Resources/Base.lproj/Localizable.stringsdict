@@ -174,13 +174,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>ld</string>
 			<key>one</key>
-			<string>one person favourited:</string>
+			<string>one person favorited:</string>
 			<key>few</key>
-			<string>%ld people favourited:</string>
+			<string>%ld people favorited:</string>
 			<key>many</key>
-			<string>%ld people favourited:</string>
+			<string>%ld people favorited:</string>
 			<key>other</key>
-			<string>%ld people favourited:</string>
+			<string>%ld people favorited:</string>
 		</dict>
 	</dict>
 	<key>plural.count.people_followed_you</key>

@@ -964,9 +964,9 @@ public enum L10n {
         public static func multiplePeopleBoosted(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleBoosted", String(describing: p1), fallback: "%@ boosted:")
         }
-        /// %@ favourited:
+        /// %@ favorited:
         public static func multiplePeopleFavourited(_ p1: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFavourited", String(describing: p1), fallback: "%@ favourited:")
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFavourited", String(describing: p1), fallback: "%@ favorited:")
         }
         /// %@ followed you
         public static func multiplePeopleFollowedYou(_ p1: Any) -> String {
@@ -976,9 +976,9 @@ public enum L10n {
         public static func singleNameBoosted(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameBoosted", String(describing: p1), fallback: "%@ boosted:")
         }
-        /// %@ favourited:
+        /// %@ favorited:
         public static func singleNameFavourited(_ p1: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameFavourited", String(describing: p1), fallback: "%@ favourited:")
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameFavourited", String(describing: p1), fallback: "%@ favorited:")
         }
         /// %@ followed you
         public static func singleNameFollowedYou(_ p1: Any) -> String {
@@ -1020,8 +1020,8 @@ public enum L10n {
         public static let boost = L10n.tr("Localizable", "Scene.Notification.Headers.Boost", fallback: "Boost")
         /// Edit
         public static let edit = L10n.tr("Localizable", "Scene.Notification.Headers.Edit", fallback: "Edit")
-        /// Favourite
-        public static let favourite = L10n.tr("Localizable", "Scene.Notification.Headers.Favourite", fallback: "Favourite")
+        /// Favorite
+        public static let favourite = L10n.tr("Localizable", "Scene.Notification.Headers.Favourite", fallback: "Favorite")
         /// Follow
         public static let follow = L10n.tr("Localizable", "Scene.Notification.Headers.Follow", fallback: "Follow")
         /// Follow request
