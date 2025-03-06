@@ -590,6 +590,7 @@ struct NotificationRowView: View {
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
     
     @ViewBuilder
