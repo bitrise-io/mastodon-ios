@@ -533,7 +533,7 @@ extension ProfileViewController: ProfileHeaderViewControllerDelegate {
             case .posts:
                 return UserTimelineViewModel.QueryFilter(excludeReplies: true)
             case .postsAndReplies:
-                return UserTimelineViewModel.QueryFilter(excludeReplies: false)
+                return UserTimelineViewModel.QueryFilter(excludeReplies: false, excludeReblogs: true)
             case .media:
                 return UserTimelineViewModel.QueryFilter(onlyMedia: true)
             }
