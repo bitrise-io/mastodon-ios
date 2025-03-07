@@ -81,7 +81,7 @@ final public class GroupedNotificationFeedLoader {
             if let currentInstance = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.instanceConfiguration {
                 useGrouped = currentInstance.canGroupNotifications
             } else { assertionFailure("no instance configuration")
-                useGrouped = false
+                useGrouped = true
             }
         case .notificationsWithAccount:
             useGrouped = false
@@ -262,11 +262,13 @@ extension GroupedNotificationFeedLoader {
         olderThan maxID: String? = nil
     ) async throws -> NotificationsResultType {
         if useGroupedNotificationsApi {
-            return try await getGroupedNotifications(
-                withScope: scope, olderThan: maxID)
-        } else {
-            return try await getUngroupedNotifications(withScope: scope, olderThan: maxID)
+            do {
+                return try await getGroupedNotifications(
+                    withScope: scope, olderThan: maxID)
+            } catch {
+            }
         }
+        return try await getUngroupedNotifications(withScope: scope, olderThan: maxID)
     }
 
     private func loadNotifications(
