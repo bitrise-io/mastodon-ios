@@ -231,36 +231,27 @@ extension StatusView {
                     return .repost(info: .init(header: metaContent))
                 }
             }()
-
-        } else if let _ = status.inReplyToID,
-                  let inReplyToAccountID = status.inReplyToAccountID
-        {
+            
+        } else if let inReplyToID = status.inReplyToID {
             func createHeader(
                 name: String?,
                 emojis: MastodonContent.Emojis?
             ) -> ViewModel.Header {
-                let fallbackMetaContent = PlaintextMetaContent(string: L10n.Common.Controls.Status.userRepliedTo("-"))
-                let fallbackReplyHeader = ViewModel.Header.reply(info: .init(header: fallbackMetaContent))
-                guard let name = name,
-                      let emojis = emojis
-                else {
-                    return fallbackReplyHeader
+                let name = name ?? "-"
+                let emojis = emojis ?? [:]
+                let replyDescription = status.visibility == .direct ? L10n.Common.Controls.Status.privateReply : L10n.Common.Controls.Status.userRepliedTo(name)
+                let content = MastodonContent(content: replyDescription, emojis: emojis)
+                if let metaContent = try? MastodonMetaContent.convert(document: content) {
+                    return ViewModel.Header.reply(info: .init(header: metaContent), isDirectMessage: status.visibility == .direct)
+                } else {
+                    return ViewModel.Header.reply(info: .init(header: PlaintextMetaContent(string: replyDescription)), isDirectMessage: status.visibility == .direct)
                 }
-                
-                let content = MastodonContent(content: L10n.Common.Controls.Status.userRepliedTo(name), emojis: emojis)
-                guard let metaContent = try? MastodonMetaContent.convert(document: content) else {
-                    return fallbackReplyHeader
-                }
-                let header = ViewModel.Header.reply(info: .init(header: metaContent))
-                return header
             }
-
-            if let inReplyToID = status.inReplyToID {
-                // A. replyTo status exist
-                
-                /// we need to initially set an empty header, otherwise the layout gets messed up
-                viewModel.header = createHeader(name: "", emojis: [:])
-                /// finally we can load the status information and display the correct header
+            
+            /// we need to initially set an empty header, otherwise the layout gets messed up
+            viewModel.header = createHeader(name: "", emojis: [:])
+            if status.visibility != .direct {
+                /// finally, if we need to get the account info, we can load the status information and display the correct header
                 if let authenticationBox = viewModel.authenticationBox {
                     Mastodon.API.Statuses.status(
                         session: .shared,
@@ -279,34 +270,9 @@ extension StatusView {
                     })
                     .store(in: &disposeBag)
                 }
-            } else {
-                // B. replyTo status not exist
-                    let header = createHeader(name: nil, emojis: nil)
-                    viewModel.header = header
-                    
-                    if let authenticationBox = viewModel.authenticationBox {
-                        Just(inReplyToAccountID)
-                            .asyncMap { userID in
-                                return try await Mastodon.API.Account.accountInfo(
-                                    session: .shared,
-                                    domain: authenticationBox.domain,
-                                    userID: userID,
-                                    authorization: authenticationBox.userAuthorization
-                                ).singleOutput()
-                            }
-                            .receive(on: DispatchQueue.main)
-                            .sink { completion in
-                                // do nothing
-                            } receiveValue: { [weak self] response in
-                                guard let self = self else { return }
-                                let user = response.value
-                                let header = createHeader(name: user.displayNameWithFallback, emojis: user.emojiMeta)
-                                self.viewModel.header = header
-                            }
-                            .store(in: &disposeBag)
-                    }   // end if let
-            }   // end else B.
-            
+            }
+        } else if status.visibility == .direct {
+            viewModel.header = .directMention
         } else {
             viewModel.header = .none
         }

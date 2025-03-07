@@ -36,7 +36,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
             }
             
             switch await statusView.viewModel.header {
-                case .none:
+                case .none, .directMention:
                     break
                 case .reply:
                     guard let replyToAccountID = status.entity.inReplyToAccountID else { return }

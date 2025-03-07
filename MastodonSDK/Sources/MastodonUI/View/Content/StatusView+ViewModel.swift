@@ -121,7 +121,8 @@ extension StatusView {
         
         public enum Header {
             case none
-            case reply(info: ReplyInfo)
+            case directMention
+            case reply(info: ReplyInfo, isDirectMessage: Bool)
             case repost(info: RepostInfo)
             // case notification(info: NotificationHeaderInfo)
             
@@ -197,10 +198,21 @@ extension StatusView.ViewModel {
                     statusView.headerIconImageView.image = UIImage(systemName: "repeat")!.withRenderingMode(.alwaysTemplate)
                     statusView.headerInfoLabel.configure(content: info.header)
                     statusView.setHeaderDisplay()
-                case .reply(let info):
+                case let .reply(info, isDirect):
                     assert(Thread.isMainThread)
-                    statusView.headerIconImageView.image = UIImage(systemName: "arrowshape.turn.up.left.fill")
+                    statusView.headerIconImageView.image = UIImage(systemName: "arrowshape.turn.up.left.fill")!.withRenderingMode(.alwaysTemplate)
+                    if isDirect {
+                        statusView.headerIconImageView.tintColor = Asset.Colors.accent.color
+                        statusView.headerInfoLabel.setup(style: .statusHeader, fontColor: Asset.Colors.accent.color)
+                    }
                     statusView.headerInfoLabel.configure(content: info.header)
+                    statusView.setHeaderDisplay()
+                case .directMention:
+                    assert(Thread.isMainThread)
+                    statusView.headerIconImageView.image = UIImage(systemName: "at")!.withRenderingMode(.alwaysTemplate)
+                    statusView.headerIconImageView.tintColor = Asset.Colors.accent.color
+                    statusView.headerInfoLabel.setup(style: .statusHeader, fontColor: Asset.Colors.accent.color)
+                    statusView.headerInfoLabel.configure(content: PlaintextMetaContent(string: L10n.Common.Controls.Status.privateMention))
                     statusView.setHeaderDisplay()
                 }
             }
@@ -679,7 +691,11 @@ extension StatusView.ViewModel {
             case .none:
                 strings.append(authorName?.string)
                 strings.append(authorUsername)
-            case .reply(let info):
+            case .directMention:
+                strings.append(L10n.Common.Controls.Status.privateMention)
+                strings.append(authorName?.string)
+                strings.append(authorUsername)
+            case .reply(let info, _):
                 strings.append(authorName?.string)
                 strings.append(authorUsername)
                 strings.append(info.header.string)
@@ -723,9 +739,11 @@ extension StatusView.ViewModel {
             switch header {
             case .none:
                 return "\(nameAndUsername), \(timestamp)"
+            case .directMention:
+                return "\(L10n.Common.Controls.Status.privateMention) \(nameAndUsername), \(timestamp)"
             case .repost(info: let info):
                 return "\(info.header.string) \(nameAndUsername), \(timestamp)"
-            case .reply(info: let info):
+            case let .reply(info, _):
                 return "\(nameAndUsername) \(info.header.string), \(timestamp)"
             }
         }

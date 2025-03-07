@@ -544,6 +544,8 @@ public final class StatusView: UIView {
         
         headerInfoLabel.text = nil
         headerIconImageView.image = nil
+        headerInfoLabel.setup(style: .statusHeader)
+        headerIconImageView.tintColor = Asset.Colors.Label.secondary.color
     }
 
     public override init(frame: CGRect) {

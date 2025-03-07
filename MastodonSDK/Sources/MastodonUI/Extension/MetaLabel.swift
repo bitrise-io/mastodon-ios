@@ -44,26 +44,26 @@ extension MetaLabel {
         setup(style: style)
     }
     
-    public func setup(style: Style) {
+    public func setup(style: Style, fontColor: UIColor? = nil) {
         let font: UIFont
         let textColor: UIColor
         
         switch style {
         case .statusHeader:
             font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .bold))
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .statusName:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             
         case .statusUsername:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .regular))
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .statusSpoilerOverlay:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             textAlignment = .center
             paragraphStyle.alignment = .center
             numberOfLines = 0
@@ -71,31 +71,31 @@ extension MetaLabel {
 
         case .statusSpoilerBanner:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .regular))
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             
         case .notificationTitle:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 14, weight: .regular))
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .profileFieldName:
             font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: .systemFont(ofSize: 12, weight: .regular))
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .profileFieldValue:
             font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 17, weight: .regular))
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             
         case .profileCardName:
             font = .systemFont(ofSize: 17, weight: .semibold)
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             
         case .profileCardUsername:
             font = .systemFont(ofSize: 15, weight: .regular)
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .profileCardFamiliarFollowerFooter:
             font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .regular), maximumPointSize: 26)
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             numberOfLines = 2
             textContainer.maximumNumberOfLines = 2
             paragraphStyle.lineSpacing = 0
@@ -103,25 +103,25 @@ extension MetaLabel {
             
         case .titleView:
             font = .systemFont(ofSize: 17, weight: .semibold)
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             textAlignment = .center
             paragraphStyle.alignment = .center
             
         case .recommendAccountName:
             font = .systemFont(ofSize: 18, weight: .semibold)
-            textColor = .white
+            textColor = fontColor ?? .white
             
         case .autoCompletion:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .semibold), maximumPointSize: 22)
-            textColor = Asset.Colors.Brand.blurple.color
+            textColor = fontColor ?? Asset.Colors.Brand.blurple.color
             
         case .accountListName:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .regular), maximumPointSize: 22)
-            textColor = Asset.Colors.Label.primary.color
+            textColor = fontColor ?? Asset.Colors.Label.primary.color
             
         case .accountListUsername:
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .regular), maximumPointSize: 20)
-            textColor = Asset.Colors.Label.secondary.color
+            textColor = fontColor ?? Asset.Colors.Label.secondary.color
             
         case .sidebarHeadline(let isSelected):
             font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 22, weight: .regular), maximumPointSize: 20)
@@ -132,7 +132,7 @@ extension MetaLabel {
             textColor = isSelected ? .white : Asset.Colors.Label.secondary.color
         case .aboutInstance:
             font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 17, weight: .regular))
-            textColor = .label
+            textColor = fontColor ?? .label
             paragraphStyle.paragraphSpacing = 0
         }
         
