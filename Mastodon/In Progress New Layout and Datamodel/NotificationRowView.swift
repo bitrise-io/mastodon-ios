@@ -602,7 +602,7 @@ struct NotificationRowView: View {
             Text(string)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .timeSinceLabel(let date):
-            Text(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
+            Text(date.localizedExtremelyAbbreviatedTimeElapsedUntilNow)
                 .font(.subheadline)
                 .frame(height: actionSuperheaderHeight)
                 .fixedSize(horizontal: true, vertical: false)
@@ -628,7 +628,7 @@ struct NotificationRowView: View {
             HStack(alignment: .top, spacing: 2) {
                 Text(string)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
+                Text(date.localizedExtremelyAbbreviatedTimeElapsedUntilNow)
                     .font(.subheadline)
                     .frame(height: actionSuperheaderHeight)
                     .fixedSize(horizontal: true, vertical: false)

@@ -9,6 +9,14 @@ import Foundation
 import MastodonAsset
 import MastodonLocalization
 
+let extremeDateAbbreviatingFormatter: DateComponentsFormatter = {
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = [.year, .month, .day, .hour, .minute, .second]
+    formatter.unitsStyle = .abbreviated
+    formatter.maximumUnitCount = 1
+    return formatter
+}()
+
 extension Date {
     
     static let calendar = Calendar(identifier: .gregorian)
@@ -34,6 +42,11 @@ extension Date {
 
     public var localizedAbbreviatedSlowedTimeAgoSinceNow: String {
         return Date.relativeTimestampFormatter.localizedString(for: self, relativeTo: Date())
+    }
+    
+    public var localizedExtremelyAbbreviatedTimeElapsedUntilNow: String {
+        let interval = Date.now.timeIntervalSince(self)
+        return extremeDateAbbreviatingFormatter.string(from: interval) ?? ""
     }
 }
 
