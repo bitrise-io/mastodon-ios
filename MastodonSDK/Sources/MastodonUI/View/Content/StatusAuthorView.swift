@@ -326,10 +326,6 @@ extension StatusAuthorView {
         authorSecondaryMetaContainer.addArrangedSubview(dateLabel)
         dateLabel.setContentHuggingPriority(.required - 1, for: .horizontal)
         dateLabel.setContentCompressionResistancePriority(.required - 1, for: .horizontal)
-        
-        NSLayoutConstraint.activate([
-            visibilityIcon.firstBaselineAnchor.constraint(equalTo: dateLabel.firstBaselineAnchor)
-        ])
 
         authorSecondaryMetaContainer.addArrangedSubview(timestampTrialingDotLabel)
         timestampTrialingDotLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
