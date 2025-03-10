@@ -31,7 +31,7 @@ files: [
  },
  {
   # App strings dict
-  "source" : "/Localization/Localizable.stringsdict",
+  "source" : "/MastodonSDK/Sources/MastodonLocalization/Resources/Base.lproj/Localizable.stringsdict",
   "translation" : "/Localization/StringsConvertor/input/%osx_code%/%original_file_name%",
   # "update_option" : "update_as_unapproved",
  },
