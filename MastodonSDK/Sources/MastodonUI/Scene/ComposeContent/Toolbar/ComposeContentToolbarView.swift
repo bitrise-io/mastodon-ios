@@ -33,7 +33,7 @@ struct ComposeContentToolbarView: View {
         HStack(spacing: .zero) {
             ScrollView(isZoomed ? .horizontal : []) {
                 HStack(spacing: .zero) {
-                    ForEach(ComposeContentToolbarView.ViewModel.Action.allCases, id: \.self) { action in
+                    ForEach(ComposeContentToolbarView.ViewModel.Action.allCases.filter { $0 != .visibility }, id: \.self) { action in
                         switch action {
                             case .attachment:
                                 Menu {
@@ -53,26 +53,6 @@ struct ComposeContentToolbarView: View {
                                         .opacity(viewModel.isAttachmentButtonEnabled ? 1.0 : 0.5)
                                 }
                                 .disabled(!viewModel.isAttachmentButtonEnabled)
-                                .frame(width: 48, height: 48)
-                            case .visibility:
-                                Menu {
-                                    Picker(selection: $viewModel.visibility) {
-                                        ForEach(viewModel.allVisibilities, id: \.self) { visibility in
-                                            Label {
-                                                Text(visibility.title)
-                                            } icon: {
-                                                Image(uiImage: visibility.image)
-                                            }
-                                        }
-                                    } label: {
-                                        Text(viewModel.visibility.title)
-                                    }
-                                } label: {
-                                    label(for: viewModel.visibility.image)
-                                        .accessibilityLabel(L10n.Scene.Compose.Keyboard.selectVisibilityEntry(viewModel.visibility.title))
-                                        .opacity(viewModel.isVisibilityButtonEnabled ? 1.0 : 0.5)
-                                }
-                                .disabled(!viewModel.isVisibilityButtonEnabled)
                                 .frame(width: 48, height: 48)
                             case .poll:
                                 Button {

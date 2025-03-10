@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MastodonAsset
+import MastodonSDK
 import MastodonCore
 import MastodonLocalization
 import Stripes
@@ -22,6 +23,13 @@ public struct ComposeContentView: View {
     public var body: some View {
         VStack(spacing: .zero) {
             Group {
+                // visibility
+                HStack {
+                    Spacer().frame(maxWidth: .infinity)
+                    visibilityPicker()
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                
                 // content warning
                 if viewModel.isContentWarningActive {
                     MetaTextViewRepresentable(
@@ -137,6 +145,21 @@ public struct ComposeContentView: View {
         }   // end VStack
         .coordinateSpace(name: ComposeContentView.contentViewCoordinateSpace)
     }   // end body
+    
+    @ViewBuilder
+    func visibilityPicker() -> some View {
+        Picker(selection: $viewModel.visibility) {
+            ForEach([Mastodon.Entity.Status.Visibility.public, .unlisted, .private, .direct], id: \.self) { visibility in
+                Label {
+                    Text(visibility.title)
+                } icon: {
+                    Image(uiImage: visibility.image)
+                }
+            }
+        } label: {
+            Text(viewModel.visibility.title)
+        }.disabled(!viewModel.isVisibilityButtonEnabled)
+    }
 }
 
 extension ComposeContentView {
