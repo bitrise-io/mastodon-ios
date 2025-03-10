@@ -246,7 +246,7 @@
                 "follow": "Follow",
                 "follow_back": "Follow back",
                 "following": "Following",
-                "mutual": "Mutual"
+                "mutual": "Mutual",
                 "request": "Request",
                 "pending": "Pending",
                 "block": "Block",
@@ -747,7 +747,7 @@
                 "severed_relationships": "Domain block",
                 "status": "Post",
                 "edit": "Edit"
-            }
+            },
             "grouped_notification_description": {
                 "your_poll_has_ended": "Your poll has ended",
                 "single_name_ran_poll": "%@ ran %@",
@@ -797,7 +797,7 @@
             "filtered_notification": {
                 "title": "Filtered Notifications",
                 "accept": "Accept",
-                "dismiss": "Dismiss",
+                "dismiss": "Dismiss"
             },
             "policy": {
                 "title": "Filter Notifications from…",
