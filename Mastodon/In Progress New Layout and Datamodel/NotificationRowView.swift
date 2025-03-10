@@ -581,7 +581,7 @@ struct NotificationRowView: View {
                     componentView($0)
                 }
                 
-                if !viewModel.contentComponents.isEmpty {
+                if !viewModel.contentComponents.isEmpty && !viewModel.type.wantsFullStatusLayout {
                     Spacer().frame(height: 2)
                 }
                 
