@@ -2083,10 +2083,6 @@ public enum L10n {
       public static func favorite(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.favorite", p1, fallback: "Plural format key: \"%#@favorite_count@\"")
       }
-      /// Plural format key: "%#@names@%#@count_mutual@"
-      public static func followedByAndMutual(_ p1: Int, _ p2: Int) -> String {
-        return L10n.tr("Localizable", "plural.count.followed_by_and_mutual", p1, p2, fallback: "Plural format key: \"%#@names@%#@count_mutual@\"")
-      }
       /// Plural format key: "%#@count_follower@"
       public static func follower(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.follower", p1, fallback: "Plural format key: \"%#@count_follower@\"")
@@ -2162,12 +2158,6 @@ public enum L10n {
       /// Plural format key: "%#@voter_count@"
       public static func voter(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.voter", p1, fallback: "Plural format key: \"%#@voter_count@\"")
-      }
-      public enum MetricFormatted {
-        /// Plural format key: "%@ %#@post_count@"
-        public static func post(_ p1: Any, _ p2: Int) -> String {
-          return L10n.tr("Localizable", "plural.count.metric_formatted.post", String(describing: p1), p2, fallback: "Plural format key: \"%@ %#@post_count@\"")
-        }
       }
     }
     public enum FilteredNotificationBanner {

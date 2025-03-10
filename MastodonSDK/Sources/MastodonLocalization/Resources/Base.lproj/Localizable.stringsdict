@@ -90,37 +90,6 @@
 			<string>%ld characters left</string>
 		</dict>
 	</dict>
-	<key>plural.count.followed_by_and_mutual</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@names@%#@count_mutual@</string>
-		<key>names</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>ld</string>
-			<key>other</key>
-			<string></string>
-		</dict>
-		<key>count_mutual</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>ld</string>
-			<key>zero</key>
-			<string>Followed by %1$@</string>
-			<key>one</key>
-			<string>Followed by %1$@, and another mutual</string>
-			<key>few</key>
-			<string>Followed by %1$@, and %ld mutuals</string>
-			<key>many</key>
-			<string>Followed by %1$@, and %ld mutuals</string>
-			<key>other</key>
-			<string>Followed by %1$@, and %ld mutuals</string>
-		</dict>
-	</dict>
 	<key>plural.count.others</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -223,28 +192,6 @@
 			<string>a poll that you and %ld others voted in</string>
 			<key>other</key>
 			<string>a poll that you and %ld others voted in</string>
-		</dict>
-	</dict>
-	<key>plural.count.metric_formatted.post</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%@ %#@post_count@</string>
-		<key>post_count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>ld</string>
-			<key>zero</key>
-			<string>posts</string>
-			<key>one</key>
-			<string>post</string>
-			<key>few</key>
-			<string>posts</string>
-			<key>many</key>
-			<string>posts</string>
-			<key>other</key>
-			<string>posts</string>
 		</dict>
 	</dict>
 	<key>plural.count.media</key>
