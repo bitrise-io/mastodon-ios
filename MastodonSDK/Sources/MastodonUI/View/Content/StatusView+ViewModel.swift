@@ -232,7 +232,6 @@ extension StatusView.ViewModel {
         $visibility
             .sink { visibility in
                 authorView.visibilityIcon.image = visibility.image
-                authorView.visibilityIcon.accessibilityLabel = visibility.title
                 switch visibility {
                 case .public, ._other:
                     authorView.visibilityIcon.isHidden = true
