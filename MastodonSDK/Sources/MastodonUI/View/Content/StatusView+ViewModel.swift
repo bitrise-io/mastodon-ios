@@ -228,6 +228,19 @@ extension StatusView.ViewModel {
             authorView.avatarButton.avatarImageView.configure(cornerConfiguration: .init(corner: .fixed(radius: 12)))
         }
         .store(in: &disposeBag)
+        // visibility
+        $visibility
+            .sink { visibility in
+                authorView.visibilityIcon.image = visibility.image
+                authorView.visibilityIcon.accessibilityLabel = visibility.title
+                switch visibility {
+                case .public, ._other:
+                    authorView.visibilityIcon.isHidden = true
+                case .direct, .private, .unlisted:
+                    authorView.visibilityIcon.isHidden = false
+                }
+            }
+            .store(in: &disposeBag)
         // name
         $authorName
             .sink { metaContent in

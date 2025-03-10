@@ -30,8 +30,16 @@ public class StatusAuthorView: UIStackView {
 
     // author username
     public let authorUsernameLabel = MetaLabel(style: .statusUsername)
-
-    public let usernameTrialingDotLabel: MetaLabel = {
+    
+    public let visibilityIcon: UIImageView = {
+        var imageView = UIImageView()
+        imageView.tintColor = Asset.Colors.Label.secondary.color
+        var config = UIImage.SymbolConfiguration(font: UIFont.systemFont(ofSize: 15, weight: .regular))
+        imageView.preferredSymbolConfiguration = config
+        return imageView
+    }()
+    
+    public let timestampTrialingDotLabel: MetaLabel = {
         let label = MetaLabel(style: .statusUsername)
         label.configure(content: PlaintextMetaContent(string: "·"))
         return label
@@ -305,19 +313,26 @@ extension StatusAuthorView {
         menuButton.setContentHuggingPriority(.required - 1, for: .horizontal)
         menuButton.setContentCompressionResistancePriority(.required - 1, for: .horizontal)
 
-        // authorSecondaryMetaContainer: H - [ authorUsername | usernameTrialingDotLabel | dateLabel | (padding) | contentSensitiveeToggleButton ]
+        // authorSecondaryMetaContainer: H - [ visibilityIcon | dateLabel | dot | authorUsername | spacer ]
         let authorSecondaryMetaContainer = UIStackView()
         authorSecondaryMetaContainer.axis = .horizontal
         authorSecondaryMetaContainer.alignment = .center
         authorSecondaryMetaContainer.spacing = 4
         authorMetaContainer.addArrangedSubview(authorSecondaryMetaContainer)
-
+        
+        authorSecondaryMetaContainer.addArrangedSubview(visibilityIcon)
+        visibilityIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
+        
         authorSecondaryMetaContainer.addArrangedSubview(dateLabel)
         dateLabel.setContentHuggingPriority(.required - 1, for: .horizontal)
         dateLabel.setContentCompressionResistancePriority(.required - 1, for: .horizontal)
+        
+        NSLayoutConstraint.activate([
+            visibilityIcon.firstBaselineAnchor.constraint(equalTo: dateLabel.firstBaselineAnchor)
+        ])
 
-        authorSecondaryMetaContainer.addArrangedSubview(usernameTrialingDotLabel)
-        usernameTrialingDotLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        authorSecondaryMetaContainer.addArrangedSubview(timestampTrialingDotLabel)
+        timestampTrialingDotLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         authorSecondaryMetaContainer.addArrangedSubview(authorUsernameLabel)
         authorUsernameLabel.setContentHuggingPriority(.required - 1, for: .vertical)
@@ -351,7 +366,7 @@ extension StatusAuthorView {
 
         avatarButton.isUserInteractionEnabled = false
         menuButton.removeFromSuperview()
-        usernameTrialingDotLabel.removeFromSuperview()
         dateLabel.removeFromSuperview()
+        timestampTrialingDotLabel.removeFromSuperview()
     }
 }
