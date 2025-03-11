@@ -5,19 +5,15 @@ import MastodonSDK
 
 struct BetaTestSettingsViewModel {
     let useStagingForDonations: Bool
-    let testGroupedNotifications: Bool
     
     init() {
         useStagingForDonations = UserDefaults.standard.useStagingForDonations
-        testGroupedNotifications = UserDefaults.standard.useGroupedNotifications
     }
     
     func byToggling(_ setting: BetaTestSetting) -> BetaTestSettingsViewModel {
         switch setting {
         case .useStagingForDonations:
             UserDefaults.standard.toggleUseStagingForDonations()
-        case .useGroupedNotifications:
-            UserDefaults.standard.toggleUseGroupedNotifications()
         case .clearPreviousDonationCampaigns:
             assertionFailure("this is an action, not a setting")
             break
@@ -28,14 +24,11 @@ struct BetaTestSettingsViewModel {
 
 enum BetaTestSettingsSectionType: Hashable {
     case donations
-    case notifications
     
     var sectionTitle: String {
         switch self {
         case .donations:
             return "Donations"
-        case .notifications:
-            return "Notifications"
         }
     }
 }
@@ -43,16 +36,13 @@ enum BetaTestSettingsSectionType: Hashable {
 enum BetaTestSetting: Hashable {
     case useStagingForDonations
     case clearPreviousDonationCampaigns
-    case useGroupedNotifications
-    
+  
     var labelText: String {
         switch self {
         case .useStagingForDonations:
             return "Donations use test endpoint"
         case .clearPreviousDonationCampaigns:
             return "Clear donation history"
-        case .useGroupedNotifications:
-            return "Test grouped notifications (WORK IN PROGRESS!)"
         }
     }
 }
@@ -99,13 +89,6 @@ class BetaTestSettingsViewController: UIViewController {
                 cell.textLabel?.text = itemIdentifier.labelText
                 cell.textLabel?.textColor = .red
                 return cell
-            case .useGroupedNotifications:
-                guard let selectionCell = tableView.dequeueReusableCell(withIdentifier: ToggleTableViewCell.reuseIdentifier, for: indexPath) as? ToggleTableViewCell else { assertionFailure("unexpected cell type"); return nil }
-                selectionCell.label.text = itemIdentifier.labelText
-                selectionCell.toggle.isOn = self.viewModel.testGroupedNotifications
-                selectionCell.toggle.removeTarget(self, action: nil, for: .valueChanged)
-                selectionCell.toggle.addTarget(self, action: #selector(didToggleGroupedNotifications), for: .valueChanged)
-                return selectionCell
             }
         })
         
@@ -129,21 +112,14 @@ class BetaTestSettingsViewController: UIViewController {
     @objc func didToggleDonationsStaging(_ sender: UISwitch) {
         viewModel = viewModel.byToggling(.useStagingForDonations)
     }
-    @objc func didToggleGroupedNotifications(_ sender: UISwitch) {
-        viewModel = viewModel.byToggling(.useGroupedNotifications)
-        let alert = UIAlertController(title: "Relaunch Required", message: "This change will not take effect until you relaunch the app.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
     
     func loadFromViewModel(animated: Bool = true) {
         var snapshot = NSDiffableDataSourceSnapshot<BetaTestSettingsSectionType, BetaTestSetting>()
-        snapshot.appendSections([.donations, .notifications])
+        snapshot.appendSections([.donations])
         snapshot.appendItems([.useStagingForDonations], toSection: .donations)
         if viewModel.useStagingForDonations {
             snapshot.appendItems([.useStagingForDonations, .clearPreviousDonationCampaigns], toSection: .donations)
         }
-        snapshot.appendItems([.useGroupedNotifications], toSection: .notifications)
         tableViewDataSource?.apply(snapshot, animatingDifferences: animated)
     }
 }
@@ -152,7 +128,7 @@ extension BetaTestSettingsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let identifier = tableViewDataSource?.itemIdentifier(for: indexPath) else { return }
         switch identifier {
-        case .useStagingForDonations, .useGroupedNotifications:
+        case .useStagingForDonations:
             break
         case .clearPreviousDonationCampaigns:
             Mastodon.Entity.DonationCampaign.forgetPreviousCampaigns()

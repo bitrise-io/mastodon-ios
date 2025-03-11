@@ -262,21 +262,11 @@ private extension MastodonFeedLoader {
 // MARK: - Notifications
 private extension MastodonFeedLoader {
     private func loadNotifications(withScope scope: APIService.MastodonNotificationScope, olderThan maxID: String? = nil) async throws -> [MastodonFeedItemIdentifier] {
-        let useGroupedNotifications = UserDefaults.standard.useGroupedNotifications
-        if useGroupedNotifications {
-            return try await _getGroupedNotifications(withScope: scope, olderThan: maxID)
-        } else {
-            return try await _getUngroupedNotifications(withScope: scope, olderThan: maxID)
-        }
+        return try await _getUngroupedNotifications(withScope: scope, olderThan: maxID)
     }
     
     private func loadNotifications(withAccountID accountID: String, olderThan maxID: String? = nil) async throws -> [MastodonFeedItemIdentifier] {
-        let useGroupedNotifications = false
-        if useGroupedNotifications {
-            return try await _getGroupedNotifications(accountID: accountID, olderThan: maxID)
-        } else {
-            return try await _getUngroupedNotifications(accountID: accountID, olderThan: maxID)
-        }
+        return try await _getUngroupedNotifications(accountID: accountID, olderThan: maxID)
     }
     
     private func _getUngroupedNotifications(withScope scope: APIService.MastodonNotificationScope? = nil, accountID: String? = nil, olderThan maxID: String? = nil) async throws -> [MastodonFeedItemIdentifier] {

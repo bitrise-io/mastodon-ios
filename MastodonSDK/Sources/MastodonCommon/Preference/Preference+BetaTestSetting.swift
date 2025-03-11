@@ -27,22 +27,9 @@ extension UserDefaults {
         }
         set { self[#function] = newValue }
     }
-    
-    @objc public dynamic var useGroupedNotifications: Bool {
-        get {
-            register(defaults: [#function: true])
-            return bool(forKey: #function) && UserDefaults.isDebugOrTestflightOrSimulator
-        }
-        set { self[#function] = newValue }
-    }
 
     public func toggleUseStagingForDonations() {
         let useStaging = UserDefaults.standard.useStagingForDonations
         UserDefaults.standard.useStagingForDonations = !useStaging
-    }
-    
-    public func toggleUseGroupedNotifications() {
-        let useGrouped = UserDefaults.standard.useGroupedNotifications
-        UserDefaults.standard.useGroupedNotifications = !useGrouped
     }
 }

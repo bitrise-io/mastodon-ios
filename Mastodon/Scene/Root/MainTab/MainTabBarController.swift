@@ -60,11 +60,7 @@ class MainTabBarController: UITabBarController {
         composeViewController = UIViewController()
         composeViewController.configureTabBarItem(with: .compose)
         
-        if BetaTestSettingsViewModel().testGroupedNotifications {
-            notificationViewController = NotificationListViewController()
-        } else {
-            notificationViewController = NotificationViewController()
-        }
+        notificationViewController = NotificationListViewController()
         notificationViewController.configureTabBarItem(with: .notifications)
 
 
