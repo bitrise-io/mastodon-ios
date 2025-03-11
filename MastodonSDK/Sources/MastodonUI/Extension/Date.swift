@@ -11,7 +11,7 @@ import MastodonLocalization
 
 let extremeDateAbbreviatingFormatter: DateComponentsFormatter = {
     let formatter = DateComponentsFormatter()
-    formatter.allowedUnits = [.year, .month, .day, .hour, .minute, .second]
+    formatter.allowedUnits = [.day, .hour, .minute, .second]
     formatter.unitsStyle = .abbreviated
     formatter.maximumUnitCount = 1
     return formatter
