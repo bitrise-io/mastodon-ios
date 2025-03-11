@@ -1057,8 +1057,8 @@ public enum L10n {
         /// boosted your post
         public static let rebloggedYourPost = L10n.tr("Localizable", "Scene.Notification.NotificationDescription.RebloggedYourPost", fallback: "boosted your post")
         /// An admin from %@ has blocked %@, including %@.
-        public static func relationshipSeveranceEvent(_ p1: Any, _ p2: Any, _ p3: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.NotificationDescription.RelationshipSeveranceEvent", String(describing: p1), String(describing: p2), String(describing: p3), fallback: "An admin from %@ has blocked %@, including %@.")
+        public static func relationshipSeverance(_ p1: Any, _ p2: Any, _ p3: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.NotificationDescription.RelationshipSeverance", String(describing: p1), String(describing: p2), String(describing: p3), fallback: "An admin from %@ has blocked %@, including %@.")
         }
         /// request to follow you
         public static let requestToFollowYou = L10n.tr("Localizable", "Scene.Notification.NotificationDescription.RequestToFollowYou", fallback: "request to follow you")
@@ -1102,8 +1102,8 @@ public enum L10n {
         public static let deleteStatuses = L10n.tr("Localizable", "Scene.Notification.Warning.DeleteStatuses", fallback: "Some of your posts have been removed.")
         /// Your account has been disabled.
         public static let disable = L10n.tr("Localizable", "Scene.Notification.Warning.Disable", fallback: "Your account has been disabled.")
-        /// Learn more
-        public static let learnMore = L10n.tr("Localizable", "Scene.Notification.Warning.LearnMore", fallback: "Learn more")
+        /// Learn More
+        public static let learnMore = L10n.tr("Localizable", "Scene.Notification.Warning.LearnMore", fallback: "Learn More")
         /// Some of your posts have been marked as sensitive.
         public static let markStatusesAsSensitive = L10n.tr("Localizable", "Scene.Notification.Warning.MarkStatusesAsSensitive", fallback: "Some of your posts have been marked as sensitive.")
         /// Your account has received a moderation warning.

@@ -66,47 +66,84 @@
         <string>%ld caratteri rimasti</string>
       </dict>
     </dict>
-    <key>plural.count.followed_by_and_mutual</key>
+    <key>plural.count.others</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>%#@names@%#@count_mutual@</string>
-      <key>names</key>
-      <dict>
-        <key>one</key>
-        <string></string>
-        <key>NSStringFormatSpecTypeKey</key>
-        <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</key>
-        <string>ld</string>
-        <key>other</key>
-        <string></string>
-      </dict>
-      <key>count_mutual</key>
+      <string>%#@count_others@</string>
+      <key>count_others</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Seguito da %1$@ e un altro amico in comune</string>
+        <string>un altro</string>
         <key>other</key>
-        <string>Seguito da %1$@ e %ld amici in comune</string>
+        <string>altri %ld</string>
       </dict>
     </dict>
-    <key>plural.count.metric_formatted.post</key>
+    <key>plural.count.people_boosted</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>%@ %#@post_count@</string>
-      <key>post_count</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>post</string>
+        <string>una persona ha condiviso:</string>
         <key>other</key>
-        <string>post</string>
+        <string>%ld persone hanno condiviso:</string>
+      </dict>
+    </dict>
+    <key>plural.count.people_favourited</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>una persona ha aggiunto ai preferiti:</string>
+        <key>other</key>
+        <string>%ld persone hanno aggiunto ai preferiti:</string>
+      </dict>
+    </dict>
+    <key>plural.count.people_followed_you</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>una persona ha iniziato a seguirti</string>
+        <key>other</key>
+        <string>%ld persone hanno iniziato a seguirti</string>
+      </dict>
+    </dict>
+    <key>plural.count.poll_that_you_and_others_voted_in</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_others@</string>
+      <key>count_others</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>un sondaggio a cui hai votato tu e un'altra persona</string>
+        <key>other</key>
+        <string>un sondaggio a cui hai votato tu e altre %ld persone</string>
       </dict>
     </dict>
     <key>plural.count.media</key>
@@ -123,6 +160,102 @@
         <string>1 contenuto multimediale</string>
         <key>other</key>
         <string>%ld contenuti multimediali</string>
+      </dict>
+    </dict>
+    <key>plural.count.image</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@image_count@</string>
+      <key>image_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 immagine</string>
+        <key>other</key>
+        <string>%ld immagini</string>
+      </dict>
+    </dict>
+    <key>plural.count.gif</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@gif_count@</string>
+      <key>gif_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 gif</string>
+        <key>other</key>
+        <string>%ld gif</string>
+      </dict>
+    </dict>
+    <key>plural.count.video</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@video_count@</string>
+      <key>video_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 video</string>
+        <key>other</key>
+        <string>%ld video</string>
+      </dict>
+    </dict>
+    <key>plural.count.audio</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@audio_count@</string>
+      <key>audio_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 audio</string>
+        <key>other</key>
+        <string>%ld audio</string>
+      </dict>
+    </dict>
+    <key>plural.count.attachment</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@attachment_count@</string>
+      <key>attachment_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 allegato</string>
+        <key>other</key>
+        <string>%ld allegati</string>
+      </dict>
+    </dict>
+    <key>plural.count.poll</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@poll_count@</string>
+      <key>poll_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 sondaggio</string>
+        <key>other</key>
+        <string>%ld sondaggi</string>
       </dict>
     </dict>
     <key>plural.count.post</key>
@@ -264,9 +397,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 following</string>
+        <string>seguendo 1</string>
         <key>other</key>
-        <string>%ld stanno seguendo</string>
+        <string>seguendo %ld</string>
       </dict>
     </dict>
     <key>plural.count.follower</key>
@@ -283,6 +416,38 @@
         <string>1 seguace</string>
         <key>other</key>
         <string>%ld seguaci</string>
+      </dict>
+    </dict>
+    <key>plural.count.of_your_followers</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_of_your_followers@</string>
+      <key>count_of_your_followers</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 dei tuoi seguaci</string>
+        <key>other</key>
+        <string>%ld dei tuoi seguaci</string>
+      </dict>
+    </dict>
+    <key>plural.count.accounts_that_you_follow</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_accounts_that_you_follow@</string>
+      <key>count_accounts_that_you_follow</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 account che segui</string>
+        <key>other</key>
+        <string>%ld account che segui</string>
       </dict>
     </dict>
     <key>date.year.left</key>

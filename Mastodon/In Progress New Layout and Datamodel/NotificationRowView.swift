@@ -211,7 +211,7 @@ extension Mastodon.Entity.RelationshipSeveranceEvent {
         }
 
         let string = L10n.Scene.Notification.NotificationDescription
-            .relationshipSeveranceEvent(
+            .relationshipSeverance(
                 myDomain, targetName, followersAndFollowingString)
 
         var attributed = AttributedString(string)
