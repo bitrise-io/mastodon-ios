@@ -11,6 +11,7 @@ import SwiftUICore
 class NotificationRowViewModel: ObservableObject {
     let identifier: MastodonFeedItemIdentifier
     let timestamp: Date?
+    let timestampUpdater: TimestampUpdater
     let oldestID: String?
     let newestID: String?
     let type: GroupedNotificationType
@@ -45,6 +46,7 @@ class NotificationRowViewModel: ObservableObject {
 
     init(
         _ notificationInfo: GroupedNotificationInfo,
+        timestamper: TimestampUpdater,
         myAccountDomain: String,
         navigateToScene: @escaping (
             SceneCoordinator.Scene, SceneCoordinator.Transition
@@ -53,6 +55,7 @@ class NotificationRowViewModel: ObservableObject {
 
         self.identifier = .notificationGroup(id: notificationInfo.id)
         self.timestamp = notificationInfo.timestamp
+        self.timestampUpdater = timestamper
         self.oldestID = notificationInfo.oldestNotificationID
         self.newestID = notificationInfo.newestNotificationID
         self.type = notificationInfo.groupedNotificationType
@@ -526,6 +529,7 @@ extension NotificationRowViewModel {
 extension NotificationRowViewModel {
     static func viewModelsFromGroupedNotificationResults(
         _ results: Mastodon.Entity.GroupedNotificationsResults,
+        timestamper: TimestampUpdater,
         myAccountID: String,
         myAccountDomain: String,
         navigateToScene: @escaping (
@@ -607,7 +611,7 @@ extension NotificationRowViewModel {
             )
 
             return NotificationRowViewModel(
-                info, myAccountDomain: myAccountDomain,
+                info, timestamper: timestamper, myAccountDomain: myAccountDomain,
                 navigateToScene: navigateToScene,
                 presentError: presentError)
         }
@@ -615,6 +619,7 @@ extension NotificationRowViewModel {
 
     static func viewModelsFromUngroupedNotifications(
         _ notifications: [Mastodon.Entity.Notification],
+        timestamper: TimestampUpdater,
         myAccountID: String,
         myAccountDomain: String,
         navigateToScene: @escaping (
@@ -675,7 +680,7 @@ extension NotificationRowViewModel {
             )
 
             return NotificationRowViewModel(
-                info, myAccountDomain: myAccountDomain,
+                info, timestamper: timestamper, myAccountDomain: myAccountDomain,
                 navigateToScene: navigateToScene,
                 presentError: presentError)
         }

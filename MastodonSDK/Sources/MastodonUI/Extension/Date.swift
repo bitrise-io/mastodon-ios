@@ -44,8 +44,8 @@ extension Date {
         return Date.relativeTimestampFormatter.localizedString(for: self, relativeTo: Date())
     }
     
-    public var localizedExtremelyAbbreviatedTimeElapsedUntilNow: String {
-        let interval = Date.now.timeIntervalSince(self)
+    public func localizedExtremelyAbbreviatedTimeElapsedUntil(now: Date) -> String {
+        let interval = now.timeIntervalSince(self)
         guard interval > TimeInterval(integerLiteral: 60) else { return "now" }
         return extremeDateAbbreviatingFormatter.string(from: interval) ?? ""
     }

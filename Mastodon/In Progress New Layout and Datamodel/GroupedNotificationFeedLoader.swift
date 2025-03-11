@@ -51,6 +51,8 @@ final public class GroupedNotificationFeedLoader {
         return cacheManager?.currentLastReadMarker
     }
     
+    private let timestampUpdater = TimestampUpdater(TimeInterval(30))
+    
     private var isFetching: Bool = false
 
     public let useGroupedNotificationsApi: Bool
@@ -319,7 +321,7 @@ extension GroupedNotificationFeedLoader {
         
         if let ungrouped = results as? [Mastodon.Entity.Notification] {
             return NotificationRowViewModel.viewModelsFromUngroupedNotifications(
-                ungrouped, myAccountID: authenticationBox.userID,
+                ungrouped, timestamper: timestampUpdater, myAccountID: authenticationBox.userID,
                 myAccountDomain: authenticationBox.domain,
                 navigateToScene: navigateToScene ?? { _, _ in },
                 presentError: presentError ?? { _ in }
@@ -328,6 +330,7 @@ extension GroupedNotificationFeedLoader {
             return NotificationRowViewModel
                 .viewModelsFromGroupedNotificationResults(
                     grouped,
+                    timestamper: timestampUpdater,
                     myAccountID: authenticationBox.userID,
                     myAccountDomain: authenticationBox.domain,
                     navigateToScene: navigateToScene ?? { _, _ in },
@@ -361,5 +364,18 @@ extension GroupedNotificationFeedLoader {
 extension NotificationRowViewModel: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(identifier)
+    }
+}
+
+class TimestampUpdater: ObservableObject {
+    @Published var timestamp: Date = .now
+    private var timer: Timer?
+    
+    init(_ interval: TimeInterval) {
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true, block: { [weak self] _ in
+            Task { @MainActor in
+                self?.timestamp = .now
+            }
+        })
     }
 }

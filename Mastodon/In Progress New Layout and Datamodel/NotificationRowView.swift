@@ -532,6 +532,12 @@ let actionSuperheaderHeight: CGFloat = 20
 
 struct NotificationRowView: View {
     @ObservedObject var viewModel: NotificationRowViewModel
+    @ObservedObject var timestamper: TimestampUpdater
+    
+    init(viewModel: NotificationRowViewModel) {
+        self.viewModel = viewModel
+        self.timestamper = viewModel.timestampUpdater
+    }
     
     var body: some View {
         HStack(alignment: .top, spacing: avatarSpacing) {
@@ -602,7 +608,7 @@ struct NotificationRowView: View {
             Text(string)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .timeSinceLabel(let date):
-            Text(date.localizedExtremelyAbbreviatedTimeElapsedUntilNow)
+            Text(date.localizedExtremelyAbbreviatedTimeElapsedUntil(now: timestamper.timestamp))
                 .font(.subheadline)
                 .frame(height: actionSuperheaderHeight)
                 .fixedSize(horizontal: true, vertical: false)
@@ -628,7 +634,7 @@ struct NotificationRowView: View {
             HStack(alignment: .top, spacing: 2) {
                 Text(string)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(date.localizedExtremelyAbbreviatedTimeElapsedUntilNow)
+                Text(date.localizedExtremelyAbbreviatedTimeElapsedUntil(now: timestamper.timestamp))
                     .font(.subheadline)
                     .frame(height: actionSuperheaderHeight)
                     .fixedSize(horizontal: true, vertical: false)
