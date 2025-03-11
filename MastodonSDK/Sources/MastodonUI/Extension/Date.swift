@@ -11,7 +11,7 @@ import MastodonLocalization
 
 let extremeDateAbbreviatingFormatter: DateComponentsFormatter = {
     let formatter = DateComponentsFormatter()
-    formatter.allowedUnits = [.day, .hour, .minute, .second]
+    formatter.allowedUnits = [.day, .hour, .minute]
     formatter.unitsStyle = .abbreviated
     formatter.maximumUnitCount = 1
     return formatter
@@ -46,6 +46,7 @@ extension Date {
     
     public var localizedExtremelyAbbreviatedTimeElapsedUntilNow: String {
         let interval = Date.now.timeIntervalSince(self)
+        guard interval > TimeInterval(integerLiteral: 60) else { return "now" }
         return extremeDateAbbreviatingFormatter.string(from: interval) ?? ""
     }
 }
