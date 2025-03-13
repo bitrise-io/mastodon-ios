@@ -145,6 +145,11 @@ struct NotificationListView: View {
                 .onDisappear() {
                     viewDidDisappear()
                 }
+                .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
+                    Task {
+                        await viewModel.refreshFeedFromTop()
+                    }
+                }
             }
         }
     }
