@@ -789,8 +789,10 @@ struct NotificationRowView: View {
         case (.iHaveAnsweredTheirRequestToFollowMe(let didAccept), false):
             if didAccept {
                 lightwieghtImageView("checkmark", size: smallAvatarSize)
+                    .accessibilityLabel(L10n.Scene.Notification.FollowRequest.accepted)
             } else {
                 lightwieghtImageView("xmark", size: smallAvatarSize)
+                    .accessibilityLabel(L10n.Scene.Notification.FollowRequest.rejected)
             }
         case (.error(_), _):
             lightwieghtImageView(
