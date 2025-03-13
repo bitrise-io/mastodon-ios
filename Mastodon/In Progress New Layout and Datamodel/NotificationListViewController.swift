@@ -238,7 +238,7 @@ struct NotificationListView: View {
         case .notification:
             return
         case .groupedNotification(let notificationViewModel):
-            notificationViewModel.defaultNavigation?()
+            notificationViewModel.doPrimaryNavigation()
         default:
             return
         }
@@ -440,5 +440,16 @@ private class NotificationListViewModel: ObservableObject {
     
     public func commitToCache() async {
         await feedLoader.commitToCache()
+    }
+}
+
+extension NotificationRowViewModel.NotificationNavigation {
+    var a11yTitle: String? {
+        switch self {
+        case .myFollowers:
+            return L10n.Scene.Profile.Dashboard.myFollowers // TODO: improve string
+        case .profile(let account):
+            return  L10n.Common.Controls.Status.MetaEntity.mention(account.displayNameWithFallback)
+        }
     }
 }

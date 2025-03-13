@@ -17,9 +17,9 @@ class NotificationRowViewModel: ObservableObject {
     let type: GroupedNotificationType
     let author: AccountInfo?
     let navigateToScene:
-        (SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void
+    (SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void
     let presentError: (Error) -> Void
-    let defaultNavigation: (() -> Void)?
+    let primaryNavigation: NotificationNavigation?
     let iconStyle: GroupedNotificationType.MainIconStyle?
     let usePrivateBackground: Bool
     let actionSuperheader: (iconName: String?, text: String, color: Color)?
@@ -63,7 +63,7 @@ class NotificationRowViewModel: ObservableObject {
         self.iconStyle = notificationInfo.groupedNotificationType.mainIconStyle
         self.navigateToScene = navigateToScene
         self.presentError = presentError
-        self.defaultNavigation = notificationInfo.defaultNavigation
+        self.primaryNavigation = notificationInfo.primaryNavigation
         
         var needsPrivateBackground = false
 
@@ -337,8 +337,8 @@ class NotificationRowViewModel: ObservableObject {
         switch type {
         case .follow, .followRequest:
             guard let accountID = sourceAccounts.firstAccountID,
-                let accountIsLocked = sourceAccounts.primaryAuthorAccount?
-                    .locked
+                  let accountIsLocked = sourceAccounts.primaryAuthorAccount?
+                .locked
             else { return }
             avatarRow = .avatarRow(sourceAccounts, .fetching)
 
@@ -381,7 +381,7 @@ class NotificationRowViewModel: ObservableObject {
     }
 
     private func fetchRelationship(to accountID: String) async throws
-        -> Mastodon.Entity.Relationship?
+    -> Mastodon.Entity.Relationship?
     {
         guard
             let authBox = await AuthenticationServiceProvider.shared
@@ -395,6 +395,16 @@ class NotificationRowViewModel: ObservableObject {
             return nil
         }
     }
+    
+}
+
+struct A11yActionInfo: Identifiable {
+    let id = UUID()
+    let title: String
+    let doAction: ()->()
+}
+
+extension NotificationRowViewModel {
     
     func navigateToProfile(_ info: AccountInfo) async throws {
         guard
@@ -415,6 +425,64 @@ class NotificationRowViewModel: ObservableObject {
                     .notMe(
                         me: me, displayAccount: account,
                         relationship: relationship)), .show)
+        }
+    }
+    
+    func doPrimaryNavigation() {
+        guard let primaryNavigation else { return }
+        Task {
+            guard let scene = await primaryNavigation.destinationScene()
+            else { return }
+            navigateToScene(scene, .show)
+        }
+    }
+    
+    public var a11yActions: [A11yActionInfo] {
+        var actions = [A11yActionInfo]()
+        if let primaryNavigationTitle = primaryNavigation?.a11yTitle { actions.append(A11yActionInfo(title: primaryNavigationTitle, doAction: { [weak self] in self?.doPrimaryNavigation() }))
+        }
+        for component in self.headerComponents + self.contentComponents {
+            actions.append(contentsOf: a11yActions(forComponent: component))
+        }
+        return actions
+    }
+
+    private func a11yActions(forComponent component: NotificationViewComponent?) -> [A11yActionInfo]  {
+        switch component {
+        case .none:
+            return []
+        case let .avatarRow(sourceAccounts, relationshipElement):
+            let relationshipActions = a11yActions(forRelationshipElement: relationshipElement, isGrouped: sourceAccounts.totalActorCount > 1)
+            let accountNavigations = sourceAccounts.accounts.compactMap { account in
+                A11yActionInfo(title: L10n.Common.Controls.Status.MetaEntity.mention(account.displayName(whenViewedBy: nil)?.plainString ?? ""), doAction: {
+                    Task { [weak self] in
+                        try await self?.navigateToProfile(account)
+                    }
+                })
+            }
+            return relationshipActions + accountNavigations
+        case let .status(statusViewModel):
+            return [A11yActionInfo(title: L10n.Common.Controls.Status.showPost, doAction: { statusViewModel.navigateToStatus() })]
+        case .hyperlinkButton(_, _):
+            return []
+        case .text, .textAndTimeLabel, .timeSinceLabel, .weightedText, ._other:
+            return []
+        }
+    }
+    
+    private func a11yActions(forRelationshipElement relationshipElement: RelationshipElement, isGrouped: Bool) -> [A11yActionInfo] {
+        
+        guard !isGrouped else { return [] }
+        
+        switch relationshipElement {
+        case .error, .fetching, .iHaveAnsweredTheirRequestToFollowMe, .noneNeeded, .unfetched(_):
+            return []
+        case .iDoNotFollowThem, .iFollowThem, .iHaveRequestedToFollowThem:
+            return [ A11yActionInfo(title: relationshipElement.a11yActionTitle() ?? "", doAction: { [weak self] in self?.doAvatarRowButtonAction() }) ]
+        case .theyHaveRequestedToFollowMe:
+            return [true, false].map { option in
+                A11yActionInfo(title: relationshipElement.a11yActionTitle(forAccept: option) ?? "", doAction: { [weak self] in self?.doAvatarRowButtonAction(option) })
+            }
         }
     }
 }
@@ -596,18 +664,9 @@ extension NotificationRowViewModel {
                                                         false))))), .show)
                         }
                     }),
-                defaultNavigation: {
-                    guard
-                        let navigation = defaultNavigation(
-                            group.type, isGrouped: group.notificationsCount > 1,
-                            primaryAccount: sourceAccounts.primaryAuthorAccount)
-                    else { return }
-                    Task {
-                        guard let scene = await navigation.destinationScene()
-                        else { return }
-                        navigateToScene(scene, .show)
-                    }
-                }
+                primaryNavigation: defaultNavigation(
+                    group.type, isGrouped: group.notificationsCount > 1,
+                    primaryAccount: sourceAccounts.primaryAuthorAccount)
             )
 
             return NotificationRowViewModel(
@@ -665,19 +724,9 @@ extension NotificationRowViewModel {
                     notification, sourceAccounts: sourceAccounts),
                 sourceAccounts: sourceAccounts,
                 statusViewModel: statusViewModel,
-                defaultNavigation: {
-                    guard
-                        let navigation = defaultNavigation(
-                            notification.type, isGrouped: false,
-                            primaryAccount: notification.primaryAuthorAccount)
-                    else { return }
-                    Task {
-                        guard let scene = await navigation.destinationScene()
-                        else { return }
-                        navigateToScene(scene, .show)
-                    }
-                }
-            )
+                primaryNavigation: defaultNavigation(
+                                                notification.type, isGrouped: false,
+                                                primaryAccount: notification.primaryAuthorAccount))
 
             return NotificationRowViewModel(
                 info, timestamper: timestamper, myAccountDomain: myAccountDomain,

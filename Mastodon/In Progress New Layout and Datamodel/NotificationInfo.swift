@@ -60,12 +60,12 @@ struct GroupedNotificationInfo {
     var relationshipElement: RelationshipElement {
         switch groupedNotificationType {
         case .follow(let accountsInfo):
-            if let primaryAuthorAccount = accountsInfo.primaryAuthorAccount {
+            if accountsInfo.primaryAuthorAccount != nil {
                 return .unfetched(groupedNotificationType)
             } else {
                 return .error(nil)
             }
-        case .followRequest(let account):
+        case .followRequest:
             if sourceAccounts.totalActorCount == 1 {
                 return .unfetched(groupedNotificationType)
             } else {
@@ -78,7 +78,7 @@ struct GroupedNotificationInfo {
 
     let statusViewModel: Mastodon.Entity.Status.ViewModel?
 
-    let defaultNavigation: (() -> Void)?
+    let primaryNavigation: NotificationRowViewModel.NotificationNavigation?
 }
 
 extension Mastodon.Entity.Notification: NotificationInfo {

@@ -629,6 +629,7 @@ extension MastodonFollowRequestState.State {
 }
 
 protocol AccountInfo {
+    var handle: String { get }
     var avatarURL: URL? { get }
     var locked: Bool { get }
     var id: String { get }
@@ -636,11 +637,11 @@ protocol AccountInfo {
 }
 
 extension AccountInfo {
-    func displayName(whenViewedBy myAccountID: String) -> AuthorName? {
+    func displayName(whenViewedBy myAccountID: String?) -> AuthorName? {
         if myAccountID == id {
             return .me
         } else {
-            guard let fullAccount else { return nil }
+            guard let fullAccount else { return .other(named: handle, emojis: [:]) }
             return .other(named: fullAccount.displayNameWithFallback, emojis: fullAccount.emojiMeta)
         }
     }
@@ -649,9 +650,11 @@ extension AccountInfo {
 extension Mastodon.Entity.Account: AccountInfo {
     var avatarURL: URL? { avatarImageURL() }
     var fullAccount: Mastodon.Entity.Account? { return self }
+    var handle: String { return acct }
 }
 
 extension Mastodon.Entity.PartialAccountWithAvatar: AccountInfo {
     var avatarURL: URL? { URL(string: avatar) }
     var fullAccount: Mastodon.Entity.Account? { return nil }
+    var handle: String { return acct }
 }

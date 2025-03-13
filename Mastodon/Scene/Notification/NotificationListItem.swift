@@ -8,6 +8,7 @@
 import CoreData
 import Foundation
 import MastodonSDK
+import MastodonLocalization
 
 enum NotificationListItem {
     case filteredNotificationsInfo(
@@ -45,6 +46,19 @@ enum NotificationListItem {
             return true
         default:
             return false
+        }
+    }
+    
+    var primaryA11yActionTitle: String? {
+        switch self {
+        case .filteredNotificationsInfo:
+            return L10n.Scene.Notification.FilteredNotification.title // TODO: improve string
+        case .notification(let identifier):
+            return nil
+        case .groupedNotification(let viewModel):
+            return viewModel.primaryNavigation?.a11yTitle
+        case .bottomLoader:
+            return nil
         }
     }
 }

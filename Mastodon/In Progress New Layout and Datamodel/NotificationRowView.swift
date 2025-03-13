@@ -15,7 +15,7 @@ enum AuthorName {
     var plainString: String {
         switch self {
         case .me:
-            return "You"
+            return "You"  // TODO: localize (for voice over users)
         case .other(let name, _):
             return name
         }
@@ -394,6 +394,27 @@ enum RelationshipElement: Equatable {
             return nil
         }
     }
+    
+    func a11yActionTitle(forAccept accept: Bool = true) -> String? {
+        switch self {
+        case .iFollowThem, .iHaveRequestedToFollowThem:
+            return L10n.Common.Alerts.UnfollowUser.unfollow
+        case .theyHaveRequestedToFollowMe:
+            if accept {
+                return L10n.Scene.Notification.FollowRequest.accept
+            } else {
+                return L10n.Scene.Notification.FollowRequest.reject
+            }
+        case .iHaveAnsweredTheirRequestToFollowMe(let accepted):
+            if accepted {
+                return L10n.Scene.Notification.FollowRequest.accepted
+            } else {
+                return L10n.Scene.Notification.FollowRequest.rejected
+            }
+        default:
+            return buttonText
+        }
+    }
 }
 
 extension Mastodon.Entity.Relationship {
@@ -425,10 +446,14 @@ extension Mastodon.Entity.Relationship {
 struct NotificationSourceAccounts {
     let accounts: [AccountInfo]
     let totalActorCount: Int
-    let authorName: AuthorName?
+    let myAccountID: String
     
     var primaryAuthorAccount: Mastodon.Entity.Account? {
         return accounts.first?.fullAccount
+    }
+    var authorName: AuthorName? {
+        guard let firstAuthor = accounts.first else { return nil }
+        return firstAuthor.displayName(whenViewedBy: myAccountID)
     }
     var firstAccountID: String? {
         return primaryAuthorAccount?.id
@@ -444,7 +469,11 @@ struct NotificationSourceAccounts {
     ) {
         self.accounts = accounts
         self.totalActorCount = totalActorCount
-        self.authorName = accounts.first?.displayName(whenViewedBy: myAccountID)
+        self.myAccountID = myAccountID
+    }
+    
+    func displayName(forAccount account: AccountInfo) -> String {
+        return account.displayName(whenViewedBy: myAccountID)?.plainString ?? L10n.Plural.Count.others(1)
     }
 }
 
@@ -597,6 +626,14 @@ struct NotificationRowView: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+        .accessibilityActions {
+            ForEach(viewModel.a11yActions) { a11y in
+                Button(a11y.title) {
+                    a11y.doAction()
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
     
     @ViewBuilder
@@ -613,6 +650,7 @@ struct NotificationRowView: View {
                 .frame(height: actionSuperheaderHeight)
                 .fixedSize(horizontal: true, vertical: false)
                 .foregroundColor(.secondary)
+                .accessibilityLabel(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
         case .weightedText(let string, let weight):
             textComponent(string, fontWeight: weight)
         case .status(let statusViewModel):
@@ -639,6 +677,7 @@ struct NotificationRowView: View {
                     .frame(height: actionSuperheaderHeight)
                     .fixedSize(horizontal: true, vertical: false)
                     .foregroundColor(.secondary)
+                    .accessibilityLabel(date.localizedAbbreviatedSlowedTimeAgoSinceNow)
             }
         }
     }
@@ -693,6 +732,7 @@ struct NotificationRowView: View {
                 Spacer().frame(minWidth: 0, maxWidth: .infinity)
                 avatarRowTrailingElement(
                     trailingElement, grouped: accountInfo.totalActorCount > 1)
+                .accessibilityHidden(true)
             }
         }
         .frame(height: smallAvatarSize)  // this keeps GeometryReader from causing inconsistent visual spacing in the VStack
@@ -724,6 +764,7 @@ struct NotificationRowView: View {
                         FollowButton(.iFollowThem(theyFollowMe: false))
                     )
                     .fixedSize()
+                    .accessibilityLabel(L10n.Common.Controls.Friendship.following)
                 }
 
                 Button(action: {
