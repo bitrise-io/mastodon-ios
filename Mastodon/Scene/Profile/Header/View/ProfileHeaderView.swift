@@ -32,8 +32,8 @@ final class ProfileHeaderView: UIView {
     static let friendshipActionButtonSize = CGSize(width: 108, height: 34)
     static let bannerImageViewPlaceholderColor = UIColor.systemGray
     
-    static let bannerImageViewOverlayViewBackgroundNormalColor = UIColor.black.withAlphaComponent(0.5)
-    static let bannerImageViewOverlayViewBackgroundEditingColor = UIColor.black.withAlphaComponent(0.8)
+    static let bannerImageViewOverlayViewBackgroundNormalColor = UIColor.black.withAlphaComponent(0.1)
+    static let bannerImageViewOverlayViewBackgroundEditingColor = UIColor.black.withAlphaComponent(0.2)
     
     weak var delegate: ProfileHeaderViewDelegate?
     var disposeBag = Set<AnyCancellable>()
@@ -99,7 +99,7 @@ final class ProfileHeaderView: UIView {
     func setupImageOverlayViews() {
         editBannerButton.tintColor = .white
 
-        editAvatarBackgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        editAvatarBackgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
         editAvatarButtonOverlayIndicatorView.tintColor = .white
     }
 

@@ -599,6 +599,9 @@ extension ProfileViewController {
         let newBannerImage: UIImage?
         let newAvatarImage: UIImage?
         
+        profileHeaderViewController?.viewModel.isUpdating = true
+        defer { profileHeaderViewController?.viewModel.isUpdating = false }
+        
         if case let .local(image) = headerDetails.bannerImage {
             if image.size.width <= ProfileHeaderViewModel.bannerImageMaxSizeInPixel.width {
                 newBannerImage = image
