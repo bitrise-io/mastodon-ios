@@ -97,7 +97,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
             updatedMostRecentChunk = newlyFetched
         }
         if let staleResults {
-            let (dedupedNewer, stale) = dedupeAndCombine(newer: updatedMostRecentChunk, older: staleResults)
+            let (dedupedNewer, stale) = merge(newer: updatedMostRecentChunk, older: staleResults)
             mostRecentlyFetchedResults = Array(dedupedNewer)
             if stale == nil {
                 self.staleResults = nil
@@ -214,7 +214,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         let allStatuses: [Mastodon.Entity.Status]
         
         if let staleResults {
-            let (dedupedNewer, dedupedStale) = dedupeAndCombine(newer: updatedNewerChunk, older: staleResults.notificationGroups)
+            let (dedupedNewer, dedupedStale) = merge(newer: updatedNewerChunk, older: staleResults.notificationGroups)
             truncatedGroups = truncate(notificationGroups: dedupedNewer)
             if dedupedStale == nil {
                 // the lists were combined, so we don't have to keep track of the stale one anymore
@@ -346,14 +346,14 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     }
 }
 
-fileprivate func dedupeAndCombine<T: Overlappable>(newer: [T], older: [T]) -> ([T], [T]?) {
+fileprivate func merge<T: Overlappable>(newer: [T], older: [T], assumeOverlap: Bool = true) -> ([T], [T]?) {
     // There can be multiple matches between the older and newer feeds, with no guarantee of order. The newer version of a duplicate is always the one that should be used.
-    // Note that the check here is not fully sufficient to test for a gap between freshly fetched notifications and cached notifications (this check could miss a gap that was skipped over by a group that got promoted far enough up the list).
+    // Note that the check here is not fully sufficient to test for a gap between freshly fetched notifications and cached notifications (this check could miss a gap that was skipped over by a group that got promoted far enough up the list), which is why for now we fetch with a minID to avoid gaps and always assume there is an overlap.
     
     var dedupedNewer = [T]()
     var dedupedOlder = [T]()
     var alreadyAdded = Set<T.ID>()
-    var canCombine = false
+    var hasOverlap = false
 
     for element in newer {
         guard !alreadyAdded.contains(element.id) else { continue }
@@ -362,12 +362,12 @@ fileprivate func dedupeAndCombine<T: Overlappable>(newer: [T], older: [T]) -> ([
     }
 
     for element in older {
-        guard !alreadyAdded.contains(element.id) else { canCombine = true; continue }
+        guard !alreadyAdded.contains(element.id) else { hasOverlap = true; continue }
         dedupedOlder.append(element)
         alreadyAdded.insert(element.id)
     }
     
-    if canCombine {
+    if hasOverlap || assumeOverlap {
         return (dedupedNewer + dedupedOlder, nil)
     } else {
         return (dedupedNewer, dedupedOlder)

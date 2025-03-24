@@ -290,13 +290,13 @@ private extension MastodonFeedLoader {
         }
     }
     
-    private func _getGroupedNotifications(withScope scope: APIService.MastodonNotificationScope? = nil, accountID: String? = nil, olderThan maxID: String? = nil) async throws -> [MastodonFeedItemIdentifier] {
+    private func _getGroupedNotifications(withScope scope: APIService.MastodonNotificationScope? = nil, accountID: String? = nil, olderThan maxID: String? = nil, newerThan minID: String?) async throws -> [MastodonFeedItemIdentifier] {
         
         assert(scope != nil || accountID != nil, "need a scope or an accountID")
         
         guard let authenticationBox = AuthenticationServiceProvider.shared.currentActiveUser.value else { throw APIService.APIError.implicit(.authenticationMissing) }
         
-        let results = try await APIService.shared.groupedNotifications(olderThan: maxID, fromAccount: accountID, scope: scope, authenticationBox: authenticationBox)
+        let results = try await APIService.shared.groupedNotifications(olderThan: maxID, newerThan: minID, fromAccount: accountID, scope: scope, authenticationBox: authenticationBox)
         
         for account in results.accounts {
             MastodonFeedItemCacheManager.shared.addToCache(account)
@@ -319,13 +319,13 @@ private extension MastodonFeedLoader {
         }
     }
     
-    private func _getGroupedNotificationResults(withScope scope: APIService.MastodonNotificationScope? = nil, accountID: String? = nil, olderThan maxID: String? = nil) async throws -> Mastodon.Entity.GroupedNotificationsResults {
+    private func _getGroupedNotificationResults(withScope scope: APIService.MastodonNotificationScope? = nil, accountID: String? = nil, olderThan maxID: String? = nil, newerThan minID: String?) async throws -> Mastodon.Entity.GroupedNotificationsResults {
         
         assert(scope != nil || accountID != nil, "need a scope or an accountID")
         
         guard let authenticationBox = AuthenticationServiceProvider.shared.currentActiveUser.value else { throw APIService.APIError.implicit(.authenticationMissing) }
         
-        let results = try await APIService.shared.groupedNotifications(olderThan: maxID, fromAccount: accountID, scope: scope, authenticationBox: authenticationBox)
+        let results = try await APIService.shared.groupedNotifications(olderThan: maxID, newerThan: minID, fromAccount: accountID, scope: scope, authenticationBox: authenticationBox)
         
         return results
     }

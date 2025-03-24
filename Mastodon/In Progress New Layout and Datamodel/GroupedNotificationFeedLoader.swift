@@ -206,13 +206,13 @@ final public class GroupedNotificationFeedLoader {
         switch kind {
         case .notificationsAll:
             return try await loadNotifications(
-                withScope: .everything, olderThan: request.olderThan)
+                withScope: .everything, olderThan: request.olderThan, newerThan: request.newerThan)
         case .notificationsMentionsOnly:
             return try await loadNotifications(
-                withScope: .mentions, olderThan: request.olderThan)
+                withScope: .mentions, olderThan: request.olderThan, newerThan: request.newerThan)
         case .notificationsWithAccount(let accountID):
             return try await loadNotifications(
-                withAccountID: accountID, olderThan: request.olderThan)
+                withAccountID: accountID, olderThan: request.olderThan, newerThan: request.newerThan)
         }
     }
 }
@@ -257,27 +257,28 @@ extension GroupedNotificationFeedLoader {
 extension GroupedNotificationFeedLoader {
     private func loadNotifications(
         withScope scope: APIService.MastodonNotificationScope,
-        olderThan maxID: String? = nil
+        olderThan maxID: String? = nil,
+        newerThan minID: String?
     ) async throws -> NotificationsResultType {
         if useGroupedNotificationsApi {
             do {
                 return try await getGroupedNotifications(
-                    withScope: scope, olderThan: maxID)
+                    withScope: scope, olderThan: maxID, newerThan: minID)
             } catch {
             }
         }
-        return try await getUngroupedNotifications(withScope: scope, olderThan: maxID)
+        return try await getUngroupedNotifications(withScope: scope, olderThan: maxID, newerThan: minID)
     }
 
     private func loadNotifications(
-        withAccountID accountID: String, olderThan maxID: String? = nil
+        withAccountID accountID: String, olderThan maxID: String? = nil, newerThan minID: String?
     ) async throws -> [Mastodon.Entity.Notification] {
         return try await getUngroupedNotifications(
-            accountID: accountID, olderThan: maxID)
+            accountID: accountID, olderThan: maxID, newerThan: minID)
     }
 
     private func getGroupedNotifications(
-        withScope scope: APIService.MastodonNotificationScope, olderThan maxID: String? = nil
+        withScope scope: APIService.MastodonNotificationScope, olderThan maxID: String? = nil, newerThan minID: String?
     ) async throws -> Mastodon.Entity.GroupedNotificationsResults {
         guard
             let authenticationBox = AuthenticationServiceProvider.shared
@@ -285,7 +286,7 @@ extension GroupedNotificationFeedLoader {
         else { throw APIService.APIError.implicit(.authenticationMissing) }
 
         let results = try await APIService.shared.groupedNotifications(
-            olderThan: maxID, fromAccount: nil, scope: scope,
+            olderThan: maxID, newerThan: minID, fromAccount: nil, scope: scope,
             authenticationBox: authenticationBox
         )
 
@@ -294,7 +295,7 @@ extension GroupedNotificationFeedLoader {
 
     private func getUngroupedNotifications(
         withScope scope: APIService.MastodonNotificationScope? = nil,
-        accountID: String? = nil, olderThan maxID: String? = nil
+        accountID: String? = nil, olderThan maxID: String? = nil, newerThan minID: String?
     ) async throws -> [Mastodon.Entity.Notification] {
 
         assert(scope != nil || accountID != nil, "need a scope or an accountID")
