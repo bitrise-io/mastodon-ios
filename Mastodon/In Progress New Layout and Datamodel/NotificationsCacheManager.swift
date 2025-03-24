@@ -89,18 +89,21 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
             case .start:
                 updatedMostRecentChunk = (newlyFetched + previouslyFetched)
             case .end:
-                updatedMostRecentChunk = (previouslyFetched + newlyFetched).removingDuplicates()
+                updatedMostRecentChunk = (previouslyFetched + newlyFetched)
             case .replace:
-                updatedMostRecentChunk = newlyFetched.removingDuplicates()
+                updatedMostRecentChunk = newlyFetched
             }
         } else {
             updatedMostRecentChunk = newlyFetched
         }
-        if let staleResults, let combined = combineListsIfOverlapping(olderFeed: staleResults, newerFeed: updatedMostRecentChunk) {
-            mostRecentlyFetchedResults = Array(combined)
-            self.staleResults = nil
+        if let staleResults {
+            let (dedupedNewer, stale) = dedupeAndCombine(newer: updatedMostRecentChunk, older: staleResults)
+            mostRecentlyFetchedResults = Array(dedupedNewer)
+            if stale == nil {
+                self.staleResults = nil
+            }
         } else {
-            mostRecentlyFetchedResults = updatedMostRecentChunk
+            mostRecentlyFetchedResults = updatedMostRecentChunk.removingDuplicates()
         }
     }
     
@@ -182,7 +185,6 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             includePreviouslyFetched = false
             updatedNewerChunk = newlyFetched.notificationGroups
         }
-        let dedupedNewChunk = updatedNewerChunk.removingDuplicates()
         
         func truncate(notificationGroups: [Mastodon.Entity.NotificationGroup]) -> [Mastodon.Entity.NotificationGroup] {
             switch insertionPoint {
@@ -211,14 +213,22 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         let allPartialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
         let allStatuses: [Mastodon.Entity.Status]
         
-        if let staleResults, let combinedGroups = combineListsIfOverlapping(olderFeed: staleResults.notificationGroups, newerFeed: dedupedNewChunk) {
-            truncatedGroups = truncate(notificationGroups: combinedGroups)
-            allAccounts = staleResults.accounts + updatedNewerAccounts
-            allPartialAccounts = (staleResults.partialAccounts ?? []) + (updatedNewerPartialAccounts ?? [])
-            allStatuses = staleResults.statuses + updatedNewerStatuses
-            self.staleResults = nil
+        if let staleResults {
+            let (dedupedNewer, dedupedStale) = dedupeAndCombine(newer: updatedNewerChunk, older: staleResults.notificationGroups)
+            truncatedGroups = truncate(notificationGroups: dedupedNewer)
+            if dedupedStale == nil {
+                // the lists were combined, so we don't have to keep track of the stale one anymore
+                allAccounts = staleResults.accounts + updatedNewerAccounts
+                allPartialAccounts = (staleResults.partialAccounts ?? []) + (updatedNewerPartialAccounts ?? [])
+                allStatuses = staleResults.statuses + updatedNewerStatuses
+                self.staleResults = nil
+            } else {
+                allAccounts = updatedNewerAccounts
+                allPartialAccounts = updatedNewerPartialAccounts ?? []
+                allStatuses = updatedNewerStatuses
+            }
         } else {
-            truncatedGroups = truncate(notificationGroups: dedupedNewChunk)
+            truncatedGroups = truncate(notificationGroups: updatedNewerChunk.removingDuplicates())
             allAccounts = updatedNewerAccounts
             allPartialAccounts = updatedNewerPartialAccounts ?? []
             allStatuses = updatedNewerStatuses
@@ -336,19 +346,35 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     }
 }
 
-fileprivate func combineListsIfOverlapping<T: Overlappable>(olderFeed: [T], newerFeed: [T]) -> [T]? {
-    // if the last item in the new feed overlaps with something in the older feed, they can be combined
-    guard let oldestNewItem = newerFeed.last else { return olderFeed }
-    let overlapIndex = olderFeed.firstIndex { item in
-        oldestNewItem.overlaps(withOlder: item)
+fileprivate func dedupeAndCombine<T: Overlappable>(newer: [T], older: [T]) -> ([T], [T]?) {
+    // There can be multiple matches between the older and newer feeds, with no guarantee of order. The newer version of a duplicate is always the one that should be used.
+    // Note that the check here is not fully sufficient to test for a gap between freshly fetched notifications and cached notifications (this check could miss a gap that was skipped over by a group that got promoted far enough up the list).
+    
+    var dedupedNewer = [T]()
+    var dedupedOlder = [T]()
+    var alreadyAdded = Set<T.ID>()
+    var canCombine = false
+
+    for element in newer {
+        guard !alreadyAdded.contains(element.id) else { continue }
+        dedupedNewer.append(element)
+        alreadyAdded.insert(element.id)
     }
-    guard let overlapIndex else { return nil }
-    let suffixStart = overlapIndex + 1
-    let olderChunk = (olderFeed.count > suffixStart) ? olderFeed.suffix(from: suffixStart) : []
-    return newerFeed + olderChunk
+
+    for element in older {
+        guard !alreadyAdded.contains(element.id) else { canCombine = true; continue }
+        dedupedOlder.append(element)
+        alreadyAdded.insert(element.id)
+    }
+    
+    if canCombine {
+        return (dedupedNewer + dedupedOlder, nil)
+    } else {
+        return (dedupedNewer, dedupedOlder)
+    }
 }
 
-protocol Overlappable {
+protocol Overlappable: Identifiable {
     func overlaps(withOlder olderItem: Self) -> Bool
 }
 
