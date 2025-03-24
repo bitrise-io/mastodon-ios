@@ -7,7 +7,7 @@ import MastodonCore
 protocol NotificationsCacheManager<T> {
     associatedtype T: NotificationsResultType
     
-    func currentResults() async -> T?
+    func currentResults() -> T?
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? { get }
     var mostRecentlyFetchedResults: T? { get }
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
@@ -16,9 +16,19 @@ protocol NotificationsCacheManager<T> {
     func commitToCache() async
 }
 
-protocol NotificationsResultType {}
-extension Mastodon.Entity.GroupedNotificationsResults: NotificationsResultType {}
-extension Array<Mastodon.Entity.Notification>: NotificationsResultType {}
+protocol NotificationsResultType {
+    var hasContents: Bool { get }
+}
+extension Mastodon.Entity.GroupedNotificationsResults: NotificationsResultType {
+    var hasContents: Bool {
+        return notificationGroups.isNotEmpty
+    }
+}
+extension Array<Mastodon.Entity.Notification>: NotificationsResultType {
+    var hasContents: Bool {
+        return isNotEmpty
+    }
+}
 
 @MainActor
 class UngroupedNotificationCacheManager: NotificationsCacheManager {
@@ -41,7 +51,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         self.mostRecentMarkers = nil
     }
     
-    func currentResults() async -> T? {
+    func currentResults() -> T? {
         if let mostRecentlyFetchedResults {
             return mostRecentlyFetchedResults
         } else if let staleResults {
@@ -273,7 +283,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         mostRecentMarkers = updatable
     }
     
-    func currentResults() async -> T? {
+    func currentResults() -> T? {
         if let mostRecentlyFetchedResults {
             return mostRecentlyFetchedResults
         } else if let staleResults {

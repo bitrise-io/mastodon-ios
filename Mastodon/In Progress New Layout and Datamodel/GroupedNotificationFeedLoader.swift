@@ -20,16 +20,18 @@ final public class GroupedNotificationFeedLoader {
         let canLoadOlder: Bool
     }
 
-    struct FeedLoadRequest: Equatable {
-        let olderThan: String?
-        let newerThan: String?
+    public enum FeedLoadRequest {
+        case older
+        case newer
+        case reload
 
         var resultsInsertionPoint: InsertLocation {
-            if olderThan != nil {
+            switch self {
+            case .older:
                 return .end
-            } else if newerThan != nil {
+            case .newer:
                 return .start
-            } else {
+            case .reload:
                 return .replace
             }
         }
@@ -44,6 +46,8 @@ final public class GroupedNotificationFeedLoader {
         subsystem: "GroupedNotificationFeedLoader", category: "Data")
     private static let entryNotFoundMessage =
         "Failed to find suitable record. Depending on the context this might result in errors (data not being updated) or can be discarded (e.g. when there are mixed data sources where an entry might or might not exist)."
+    
+    private var loadRequestQueue = [FeedLoadRequest]()
 
     @Published private(set) var records: FeedLoadResult = FeedLoadResult(
         allRecords: [], canLoadOlder: true)
@@ -53,7 +57,15 @@ final public class GroupedNotificationFeedLoader {
     
     private let timestampUpdater = TimestampUpdater(TimeInterval(30))
     
-    private var isFetching: Bool = false
+    private var isFetching: Bool = false {
+        didSet {
+            if !isFetching, let waitingRequest = nextRequestThatCanBeLoadedNow() {
+                Task {
+                    await load(waitingRequest)
+                }
+            }
+        }
+    }
 
     public let useGroupedNotificationsApi: Bool
     private let cacheManager: (any NotificationsCacheManager)?
@@ -104,13 +116,10 @@ final public class GroupedNotificationFeedLoader {
             .$activeFilterBox
             .sink { filterBox in
                 if filterBox != nil {
-                    Task { [weak self] in
-                        guard let self else { return }
-                        let curAllRecords = self.records.allRecords
-                        let curCanLoadOlder = self.records.canLoadOlder
-                        await self.replaceRecordsAfterFiltering(
-                            curAllRecords, canLoadOlder: curCanLoadOlder)
-                    }
+                    let curAllRecords = self.records.allRecords
+                    let curCanLoadOlder = self.records.canLoadOlder
+                    self.replaceRecordsAfterFiltering(
+                        curAllRecords, canLoadOlder: curCanLoadOlder)
                 }
             }
     }
@@ -118,7 +127,7 @@ final public class GroupedNotificationFeedLoader {
     public func doFirstLoad() {
         Task {
             do {
-                try await loadCached()
+                try loadCached()
             } catch {
             }
             do {
@@ -128,18 +137,24 @@ final public class GroupedNotificationFeedLoader {
                 }
             } catch {
             }
-            await asyncLoadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
+            requestLoad(.newer)
         }
     }
     
     public func commitToCache() async {
         await cacheManager?.commitToCache()
     }
+    
+    private func noMoreResultsToFetch() {
+        if records.canLoadOlder {
+            records = FeedLoadResult(allRecords: records.allRecords, canLoadOlder: false)
+        }
+    }
 
-    private func replaceRecordsAfterFiltering(_ unfiltered: [NotificationRowViewModel], canLoadOlder: Bool? = nil) async {
+    private func replaceRecordsAfterFiltering(_ unfiltered: [NotificationRowViewModel], canLoadOlder: Bool? = nil) {
         let filtered: [NotificationRowViewModel]
         if let filterBox = StatusFilterService.shared.activeFilterBox {
-            filtered = await filter(unfiltered, forFeed: kind, with: filterBox)
+            filtered = filter(unfiltered, forFeed: kind, with: filterBox)
         } else {
             filtered = unfiltered
         }
@@ -170,49 +185,82 @@ final public class GroupedNotificationFeedLoader {
         return deduped
     }
     
-
-    public func asyncLoadMore(
-        olderThan: String?,
-        newerThan: String?
-    ) async {
-        guard !isFetching else { return }
-        isFetching = true
-        defer {
-            isFetching = false
-        }
-        let request = FeedLoadRequest(
-            olderThan: olderThan, newerThan: newerThan)
-        do {
-            let newlyFetched = try await load(request)
-            await updateAfterInserting(newlyFetchedResults: newlyFetched, at: request.resultsInsertionPoint)
-        } catch {
-            presentError?(error)
-        }
-    }
-    
-    private func loadCached() async throws {
+    private func loadCached() throws {
         guard !isFetching, let cacheManager else { return }
         isFetching = true
         defer {
             isFetching = false
         }
-        let currentResults = await cacheManager.currentResults()
-        try await replaceRecordsAfterFiltering(rowViewModels(from: currentResults), canLoadOlder: true)
+        let currentResults = cacheManager.currentResults()
+        try replaceRecordsAfterFiltering(rowViewModels(from: currentResults), canLoadOlder: true)
     }
 
-    private func load(_ request: FeedLoadRequest) async throws
-    -> NotificationsResultType
+    public func requestLoad(_ request: FeedLoadRequest) {
+        if !loadRequestQueue.contains(request) {
+            loadRequestQueue.append(request)
+        }
+        if let nextDoableRequest = nextRequestThatCanBeLoadedNow() {
+            Task {
+                await load(nextDoableRequest)
+            }
+        }
+    }
+    
+    public var permissionToLoadImmediately: Bool {
+        // This is only intended for use with pull to refresh, in order to properly update the progress spinner.
+        if isFetching {
+            return false
+        } else {
+            isFetching = true
+            return true
+        }
+    }
+    public func loadImmediately(_ request: FeedLoadRequest) async {
+        // This is only intended for use with pull to refresh, in order to properly update the progress spinner.
+        guard isFetching else { assertionFailure("request permissionToLoadImmediately before calling loadImmediately"); return }
+        await load(request)
+    }
+    
+    private func nextRequestThatCanBeLoadedNow() -> FeedLoadRequest? {
+        guard !isFetching else { return nil }
+        guard !loadRequestQueue.isEmpty else { return nil }
+        let nextRequest = loadRequestQueue.removeFirst()
+        isFetching = true
+        return nextRequest
+    }
+    
+    private func load(_ request: FeedLoadRequest) async
     {
-        switch kind {
-        case .notificationsAll:
-            return try await loadNotifications(
-                withScope: .everything, olderThan: request.olderThan, newerThan: request.newerThan)
-        case .notificationsMentionsOnly:
-            return try await loadNotifications(
-                withScope: .mentions, olderThan: request.olderThan, newerThan: request.newerThan)
-        case .notificationsWithAccount(let accountID):
-            return try await loadNotifications(
-                withAccountID: accountID, olderThan: request.olderThan, newerThan: request.newerThan)
+        defer { isFetching = false }
+        do {
+            let olderThan: String?
+            let newerThan: String?
+            switch request {
+            case .newer:
+                olderThan = nil
+                newerThan = records.allRecords.first?.newestID
+            case .older:
+                olderThan = records.allRecords.last?.oldestID
+                newerThan = nil
+            case .reload:
+                olderThan = nil
+                newerThan = nil
+            }
+            let results: NotificationsResultType
+            switch kind {
+            case .notificationsAll:
+                results = try await loadNotifications(
+                    withScope: .everything, olderThan: olderThan, newerThan: newerThan)
+            case .notificationsMentionsOnly:
+                results = try await loadNotifications(
+                    withScope: .mentions, olderThan: olderThan, newerThan: newerThan)
+            case .notificationsWithAccount(let accountID):
+                results = try await loadNotifications(
+                    withAccountID: accountID, olderThan: olderThan, newerThan: newerThan)
+            }
+            updateAfterInserting(newlyFetchedResults: results, at: request.resultsInsertionPoint)
+        } catch {
+            presentError?(error)
         }
     }
 }
@@ -220,11 +268,22 @@ final public class GroupedNotificationFeedLoader {
 // MARK: - Filtering
 extension GroupedNotificationFeedLoader {
     private func updateAfterInserting(newlyFetchedResults: NotificationsResultType,
-                                      at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) async {
+                                      at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
+        switch insertionPoint {
+        case .start:
+            guard newlyFetchedResults.hasContents else { return }
+        case .replace:
+            break
+        case .end:
+            guard newlyFetchedResults.hasContents else {
+                noMoreResultsToFetch()
+                return
+            }
+        }
         guard let cacheManager else { assertionFailure(); return }
         do {
             cacheManager.updateByInserting(newlyFetched: newlyFetchedResults, at: insertionPoint)
-            let currentResults = await cacheManager.currentResults()
+            let currentResults = cacheManager.currentResults()
             let unfiltered = try rowViewModels(from: currentResults)
             
             let canLoadOlder: Bool? = {
@@ -238,7 +297,7 @@ extension GroupedNotificationFeedLoader {
                 }
             }()
     
-            await replaceRecordsAfterFiltering(unfiltered, canLoadOlder: canLoadOlder)
+            replaceRecordsAfterFiltering(unfiltered, canLoadOlder: canLoadOlder)
         } catch {
             presentError?(error)
         }
@@ -248,7 +307,7 @@ extension GroupedNotificationFeedLoader {
         _ records: [NotificationRowViewModel],
         forFeed feedKind: MastodonFeedKind,
         with filterBox: Mastodon.Entity.FilterBox
-    ) async -> [NotificationRowViewModel] {
+    ) -> [NotificationRowViewModel] {
         return records
     }
 }

@@ -146,9 +146,7 @@ struct NotificationListView: View {
                     viewDidDisappear()
                 }
                 .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                    Task {
-                        await viewModel.refreshFeedFromTop()
-                    }
+                    viewModel.requestLoad(.newer)
                 }
             }
         }
@@ -219,9 +217,7 @@ struct NotificationListView: View {
     
     func viewDidAppear() {
         NotificationService.shared.clearNotificationCountForActiveUser()
-        Task {
-            await viewModel.refreshFeedFromTop()
-        }
+        viewModel.requestLoad(.newer)
     }
     
     func viewDidDisappear() {
@@ -232,7 +228,7 @@ struct NotificationListView: View {
     }
     
     func loadMore() {
-        viewModel.loadOlder()
+        viewModel.requestLoad(.older)
     }
 
     func didTap(item: NotificationListItem) {
@@ -369,9 +365,7 @@ private class NotificationListViewModel: ObservableObject {
             notificationPolicyBannerRow
             + withoutFilteredRow
         
-        Task {
-            await feedLoader.asyncLoadMore(olderThan: nil, newerThan: nil)
-        }
+        feedLoader.requestLoad(.reload)
     }
     
     func isUnread(_ item: NotificationListItem) -> Bool? {
@@ -436,15 +430,13 @@ private class NotificationListViewModel: ObservableObject {
     }
 
     public func refreshFeedFromTop() async {
-        let newestKnown = feedLoader.records.allRecords.first?.newestID
-        await feedLoader.asyncLoadMore(olderThan: nil, newerThan: newestKnown)
-    }
-
-    public func loadOlder() {
-        let oldestKnown = feedLoader.records.allRecords.last?.oldestID
-        Task {
-            await feedLoader.asyncLoadMore(olderThan: oldestKnown, newerThan: nil)
+        if feedLoader.permissionToLoadImmediately {
+            await feedLoader.loadImmediately(.newer)
         }
+    }
+    
+    public func requestLoad(_ loadRequest: GroupedNotificationFeedLoader.FeedLoadRequest) {
+        feedLoader.requestLoad(loadRequest)
     }
     
     public func commitToCache() async {
