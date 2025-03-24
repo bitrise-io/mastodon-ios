@@ -128,11 +128,7 @@ final public class GroupedNotificationFeedLoader {
                 }
             } catch {
             }
-            do {
-                await asyncLoadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
-            } catch {
-                presentError?(error)
-            }
+            await asyncLoadMore(olderThan: nil, newerThan: records.allRecords.first?.newestID)
         }
     }
     
