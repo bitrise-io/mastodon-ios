@@ -57,6 +57,7 @@ final class MastodonRegisterViewModel: ObservableObject {
     // output
     var diffableDataSource: UITableViewDiffableDataSource<RegisterSection, RegisterItem>?
     let approvalRequired: Bool
+    let reasonRequired: Bool
     let minAge: Int?
     let applicationAuthorization: Mastodon.API.OAuth.Authorization
     
@@ -94,6 +95,7 @@ final class MastodonRegisterViewModel: ObservableObject {
         self.instance = instance
         self.applicationToken = applicationToken
         self.approvalRequired = instance.approvalRequired ?? false
+        self.reasonRequired = instance.reasonRequired
         self.minAge = instance.minAge
         self.applicationAuthorization = Mastodon.API.OAuth.Authorization(accessToken: applicationToken.accessToken)
         self.submitValidatedUserRegistration = submitValidatedUserRegistration
@@ -323,7 +325,7 @@ final class MastodonRegisterViewModel: ObservableObject {
         )
             .map { [weak self] reasonValidateState, dobValidateState, passwordConfirmationValidateState -> Bool in
                 guard let self else { return false }
-                let reasonOK = !self.approvalRequired || reasonValidateState == .valid
+                let reasonOK = !self.reasonRequired || reasonValidateState == .valid
                 let dobOK = (self.minAge == nil) || dobValidateState == .valid
                 let passwordConfirmationCorrect = passwordConfirmationValidateState == .valid
                 return reasonOK && dobOK && passwordConfirmationCorrect
@@ -506,6 +508,7 @@ extension MastodonRegisterViewModel {
 
 protocol RegistrationInstance {
     var approvalRequired: Bool? { get }
+    var reasonRequired: Bool { get }
     var minAge: Int? { get }
     var isBeyondVersion1: Bool { get }
     var isOpenToNewRegistrations: Bool? { get }
@@ -518,6 +521,9 @@ extension Mastodon.Entity.Instance: RegistrationInstance {
         return version?.majorServerVersion(greaterThanOrEquals: 4) ?? false
     }
     var isOpenToNewRegistrations: Bool? { return registrations }
+    var reasonRequired: Bool {
+        return approvalRequired ?? false
+    }
 }
 
 extension Mastodon.Entity.V2.Instance: RegistrationInstance {
@@ -525,4 +531,7 @@ extension Mastodon.Entity.V2.Instance: RegistrationInstance {
     var isBeyondVersion1: Bool { return true }
     var isOpenToNewRegistrations: Bool? { return registrations?.enabled }
     var approvalRequired: Bool? { return registrations?.approvalRequired }
+    var reasonRequired: Bool {
+        return registrations?.reasonRequired ?? approvalRequired ?? false
+    }
 }

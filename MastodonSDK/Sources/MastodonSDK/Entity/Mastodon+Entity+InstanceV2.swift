@@ -91,11 +91,13 @@ extension Mastodon.Entity.V2.Instance {
         public let enabled: Bool
         public let minAge: Int?
         public let approvalRequired: Bool?
+        public let reasonRequired: Bool?
         
         enum CodingKeys: String, CodingKey {
             case enabled
             case minAge = "min_age"
             case approvalRequired = "approval_required"
+            case reasonRequired = "reason_required"
         }
     }
 }

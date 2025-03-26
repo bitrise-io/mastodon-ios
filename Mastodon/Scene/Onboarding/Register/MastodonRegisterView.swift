@@ -109,7 +109,7 @@ struct MastodonRegisterView: View {
             .padding(.bottom, 22)
             
             // Reason
-            if viewModel.approvalRequired {
+            if viewModel.reasonRequired {
                 VStack(alignment: .leading, spacing: 11) {
                     TextField(L10n.Scene.Register.Input.Invite.registrationUserInviteRequest.localizedCapitalized, text: $viewModel.reason)
                         .modifier(FormTextFieldModifier(validateState: viewModel.reasonValidateState))
