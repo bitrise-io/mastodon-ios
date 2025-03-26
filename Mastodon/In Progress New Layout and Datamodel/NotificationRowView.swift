@@ -123,7 +123,7 @@ extension GroupedNotificationType {
                     plainString = firstAuthorName
                 case .poll(let status):
                     let votersCount = status?.poll?.votersCount ?? 0
-                    let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount)
+                    let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount - 1)
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRanPoll(firstAuthorName, pollDescription)
                 case .status:
                     plainString = firstAuthorName
