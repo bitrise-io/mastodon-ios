@@ -13,19 +13,27 @@ import MastodonAsset
 
 struct MastodonRegisterView: View {
     
+    @FocusState var focusedField: MastodonRegisterViewModel.RegistrationField?
+    
     @ObservedObject var viewModel: MastodonRegisterViewModel
     
     @State var usernameRightViewWidth: CGFloat = 300
+    
+    @State var dateOfBirthLabel = L10n.Scene.Register.Input.BirthDate.label.localizedCapitalized
     
     var body: some View {
         ScrollView(.vertical) {
             let margin: CGFloat = 16
             VStack(alignment: .leading, spacing: 16) {
                 Spacer()
+                if let minAge = viewModel.minAge {
+                    dateOfBirthEntry(minAge: minAge)
+                }
                 TextField(L10n.Scene.Register.Input.DisplayName.placeholder.localizedCapitalized, text: $viewModel.name)
                     .textContentType(.name)
                     .disableAutocorrection(true)
                     .modifier(FormTextFieldModifier(validateState: viewModel.displayNameValidateState))
+                    .focused($focusedField, equals: .displayName)
                 HStack {
                     Text("@")
                         .accessibilityHidden(true)
@@ -35,6 +43,7 @@ struct MastodonRegisterView: View {
                         .disableAutocorrection(true)
                         .keyboardType(.asciiCapable)
                         .accessibilityLabel(viewModel.accessibilityLabelUsernameField)
+                        .focused($focusedField, equals: .handle)
                     Text("@\(viewModel.domain)")
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -69,6 +78,7 @@ struct MastodonRegisterView: View {
                     .disableAutocorrection(true)
                     .keyboardType(.emailAddress)
                     .modifier(FormTextFieldModifier(validateState: viewModel.emailValidateState))
+                    .focused($focusedField, equals: .email)
                 if let errorPrompt = viewModel.emailErrorPrompt {
                     Text(errorPrompt)
                         .modifier(FormFootnoteModifier())
@@ -82,10 +92,12 @@ struct MastodonRegisterView: View {
             VStack(alignment: .leading, spacing: margin) {
                 SecureField(L10n.Scene.Register.Input.Password.placeholder.localizedCapitalized, text: $viewModel.password)
                     .textContentType(.newPassword)
-                    .modifier(FormTextFieldModifier(validateState: viewModel.passwordValidateState))
+                    .modifier(FormTextFieldModifier(validateState: viewModel.passwordBaseValidateState))
+                    .focused($focusedField, equals: .password)
                 SecureField(L10n.Scene.Register.Input.Password.confirmationPlaceholder.localizedCapitalized, text: $viewModel.passwordConfirmation)
                     .textContentType(.newPassword)
-                    .modifier(FormTextFieldModifier(validateState: viewModel.passwordValidateState))
+                    .modifier(FormTextFieldModifier(validateState: viewModel.passwordConfirmationValidateState))
+                    .focused($focusedField, equals: .confirmPassword)
                 Text(L10n.Scene.Register.Input.Password.hint)
                     .modifier(FormFootnoteModifier(foregroundColor: .secondary))
                 if let errorPrompt = viewModel.passwordErrorPrompt {
@@ -101,6 +113,7 @@ struct MastodonRegisterView: View {
                 VStack(alignment: .leading, spacing: 11) {
                     TextField(L10n.Scene.Register.Input.Invite.registrationUserInviteRequest.localizedCapitalized, text: $viewModel.reason)
                         .modifier(FormTextFieldModifier(validateState: viewModel.reasonValidateState))
+                        .focused($focusedField, equals: .proposedApprovalReason)
                     if let errorPrompt = viewModel.reasonErrorPrompt {
                         Text(errorPrompt)
                             .modifier(FormFootnoteModifier())
@@ -119,6 +132,9 @@ struct MastodonRegisterView: View {
                 }
         )
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: focusedField) { _, newValue in
+            viewModel.editingField = newValue
+        }
     }
     
     struct FormTextFieldModifier: ViewModifier {
@@ -128,7 +144,7 @@ struct MastodonRegisterView: View {
             ZStack {
                 let borderColor: Color = {
                     switch validateState {
-                        case .empty:    return Color(Asset.Scene.Onboarding.textFieldBackground.color)
+                        case .empty, .filling:    return Color(Asset.Scene.Onboarding.textFieldBackground.color)
                         case .invalid:  return Color(Asset.Colors.TextField.invalid.color.withAlphaComponent(0.25))
                         case .valid:    return Color(Asset.Scene.Onboarding.textFieldBackground.color)
                     }
@@ -153,7 +169,22 @@ struct MastodonRegisterView: View {
                 .foregroundColor(foregroundColor)
         }
     }
-    
+ 
+    @ViewBuilder func dateOfBirthEntry(minAge: Int) -> some View {
+        VStack {
+            ZStack {
+                TextField(L10n.Scene.Register.Input.BirthDate.label.localizedCapitalized, text: $dateOfBirthLabel)
+                    .disabled(true)
+                    .modifier(FormTextFieldModifier(validateState: viewModel.dateOfBirthValidateState))
+                HStack {
+                    Spacer().frame(maxWidth: .infinity)
+                    DatePicker(selection: $viewModel.dateOfBirth,  in: ...Date.now, displayedComponents: .date) { }
+                    Spacer()
+                }
+            }
+            Text(L10n.Scene.Register.Input.BirthDate.explanationMessage(minAge, viewModel.domain)).font(.callout)
+        }
+    }
 }
 
 struct WidthKey: PreferenceKey {

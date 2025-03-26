@@ -14,7 +14,7 @@ final class PrivacyViewModel {
     let domain: String
     let authenticateInfo: AuthenticationViewModel.AuthenticateInfo
     let rows: [PrivacyRow]
-    let instance: Mastodon.Entity.Instance
+    let instance: RegistrationInstance
     let applicationToken: Mastodon.Entity.Token
     let didAccept: ()->()
 
@@ -22,7 +22,7 @@ final class PrivacyViewModel {
         domain: String,
         authenticateInfo: AuthenticationViewModel.AuthenticateInfo,
         rows: [PrivacyRow],
-        instance: Mastodon.Entity.Instance,
+        instance: RegistrationInstance,
         applicationToken: Mastodon.Entity.Token,
         didAccept: @escaping ()->()
     ) {

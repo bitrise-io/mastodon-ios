@@ -49,22 +49,39 @@ extension Mastodon.API.Account {
     
     public struct RegisterQuery: Codable, PostQuery {
         public let reason: String?
+        public let dateOfBirth: String?
         public let username: String
         public let email: String
         public let password: String
         public let agreement: Bool
         public let locale: String
         
-        public init(reason: String? = nil, username: String, email: String, password: String, agreement: Bool, locale: String) {
+        public init(reason: String? = nil, dateOfBirth: Date?, username: String, email: String, password: String, agreement: Bool, locale: String) {
             self.reason = reason
+            if let dateOfBirth {
+                let dateFormatter = ISO8601DateFormatter()
+                dateFormatter.formatOptions = .withFullDate // YYYY-MM-DD
+                self.dateOfBirth = dateFormatter.string(from: dateOfBirth)
+            } else {
+                self.dateOfBirth = nil
+            }
             self.username = username
             self.email = email
             self.password = password
             self.agreement = agreement
             self.locale = locale
         }
+        
+        public enum CodingKeys: String, CodingKey {
+            case reason
+            case dateOfBirth = "date_of_birth"
+            case username
+            case email
+            case password
+            case agreement
+            case locale
+        }
     }
-    
 }
 
 extension Mastodon.API.Account {
