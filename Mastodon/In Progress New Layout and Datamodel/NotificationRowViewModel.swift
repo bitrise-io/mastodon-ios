@@ -7,6 +7,7 @@ import MastodonCore
 import MastodonLocalization
 import MastodonSDK
 import SwiftUICore
+import UIKit
 
 class NotificationRowViewModel: ObservableObject {
     let identifier: MastodonFeedItemIdentifier
@@ -223,7 +224,7 @@ class NotificationRowViewModel: ObservableObject {
             {
                 contentComponents = [.text(comment)]
             }
-        case .severedRelationships(let severanceEvent):
+        case .severedRelationships(let severanceEvent, let url):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = severanceEvent?.summary(myDomain: myAccountDomain)
             {
@@ -244,13 +245,11 @@ class NotificationRowViewModel: ObservableObject {
                 ]
             }
             contentComponents = [
-                .hyperlinkButton(
+                .hyperlink(
                     L10n.Scene.Notification.learnMoreAboutServerBlocks,
-                    notificationInfo.groupedNotificationType.learnMoreUrl(
-                        forDomain: myAccountDomain,
-                        notificationID: notificationInfo.newestNotificationID))
+                    url)
             ]
-        case .moderationWarning(let accountWarning):
+        case .moderationWarning(let accountWarning, let url):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let timestamp = notificationInfo.timestamp {
                 headerTextComponents = [
@@ -265,11 +264,8 @@ class NotificationRowViewModel: ObservableObject {
                 ]
             }
 
-            let learnMoreButton = NotificationViewComponent.hyperlinkButton(
-                L10n.Scene.Notification.Warning.learnMore,
-                notificationInfo.groupedNotificationType.learnMoreUrl(
-                    forDomain: myAccountDomain,
-                    notificationID: accountWarning?.id ?? notificationInfo.newestNotificationID))
+            let learnMoreButton = NotificationViewComponent.hyperlink(
+                L10n.Scene.Notification.Warning.learnMore, url)
 
             if let accountWarningText = accountWarning?.text {
                 contentComponents = [
@@ -324,7 +320,7 @@ class NotificationRowViewModel: ObservableObject {
                 default:
                     break
                 }
-            case .text, .weightedText, .status, .hyperlinkButton, ._other, .timeSinceLabel, .textAndTimeLabel:
+            case .text, .weightedText, .status, .hyperlink, ._other, .timeSinceLabel, .textAndTimeLabel:
                 break
             }
         }
@@ -430,10 +426,16 @@ extension NotificationRowViewModel {
     
     func doPrimaryNavigation() {
         guard let primaryNavigation else { return }
-        Task {
-            guard let scene = await primaryNavigation.destinationScene()
-            else { return }
-            navigateToScene(scene, .show)
+        switch primaryNavigation {
+        case .link(_, let url):
+            guard let url else { return }
+            UIApplication.shared.open(url)
+        case .myFollowers, .profile:
+            Task {
+                guard let scene = await primaryNavigation.destinationScene()
+                else { return }
+                navigateToScene(scene, .show)
+            }
         }
     }
     
@@ -463,7 +465,7 @@ extension NotificationRowViewModel {
             return relationshipActions + accountNavigations
         case let .status(statusViewModel):
             return [A11yActionInfo(title: L10n.Common.Controls.Status.showPost, doAction: { statusViewModel.navigateToStatus() })]
-        case .hyperlinkButton(_, _):
+        case .hyperlink(_, _):
             return []
         case .text, .textAndTimeLabel, .timeSinceLabel, .weightedText, ._other:
             return []
@@ -633,7 +635,7 @@ extension NotificationRowViewModel {
             let status = group.statusID == nil ? nil : statuses[group.statusID!]
             
             let type = GroupedNotificationType(
-                group, sourceAccounts: sourceAccounts, status: status)
+                group, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts, status: status)
 
             let info = GroupedNotificationInfo(
                 id: group.id,
@@ -665,7 +667,7 @@ extension NotificationRowViewModel {
                         }
                     }),
                 primaryNavigation: defaultNavigation(
-                    group.type, isGrouped: group.notificationsCount > 1,
+                    type, isGrouped: group.notificationsCount > 1,
                     primaryAccount: sourceAccounts.primaryAuthorAccount)
             )
 
@@ -715,17 +717,18 @@ extension NotificationRowViewModel {
                     }
                 })
             
+            let groupedNotificationType = GroupedNotificationType(
+                notification, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts)
             let info = GroupedNotificationInfo(
                 id: notification.id,
                 timestamp: notification.createdAt,
                 oldestNotificationID: notification.id,
                 newestNotificationID: notification.id,
-                groupedNotificationType: GroupedNotificationType(
-                    notification, sourceAccounts: sourceAccounts),
+                groupedNotificationType: groupedNotificationType,
                 sourceAccounts: sourceAccounts,
                 statusViewModel: statusViewModel,
                 primaryNavigation: defaultNavigation(
-                                                notification.type, isGrouped: false,
+                    groupedNotificationType, isGrouped: false,
                                                 primaryAccount: notification.primaryAuthorAccount))
 
             return NotificationRowViewModel(
@@ -738,6 +741,7 @@ extension NotificationRowViewModel {
     enum NotificationNavigation {
         case myFollowers
         case profile(Mastodon.Entity.Account)
+        case link(String, URL?)
 
         func destinationScene() async -> SceneCoordinator.Scene? {
             guard
@@ -746,6 +750,9 @@ extension NotificationRowViewModel {
                 let myAccount = await authBox.cachedAccount
             else { return nil }
             switch self {
+            case .link(_, let link):
+                guard let link else { return nil }
+                return .mastodonWebView(viewModel: WebViewModel(url: link))
             case .myFollowers:
                 return .follower(
                     viewModel: FollowerListViewModel(
@@ -765,7 +772,7 @@ extension NotificationRowViewModel {
     }
 
     static func defaultNavigation(
-        _ notificationType: Mastodon.Entity.NotificationType, isGrouped: Bool,
+        _ notificationType: GroupedNotificationType, isGrouped: Bool,
         primaryAccount: Mastodon.Entity.Account?
     ) -> NotificationNavigation? {
 
@@ -784,10 +791,12 @@ extension NotificationRowViewModel {
             }
         case .adminReport:
             break
-        case .severedRelationships:
-            return .myFollowers
-        case .moderationWarning:
-            break
+        case .severedRelationships(_, let url):
+            let linkDescription = L10n.Scene.Notification.learnMoreAboutServerBlocks
+            return .link(linkDescription, url)
+        case .moderationWarning(_, let url):
+            let linkDescription =  L10n.Scene.Notification.Warning.learnMore
+            return .link(linkDescription, url)
         case ._other(_):
             break
         }
@@ -798,6 +807,7 @@ extension NotificationRowViewModel {
 extension GroupedNotificationType {
     init(
         _ notification: Mastodon.Entity.Notification,
+        myAccountDomain: String,
         sourceAccounts: NotificationSourceAccounts
     ) {
         switch notification.typeFromServer {
@@ -826,10 +836,14 @@ extension GroupedNotificationType {
         case .adminReport:
             self = .adminReport(notification.ruleViolationReport)
         case .severedRelationships:
+            let url = severedRelationshipsUrl(
+                forDomain: myAccountDomain,
+                notificationID: notification.id)
             self = .severedRelationships(
-                notification.relationshipSeveranceEvent)
+                notification.relationshipSeveranceEvent, url)
         case .moderationWarning:
-            self = .moderationWarning(notification.accountWarning)
+            let url = moderationWarningUrl(forDomain: myAccountDomain, notificationID: notification.id)
+            self = .moderationWarning(notification.accountWarning, url)
         case ._other(let string):
             self = ._other(string)
         }
@@ -837,6 +851,7 @@ extension GroupedNotificationType {
 
     init(
         _ notificationGroup: Mastodon.Entity.NotificationGroup,
+        myAccountDomain: String,
         sourceAccounts: NotificationSourceAccounts,
         status: Mastodon.Entity.Status?
     ) {
@@ -866,10 +881,12 @@ extension GroupedNotificationType {
         case .adminReport:
             self = .adminReport(notificationGroup.ruleViolationReport)
         case .severedRelationships:
+            let url = severedRelationshipsUrl(forDomain: myAccountDomain, notificationID: String(notificationGroup.mostRecentNotificationID))
             self = .severedRelationships(
-                notificationGroup.relationshipSeveranceEvent)
+                notificationGroup.relationshipSeveranceEvent, url)
         case .moderationWarning:
-            self = .moderationWarning(notificationGroup.accountWarning)
+            let url = moderationWarningUrl(forDomain: myAccountDomain, notificationID: String(notificationGroup.mostRecentNotificationID))
+            self = .moderationWarning(notificationGroup.accountWarning, url)
         case ._other(let string):
             self = ._other(string)
         }
@@ -892,28 +909,30 @@ extension NotificationSourceAccounts {
     }
 }
 
-extension GroupedNotificationType {
-    func learnMoreUrl(forDomain domain: String, notificationID: String) -> URL?
-    {
-        let trailingPathComponents: [String]
-        switch self {
-        case .severedRelationships:
-            trailingPathComponents = ["severed_relationships"]
-        case .moderationWarning:
-            trailingPathComponents = [
-                "disputes",
-                "strikes",
-                notificationID,
-            ]
-        default:
-            return nil
-        }
-        var url = URL(string: "https://" + domain)
-        for component in trailingPathComponents {
-            url?.append(component: component)
-        }
-        return url
+
+func moderationWarningUrl(forDomain domain: String, notificationID: String) -> URL?
+{
+    let trailingPathComponents = [
+            "disputes",
+            "strikes",
+            notificationID,
+        ]
+  
+    var url = URL(string: "https://" + domain)
+    for component in trailingPathComponents {
+        url?.append(component: component)
     }
+    return url
+}
+
+func severedRelationshipsUrl(forDomain domain: String, notificationID: String) -> URL?
+{
+    let trailingPathComponents = ["severed_relationships"]
+    var url = URL(string: "https://" + domain)
+    for component in trailingPathComponents {
+        url?.append(component: component)
+    }
+    return url
 }
 
 extension Mastodon.Entity.AccountWarning.Action {

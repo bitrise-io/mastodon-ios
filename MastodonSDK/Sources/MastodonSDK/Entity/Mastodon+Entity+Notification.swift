@@ -262,6 +262,10 @@ extension Mastodon.Entity {
             case "favourite":           self = .favourite
             case "poll":                self = .poll
             case "status":              self = .status
+            case "update":              self = .update
+            case "admin.sign_up":       self = .adminSignUp
+            case "admin.report":        self = .adminReport
+            case "severed_relationships": self = .severedRelationships
             case "moderation_warning":  self = .moderationWarning
             default:                    self = ._other(rawValue)
             }

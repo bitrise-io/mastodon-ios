@@ -447,6 +447,8 @@ private class NotificationListViewModel: ObservableObject {
 extension NotificationRowViewModel.NotificationNavigation {
     var a11yTitle: String? {
         switch self {
+        case .link(let description, _):
+            return description
         case .myFollowers:
             return L10n.Scene.Profile.Dashboard.myFollowers // TODO: improve string
         case .profile(let account):
