@@ -131,7 +131,7 @@ extension GroupedNotificationType {
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameSignedUp(firstAuthorName)
                 case .update:
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameEditedAPost(firstAuthorName)
-                case .adminReport, .severedRelationships, .moderationWarning(_), ._other(_):
+                case .adminReport, .severedRelationships, .moderationWarning, ._other:
                     plainString = firstAuthorName
                 }
             } else {
