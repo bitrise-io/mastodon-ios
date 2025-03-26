@@ -13,15 +13,19 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 ólesin tilkynning</string>
+        <string>%ld neskaitytas pranešimas</string>
+        <key>few</key>
+        <string>%ld neskaityti pranešimai</string>
+        <key>many</key>
+        <string>%ld neskaityto pranešimo</string>
         <key>other</key>
-        <string>%ld ólesnar tilkynningar</string>
+        <string>%ld neskaitytų pranešimų</string>
       </dict>
     </dict>
     <key>a11y.plural.count.input_limit_exceeds</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>Inntak fer fram úr takmörkunum %#@character_count@</string>
+      <string>Įvesties riba viršija %#@character_count@.</string>
       <key>character_count</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
@@ -29,15 +33,19 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 stafur</string>
+        <string>%ld simbolį</string>
+        <key>few</key>
+        <string>%ld simbolius</string>
+        <key>many</key>
+        <string>%ld simbolio</string>
         <key>other</key>
-        <string>%ld stafir</string>
+        <string>%ld simbolių</string>
       </dict>
     </dict>
     <key>a11y.plural.count.input_limit_remains</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>Inntakstakmörk haldast %#@character_count@</string>
+      <string>Įvesties riba lieka %#@character_count@.</string>
       <key>character_count</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
@@ -45,9 +53,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 stafur</string>
+        <string>%ld simbolis</string>
+        <key>few</key>
+        <string>%ld simboliai</string>
+        <key>many</key>
+        <string>%ld simbolio</string>
         <key>other</key>
-        <string>%ld stafir</string>
+        <string>%ld simbolių</string>
       </dict>
     </dict>
     <key>a11y.plural.count.characters_left</key>
@@ -61,9 +73,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 stafur eftir</string>
+        <string>Liko %ld simbolis</string>
+        <key>few</key>
+        <string>Liko %ld simboliai</string>
+        <key>many</key>
+        <string>Liko %ld simbolio</string>
         <key>other</key>
-        <string>%ld stafir eftir</string>
+        <string>Liko %ld simbolių</string>
       </dict>
     </dict>
     <key>plural.count.others</key>
@@ -77,9 +93,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn annar</string>
+        <string>%ld kitas</string>
+        <key>few</key>
+        <string>%ld kiti</string>
+        <key>many</key>
+        <string>%ld kito</string>
         <key>other</key>
-        <string>%ld aðrir</string>
+        <string>%ld kitų</string>
       </dict>
     </dict>
     <key>plural.count.people_boosted</key>
@@ -93,9 +113,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili endurbirti:</string>
+        <string>%ld žmogus pasidalino:</string>
+        <key>few</key>
+        <string>%ld žmonės pasidalino:</string>
+        <key>many</key>
+        <string>%ld žmones pasidalino:</string>
         <key>other</key>
-        <string>%ld aðilar endurbirtu:</string>
+        <string>%ld žmonių pasidalino:</string>
       </dict>
     </dict>
     <key>plural.count.people_favourited</key>
@@ -109,9 +133,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili setti í eftirlæti:</string>
+        <string>%ld žmogus pamėgo:</string>
+        <key>few</key>
+        <string>%ld žmonės pamėgo:</string>
+        <key>many</key>
+        <string>%ld žmones pamėgo:</string>
         <key>other</key>
-        <string>%ld aðilar settu í eftirlæti:</string>
+        <string>%ld žmonių pamėgo:</string>
       </dict>
     </dict>
     <key>plural.count.people_followed_you</key>
@@ -125,9 +153,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili fylgist með þér</string>
+        <string>%ld žmogus seka jus</string>
+        <key>few</key>
+        <string>%ld žmonės seka jus</string>
+        <key>many</key>
+        <string>%ld žmones seka jus</string>
         <key>other</key>
-        <string>%ld aðilar fylgjast með þér</string>
+        <string>%ld žmonių seka jus</string>
       </dict>
     </dict>
     <key>plural.count.poll_that_you_and_others_voted_in</key>
@@ -141,9 +173,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>könnun sem þú og einn til viðbótar tóku þátt í</string>
+        <string>apklausa, kurioje balsavote jūs ir %ld kitas</string>
+        <key>few</key>
+        <string>apklausa, kurioje balsavote jūs ir %ld kiti</string>
+        <key>many</key>
+        <string>apklausa, kurioje balsavote jūs ir %ld kito</string>
         <key>other</key>
-        <string>könnun sem þú og %ld til viðbótar tóku þátt í</string>
+        <string>apklausa, kurioje balsavote jūs ir %ld kitų</string>
       </dict>
     </dict>
     <key>plural.count.media</key>
@@ -157,9 +193,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 gagnamiðill</string>
+        <string>%ld medija</string>
+        <key>few</key>
+        <string>%ld medijos</string>
+        <key>many</key>
+        <string>%ld medijos</string>
         <key>other</key>
-        <string>%ld gagnamiðlar</string>
+        <string>%ld medijų</string>
       </dict>
     </dict>
     <key>plural.count.image</key>
@@ -173,9 +213,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 mynd</string>
+        <string>%ld vaizdas</string>
+        <key>few</key>
+        <string>%ld vaizdai</string>
+        <key>many</key>
+        <string>%ld vaizdo</string>
         <key>other</key>
-        <string>%ld myndir</string>
+        <string>%ld vaizdų</string>
       </dict>
     </dict>
     <key>plural.count.gif</key>
@@ -189,9 +233,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 hreyfimynd</string>
+        <string>%ld GIF</string>
+        <key>few</key>
+        <string>%ld GIF</string>
+        <key>many</key>
+        <string>%ld GIF</string>
         <key>other</key>
-        <string>%ld hreyfimyndir</string>
+        <string>%ld GIF</string>
       </dict>
     </dict>
     <key>plural.count.video</key>
@@ -205,9 +253,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 myndskeið</string>
+        <string>%ld vaizdo įrašas</string>
+        <key>few</key>
+        <string>%ld vaizdo įrašai</string>
+        <key>many</key>
+        <string>%ld vaizdo įrašo</string>
         <key>other</key>
-        <string>%ld myndskeið</string>
+        <string>%ld vaizdo įrašų</string>
       </dict>
     </dict>
     <key>plural.count.audio</key>
@@ -221,9 +273,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 hljóðskrá</string>
+        <string>%ld garso įrašas</string>
+        <key>few</key>
+        <string>%ld garso įrašai</string>
+        <key>many</key>
+        <string>%ld garso įrašo</string>
         <key>other</key>
-        <string>%ld hljóðskrár</string>
+        <string>%ld garso įrašų</string>
       </dict>
     </dict>
     <key>plural.count.attachment</key>
@@ -237,9 +293,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 viðhengi</string>
+        <string>%ld priedas</string>
+        <key>few</key>
+        <string>%ld priedai</string>
+        <key>many</key>
+        <string>%ld priedo</string>
         <key>other</key>
-        <string>%ld viðhengi</string>
+        <string>%ld priedų</string>
       </dict>
     </dict>
     <key>plural.count.poll</key>
@@ -253,9 +313,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 könnun</string>
+        <string>%ld apklausa</string>
+        <key>few</key>
+        <string>%ld apklausos</string>
+        <key>many</key>
+        <string>%ld apklausos</string>
         <key>other</key>
-        <string>%ld kannanir</string>
+        <string>%ld apklausų</string>
       </dict>
     </dict>
     <key>plural.count.post</key>
@@ -269,9 +333,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 færsla</string>
+        <string>%ld įrašas</string>
+        <key>few</key>
+        <string>%ld įrašai</string>
+        <key>many</key>
+        <string>%ld įrašo</string>
         <key>other</key>
-        <string>%ld færslur</string>
+        <string>%ld įrašų</string>
       </dict>
     </dict>
     <key>plural.count.favorite</key>
@@ -285,9 +353,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 eftirlæti</string>
+        <string>%ld mėgstamas</string>
+        <key>few</key>
+        <string>%ld mėgstami</string>
+        <key>many</key>
+        <string>%ld mėgstamo</string>
         <key>other</key>
-        <string>%ld eftirlæti</string>
+        <string>%ld mėgstamų</string>
       </dict>
     </dict>
     <key>plural.count.reblog</key>
@@ -301,9 +373,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 endurbirting</string>
+        <string>%ld pasidalinimas</string>
+        <key>few</key>
+        <string>%ld pasidalinimai</string>
+        <key>many</key>
+        <string>%ld pasidalinimo</string>
         <key>other</key>
-        <string>%ld endurbirtingar</string>
+        <string>%ld pasidalinimų</string>
       </dict>
     </dict>
     <key>plural.count.reblog_a11y</key>
@@ -317,9 +393,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 endurbirting</string>
+        <string>%ld pasidalinimas</string>
+        <key>few</key>
+        <string>%ld pasidalinimai</string>
+        <key>many</key>
+        <string>%ld pasidalinimo</string>
         <key>other</key>
-        <string>%ld endurbirtingar</string>
+        <string>%ld pasidalinimų</string>
       </dict>
     </dict>
     <key>plural.count.reply</key>
@@ -333,9 +413,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 svar</string>
+        <string>%ld atsakymas</string>
+        <key>few</key>
+        <string>%ld atsakymai</string>
+        <key>many</key>
+        <string>%ld atsakymo</string>
         <key>other</key>
-        <string>%ld svör</string>
+        <string>%ld atsakymų</string>
       </dict>
     </dict>
     <key>plural.count.vote</key>
@@ -349,9 +433,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 atkvæði</string>
+        <string>%ld balsas</string>
+        <key>few</key>
+        <string>%ld balsai</string>
+        <key>many</key>
+        <string>%ld balso</string>
         <key>other</key>
-        <string>%ld atkvæði</string>
+        <string>%ld balsų</string>
       </dict>
     </dict>
     <key>plural.count.voter</key>
@@ -365,9 +453,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 kjósandi</string>
+        <string>%ld balsuotojas</string>
+        <key>few</key>
+        <string>%ld balsuotojai</string>
+        <key>many</key>
+        <string>%ld balsuotojo</string>
         <key>other</key>
-        <string>%ld kjósendur</string>
+        <string>%ld balsuotojų</string>
       </dict>
     </dict>
     <key>plural.people_talking</key>
@@ -381,9 +473,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 aðili að spjalla</string>
+        <string>%ld žmogus kalbasi</string>
+        <key>few</key>
+        <string>%ld žmonės kalbasi</string>
+        <key>many</key>
+        <string>%ld žmones kalbasi</string>
         <key>other</key>
-        <string>%ld aðilar að spjalla</string>
+        <string>%ld žmonių kalbasi</string>
       </dict>
     </dict>
     <key>plural.count.following</key>
@@ -397,9 +493,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 fylgist með</string>
+        <string>%ld sekimas</string>
+        <key>few</key>
+        <string>%ld sekimai</string>
+        <key>many</key>
+        <string>%ld sekimo</string>
         <key>other</key>
-        <string>%ld fylgjast með</string>
+        <string>%ld sekimų</string>
       </dict>
     </dict>
     <key>plural.count.follower</key>
@@ -413,9 +513,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 fylgjandi</string>
+        <string>%ld sekėjas</string>
+        <key>few</key>
+        <string>%ld sekėjai</string>
+        <key>many</key>
+        <string>%ld sekėjo</string>
         <key>other</key>
-        <string>%ld fylgjendur</string>
+        <string>%ld sekėjų</string>
       </dict>
     </dict>
     <key>plural.count.of_your_followers</key>
@@ -429,9 +533,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 af fylgjendunum þínum</string>
+        <string>%ld iš jūsų sekėjų</string>
+        <key>few</key>
+        <string>%ld iš jūsų sekėjų</string>
+        <key>many</key>
+        <string>%ld iš jūsų sekėjų</string>
         <key>other</key>
-        <string>%ld af fylgjendunum þínum</string>
+        <string>%ld iš jūsų sekėjų</string>
       </dict>
     </dict>
     <key>plural.count.accounts_that_you_follow</key>
@@ -445,9 +553,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 notandi sem þú fylgist með</string>
+        <string>%ld paskyra, kurią sekate</string>
+        <key>few</key>
+        <string>%ld paskyros, kurias sekate</string>
+        <key>many</key>
+        <string>%ld paskyros, kurios sekate</string>
         <key>other</key>
-        <string>%ld notendur sem þú fylgist með</string>
+        <string>%ld paskyrų, kurių sekate</string>
       </dict>
     </dict>
     <key>date.year.left</key>
@@ -461,9 +573,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 ár eftir</string>
+        <string>Liko %ld metai</string>
+        <key>few</key>
+        <string>Liko %ld metai</string>
+        <key>many</key>
+        <string>Liko %ld metų</string>
         <key>other</key>
-        <string>%ld ár eftir</string>
+        <string>Liko %ld metų</string>
       </dict>
     </dict>
     <key>date.month.left</key>
@@ -477,9 +593,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 mánuður eftir</string>
+        <string>Liko %ld mėnesis</string>
+        <key>few</key>
+        <string>Liko %ld mėnesiai</string>
+        <key>many</key>
+        <string>Liko %ld mėnesio</string>
         <key>other</key>
-        <string>%ld mánuðir eftir</string>
+        <string>Liko %ld minučių</string>
       </dict>
     </dict>
     <key>date.day.left</key>
@@ -493,9 +613,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 dagur eftir</string>
+        <string>Liko %ld diena</string>
+        <key>few</key>
+        <string>Liko %ld dienos</string>
+        <key>many</key>
+        <string>Liko %ld dienos</string>
         <key>other</key>
-        <string>%ld dagar eftir</string>
+        <string>Liko %ld dienų</string>
       </dict>
     </dict>
     <key>date.hour.left</key>
@@ -509,9 +633,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 klukkustund eftir</string>
+        <string>Liko %ld valanda</string>
+        <key>few</key>
+        <string>Liko %ld valandos</string>
+        <key>many</key>
+        <string>Liko %ld valandos</string>
         <key>other</key>
-        <string>%ld klukkustundir eftir</string>
+        <string>Liko %ld valandų</string>
       </dict>
     </dict>
     <key>date.minute.left</key>
@@ -525,9 +653,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 mínúta eftir</string>
+        <string>Liko %ld minutė</string>
+        <key>few</key>
+        <string>Liko %ld minutės</string>
+        <key>many</key>
+        <string>Liko %ld minutes</string>
         <key>other</key>
-        <string>%ld mínútur eftir</string>
+        <string>Liko %ld minučių</string>
       </dict>
     </dict>
     <key>date.second.left</key>
@@ -541,9 +673,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 sekúnda eftir</string>
+        <string>Liko %ld sekundė</string>
+        <key>few</key>
+        <string>Liko %ld sekundės</string>
+        <key>many</key>
+        <string>Liko %ld sekundes</string>
         <key>other</key>
-        <string>%ld sekúndur eftir</string>
+        <string>Liko %ld sekundžių</string>
       </dict>
     </dict>
     <key>date.year.ago.abbr</key>
@@ -557,9 +693,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Fyrir 1 ári síðan</string>
+        <string>prieš %ld m.</string>
+        <key>few</key>
+        <string>prieš %ld m.</string>
+        <key>many</key>
+        <string>prieš %ld m.</string>
         <key>other</key>
-        <string>Fyrir %ld árum síðan</string>
+        <string>prieš %ld m.</string>
       </dict>
     </dict>
     <key>date.month.ago.abbr</key>
@@ -573,9 +713,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Fyrir 1mín síðan</string>
+        <string>prieš %ld mėn.</string>
+        <key>few</key>
+        <string>prieš %ld mėn.</string>
+        <key>many</key>
+        <string>prieš %ld mėn.</string>
         <key>other</key>
-        <string>Fyrir %ldmín síðan</string>
+        <string>prieš %ld mėn.</string>
       </dict>
     </dict>
     <key>date.day.ago.abbr</key>
@@ -589,9 +733,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Fyrir 1 degi síðan</string>
+        <string>prieš %ld d.</string>
+        <key>few</key>
+        <string>prieš %ld d.</string>
+        <key>many</key>
+        <string>prieš %ld d.</string>
         <key>other</key>
-        <string>Fyrir %ld dögum síðan</string>
+        <string>prieš %ld d.</string>
       </dict>
     </dict>
     <key>date.hour.ago.abbr</key>
@@ -605,9 +753,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1klst síðan</string>
+        <string>prieš %ld val.</string>
+        <key>few</key>
+        <string>prieš %ld val.</string>
+        <key>many</key>
+        <string>prieš %ld val.</string>
         <key>other</key>
-        <string>%ldklst síðan</string>
+        <string>prieš %ld val.</string>
       </dict>
     </dict>
     <key>date.minute.ago.abbr</key>
@@ -621,9 +773,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1m síðan</string>
+        <string>prieš %ld min.</string>
+        <key>few</key>
+        <string>prieš %ld min.</string>
+        <key>many</key>
+        <string>prieš %ld min.</string>
         <key>other</key>
-        <string>%ldm síðan</string>
+        <string>prieš %ld min.</string>
       </dict>
     </dict>
     <key>date.second.ago.abbr</key>
@@ -637,9 +793,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1s síðan</string>
+        <string>prieš %ld sek.</string>
+        <key>few</key>
+        <string>prieš %ld sek.</string>
+        <key>many</key>
+        <string>prieš %ld sek.</string>
         <key>other</key>
-        <string>%lds síðan</string>
+        <string>prieš %ld sek.</string>
       </dict>
     </dict>
     <key>plural.filtered_notification_banner.subtitle</key>
@@ -653,9 +813,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Einn aðili sem þú gætir þekkt</string>
+        <string>%Id žmogus, kurį galbūt pažįstate</string>
+        <key>few</key>
+        <string>%ld žmonės, kuriuos galbūt pažįstate</string>
+        <key>many</key>
+        <string>%ld žmones, kurios galbūt pažįstate</string>
         <key>other</key>
-        <string>%ld aðilar sem þú gætir þekkt</string>
+        <string>%ld žmonių, kurių galbūt pažįstate</string>
       </dict>
     </dict>
   </dict>

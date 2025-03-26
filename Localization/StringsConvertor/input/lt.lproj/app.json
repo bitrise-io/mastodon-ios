@@ -2,130 +2,130 @@
     "common": {
         "alerts": {
             "common": {
-                "please_try_again": "ပြန်လည်ကြိုးစားကြည့်ပါ",
-                "please_try_again_later": "နောက်မှ ပြန်လည်ကြိုးစားကြည့်ပါ"
+                "please_try_again": "Bandykite dar kartą.",
+                "please_try_again_later": "Bandykite dar kartą vėliau."
             },
             "sign_up_failure": {
-                "title": "အကောင့်ဖွင့်ခြင်း မအောင်မြင်ပါ"
+                "title": "Registracijos nesėkmė"
             },
             "server_error": {
-                "title": "ဆာဗာ အမှား"
+                "title": "Serverio klaida"
             },
             "vote_failure": {
-                "title": "မဲပေးမှု မအောင်မြင်ခြင်း",
-                "poll_ended": "စစ်တမ်းကောက်မှု ပြီးဆုံးပါပြီ"
+                "title": "Balsavimo nesėkmė",
+                "poll_ended": "Apklausa baigėsi"
             },
             "publish_post_failure": {
-                "title": "ပို့စ်တင်ခြင်း မအောင်မြင်မှု",
-                "message": "ပို့စ်တင်ခြင်း မအောင်မြင်ပါ၊ သင်၏ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။",
+                "title": "Skelbimo nesėkmė",
+                "message": "Nepavyko paskelbti įrašo.\nPatikrinkite savo interneto ryšį.",
                 "attachments_message": {
-                    "video_attach_with_photo": "ဓာတ်ပုံများပါဝင်သော ပို့စ်တွင် ဗီဒီိယိုကို တွဲတင်၍ မရပါ",
-                    "more_than_one_video": "ဗီဒီိယို ၁ ခုထက်ပို၍ တွဲတင်၍ မရပါ"
+                    "video_attach_with_photo": "Negalima pridėti vaizdo įrašo prie įrašo, kuriame jau yra vaizdų.",
+                    "more_than_one_video": "Negalima pridėti daugiau nei vieno vaizdo įrašo."
                 }
             },
             "edit_profile_failure": {
-                "title": "ပရိုဖိုင်ပြင်ဆင်ခြင်း အမှား",
-                "message": "ပရိုဖိုင်ကို ပြင်ဆင်၍ မရပါ၊ ပြန်လည်ကြိုးစားကြည့်ပါ။"
+                "title": "Profilio redagavimo klaida",
+                "message": "Negalima redaguoti profilio. Bandykite dar kartą."
             },
             "sign_out": {
-                "title": "ထွက်မည်",
-                "message": "အကောင့်မှ ထွက်ရန် သေချာပါသလား?",
-                "confirm": "ထွက်မည်"
+                "title": "Atsijungti",
+                "message": "Ar tikrai norite atsijungti?",
+                "confirm": "Atsijungti"
             },
             "block_domain": {
-                "title": "%s တစ်ခုလုံးကို ဘလော့လုပ်ရန် တကယ် သေချာပါသလား? များသောအားဖြင့် အနည်းစုကို ပစ်မှတ်ထား ဘလော့လုပ်ခြင်းသည် လုံလောက်ပါသည်။ ထို ဒိုမိန်းမှ အကြောင်းအရာ တစ်ခုမှ မြင်ရမည်မဟုတ်သည့်အပြင် ထို ဒိုမိန်းတွင်ရှိသော သင်၏ စောင့်ကြည့်သူများပါ ဖယ်ရှားပစ်မည်ဖြစ်သည်။",
-                "block_entire_domain": "ဒိုမိန်းကို ဘလော့လုပ်ရန်"
+                "title": "Ar tikrai, tikrai norite užblokuoti visą %s? Daugeliu atvejų užtenka kelių tikslinių blokavimų arba nutildymų. Nematysite to domeno turinio ir bus pašalinti visi jūsų sekėjai iš to domeno.",
+                "block_entire_domain": "Blokuoti domeną"
             },
             "save_photo_failure": {
-                "title": "ဓာတ်ပုံသိမ်းဆည်းခြင်း အမှား",
-                "message": "ကျေးဇူးပြု၍ ဓာတ်ပုံသိမ်းဆည်းနိုင်ရန် ဓာတ်ပုံပြတိုက်သို့ ဝင်ရောက်ခွင့်ပေးပါ။"
+                "title": "Išsaugomo nuotraukos nesėkmė",
+                "message": "Kad išsaugotumėte nuotrauką, įjunkite nuotraukų bibliotekos prieigos leidimą."
             },
             "delete_post": {
-                "title": "ပို့စ်ဖျက်ရန်",
-                "message": "ပို့စ်ကို ဖျက်ရန် သေချာပါသလား?"
+                "title": "Ištrinti įrašą",
+                "message": "Ar tikrai norite ištrinti šį įrašą?"
             },
             "clean_cache": {
-                "title": "Cache ကို ရှင်းပါ",
-                "message": "%s cache ကို အောင်မြင်စွာ ရှင်းလင်းပြီးပါပြီ"
+                "title": "Valyti podėlį",
+                "message": "Sėkmingai išvalytas %s podėlis."
             },
             "translation_failed": {
-                "title": "Note",
-                "message": "Translation failed. Maybe the administrator has not enabled translations on this server or this server is running an older version of Mastodon where translations are not yet supported.",
-                "button": "OK"
+                "title": "Pastaba",
+                "message": "Vertimas nepavyko. Galbūt administratorius šiame serveryje neįjungė vertimų arba šiame serveryje veikia senesnė „Mastodon“ versija, kurioje vertimai dar nepalaikomi.",
+                "button": "Gerai"
             },
             "media_missing_alt_text": {
-                "title": "Media Missing Alt Text",
-                "message": "%d of your images are missing alt text.\nPost Anyway?",
-                "cancel": "Cancel",
-                "post": "Post"
+                "title": "Medijoje trūksta alternatyvaus teksto",
+                "message": "%d iš jūsų vaizdų trūksta alternatyvių tekstų.\nSkelbti vis tiek?",
+                "cancel": "Atšaukti",
+                "post": "Skelbti"
             },
             "boost_a_post": {
-                "title_boost": "Boost Post?",
-                "title_unboost": "Unboost Post?",
-                "cancel": "Cancel",
-                "boost": "Boost",
-                "unboost": "Unboost"
+                "title_boost": "Pasidalinti įrašu?",
+                "title_unboost": "Nebepasidalinti įrašo?",
+                "cancel": "Atšaukti",
+                "boost": "Pasidalinti",
+                "unboost": "Nebepasidalinti"
             },
             "unfollow_user": {
-                "title": "Unfollow %@?",
-                "cancel": "Cancel",
-                "unfollow": "Unfollow"
+                "title": "Nebesekti %@?",
+                "cancel": "Atšaukti",
+                "unfollow": "Nebesekti"
             }
         },
         "controls": {
             "actions": {
-                "back": "ပြန်၍",
-                "next": "ရှေ့သို့",
-                "previous": "ယခင်",
-                "open": "ဖွင့်",
-                "add": "ထည့်",
-                "remove": "ဖယ်ရှား",
-                "edit": "တည်းဖြတ်",
-                "save": "သိမ်းဆည်း",
-                "ok": "အိုကေ",
-                "done": "ပြီးပြီ",
-                "confirm": "အတည်ပြု",
-                "continue": "ဆက်လက်",
-                "compose": "ရေးဖွဲ့",
-                "cancel": "ပယ်ဖျက်",
-                "discard": "ဖယ်ရှား",
-                "try_again": "ထပ်မံကြိုးစားပါ",
-                "take_photo": "ဓါတ်ပုံရိုက်",
-                "save_photo": "ဓါတ်ပုံသိမ်းဆည်း",
-                "copy_photo": "ဓာတ်ပုံကူး",
-                "sign_in": "လော့ဂ်အင်ဝင်",
-                "see_more": "ပိုမိုကြည့်ရှုရန်",
-                "preview": "အစမ်းကြည့်",
-                "copy": "Copy",
-                "share": "မျှဝေ",
-                "share_user": "%s ကို မျှဝေပါ",
-                "share_post": "ပို့စ်ကို မျှဝေရန်",
-                "open_in_safari": "Safari တွင် ဖွင့်ရန်",
-                "open_in_browser": "Browser တွင် ဖွင့်ရန်",
-                "find_people": "စောင့်ကြည့်ရန် လူရှာပါ",
-                "manually_search": "ကိုယ်တိုင် ရှာဖွေရန်",
-                "skip": "ကျော်",
-                "reply": "စာပြန်",
-                "report_user": " %s ကို တိုင်ကြားရန်",
-                "block_domain": "%s ကို ဘလော့လုပ်ရန်",
-                "unblock_domain": "%s ကို ဘလော့ဖြုတ်ရန်",
-                "settings": "ဆက်တင်များ",
-                "delete": "ဖျက်",
+                "back": "Atgal",
+                "next": "Toliau",
+                "previous": "Ankstesnis",
+                "open": "Atverti",
+                "add": "Pridėti",
+                "remove": "Šalinti",
+                "edit": "Redaguoti",
+                "save": "Išsaugoti",
+                "ok": "Gerai",
+                "done": "Atlikta",
+                "confirm": "Patvirtinti",
+                "continue": "Tęsti",
+                "compose": "Sukurti",
+                "cancel": "Atšaukti",
+                "discard": "Atmesti",
+                "try_again": "Bandyti dar kartą",
+                "take_photo": "Fotografuoti",
+                "save_photo": "Išsaugoti nuotrauką",
+                "copy_photo": "Kopijuoti nuotrauką",
+                "sign_in": "Prisijungti",
+                "see_more": "Žiūrėti daugiau",
+                "preview": "Peržiūrėti",
+                "copy": "Kopijuoti",
+                "share": "Bendrinti",
+                "share_user": "Bendrinti %s",
+                "share_post": "Bendrinti įrašą",
+                "open_in_safari": "Atverti naršyklėje „Safari“",
+                "open_in_browser": "Atverti naršyklėje",
+                "find_people": "Rasti žmonių sekti",
+                "manually_search": "Ieškoti rankiniu būdu vietoj to",
+                "skip": "Praleisti",
+                "reply": "Atsakyti",
+                "report_user": "Pranešti apie %s",
+                "block_domain": "Blokuoti %s",
+                "unblock_domain": "Atblokuoti %s",
+                "settings": "Nustatymai",
+                "delete": "Ištrinti",
                 "translate_post": {
-                    "title": "Translate from %s",
-                    "unknown_language": "Unknown"
+                    "title": "Versti iš %s",
+                    "unknown_language": "Nežinoma"
                 },
-                "edit_post": "Edit",
-                "bookmark": "Bookmark",
-                "remove_bookmark": "Remove Bookmark",
-                "follow": "Follow %s",
-                "unfollow": "Unfollow %s"
+                "edit_post": "Redaguoti",
+                "bookmark": "Pridėti prie žymių",
+                "remove_bookmark": "Šalinti žymę",
+                "follow": "Sekti %s",
+                "unfollow": "Nebesekti %s"
             },
             "tabs": {
-                "home": "အိမ်",
+                "home": "Home",
                 "search_and_explore": "Search and Explore",
-                "notifications": "အသိပေးချက်များ",
-                "profile": "ကိုယ်ရေးမှတ်တမ်း",
+                "notifications": "Notifications",
+                "profile": "Profile",
                 "a11y": {
                     "search": "Search",
                     "explore": "Explore"
@@ -133,66 +133,66 @@
             },
             "keyboard": {
                 "common": {
-                    "switch_to_tab": "%s သို့ ပြောင်းရန်",
-                    "compose_new_post": "ပို့စ်အသစ် ရေးဖွဲ့",
-                    "show_favorites": "အကြိုက်ဆုံးများ ပြရန်",
-                    "open_settings": "ဆက်တင်ကို ဖွင့်ရန်"
+                    "switch_to_tab": "Switch to %s",
+                    "compose_new_post": "Compose New Post",
+                    "show_favorites": "Show Favorites",
+                    "open_settings": "Open Settings"
                 },
                 "timeline": {
-                    "previous_status": "ယခင်ပို့စ်",
-                    "next_status": "နောက်ပို့စ်",
-                    "open_status": "ပို့စ်ဖွင့်ရန်",
-                    "open_author_profile": "စာရေးသူ၏ ပရိုဖိုင်ကို ဖွင့်ပါ",
+                    "previous_status": "Previous Post",
+                    "next_status": "Next Post",
+                    "open_status": "Open Post",
+                    "open_author_profile": "Open Author's Profile",
                     "open_reblogger_profile": "Open Booster's Profile",
-                    "reply_status": "ပို့စ်ကို စာပြန်",
+                    "reply_status": "Atsakyti į įrašą",
                     "toggle_reblog": "Toggle Boost on Post",
-                    "toggle_favorite": "အကြိုက်ဆုံးလုပ်ခွင့်ပေးခြင်းကို ဖွင့်၊ပိတ် လုပ်ပါ",
-                    "toggle_content_warning": "အကြောင်းအရာသတိပေးချက်ကို ဖွင့်၊ပိတ် လုပ်ပါ",
-                    "preview_image": "ဓာတ်ပုံကို ကြိုကြည့်"
+                    "toggle_favorite": "Toggle Favorite on Post",
+                    "toggle_content_warning": "Toggle Content Warning",
+                    "preview_image": "Preview Image"
                 },
                 "segmented_control": {
-                    "previous_section": "ယခင်အပိုင်း",
-                    "next_section": "နောက်အပိုင်း"
+                    "previous_section": "Previous Section",
+                    "next_section": "Next Section"
                 }
             },
             "status": {
                 "reply": "Reply",
                 "private_reply": "Private reply",
-                "mention": "Mention",
-                "private_mention": "Private mention",
-                "user_reblogged": "%s boosted",
-                "user_replied_to": "%s ထံ စာပြန်",
-                "show_post": "ပို့စ်ကို ပြသ",
-                "show_user_profile": "အသုံးပြုသူ၏ ပရိုဖိုင်ကို ပြရန်",
-                "content_warning": "အကြောင်းအရာသတိပေးချက်",
-                "sensitive_content": "ထိလွယ်ရှလွယ် အကြောင်းအရာ",
-                "media_content_warning": "ဖော်ထုတ်ရန် မည်သည့်နေရာမဆို နှိပ်ပါ",
-                "tap_to_reveal": "ဖော်ထုတ်ရန် နှိပ်ပါ",
+                "mention": "Paminėjimas",
+                "private_mention": "Privatus paminėjimas",
+                "user_reblogged": "%s pasidalino",
+                "user_replied_to": "Atsakė į %s",
+                "show_post": "Show Post",
+                "show_user_profile": "Show user profile",
+                "content_warning": "Content Warning",
+                "sensitive_content": "Sensitive Content",
+                "media_content_warning": "Tap anywhere to reveal",
+                "tap_to_reveal": "Tap to reveal",
                 "load_embed": "Load Embed",
                 "link_via_user": "%s via %s",
                 "poll": {
-                    "vote": "မဲပေး",
-                    "closed": "ပိတ်သွားပြီ"
+                    "vote": "Vote",
+                    "closed": "Closed"
                 },
                 "meta_entity": {
-                    "url": "လင့်ခ်: %s",
-                    "hashtag": "ဟက်ရှ်တက်ခ်: %s",
-                    "mention": "ပရိုဖိုင် ပြသ: %s",
-                    "email": "အီးမေးလ်လိပ်စာ: %s"
+                    "url": "Link: %s",
+                    "hashtag": "Hashtag: %s",
+                    "mention": "Show Profile: %s",
+                    "email": "Email address: %s"
                 },
                 "actions": {
-                    "reply": "စာပြန်",
+                    "reply": "Reply",
                     "reblog": "Boost",
                     "unreblog": "Undo boost",
-                    "favorite": "အကြိုက်ဆုံး",
-                    "unfavorite": "အကြိုက်ဆုံးမှ ဖယ်ရှားရန်",
-                    "menu": "မီနူး",
-                    "hide": "ဝှက်ရန်",
-                    "show_image": "ဓာတ်ပုံပြရန်",
-                    "show_gif": "GIF ပြရန်",
-                    "show_video_player": "ဗီဒီယိုဖွင့်စက် ပြရန်",
+                    "favorite": "Favorite",
+                    "unfavorite": "Unfavorite",
+                    "menu": "Menu",
+                    "hide": "Hide",
+                    "show_image": "Show image",
+                    "show_gif": "Show GIF",
+                    "show_video_player": "Show video player",
                     "share_link_in_post": "Share Link in Post",
-                    "tap_then_hold_to_show_menu": "မီနူးပြရန် ဖိထားပါ",
+                    "tap_then_hold_to_show_menu": "Tap then hold to show menu",
                     "a11y_labels": {
                         "reblog": "Boost",
                         "unreblog": "Undo boost"
@@ -201,17 +201,17 @@
                 },
                 "tag": {
                     "url": "URL",
-                    "mention": "ရည်ညွှန်း",
-                    "link": "လင့်ခ်",
-                    "hashtag": "ဟက်ရှ်တက်ခ်",
-                    "email": "အီးမေးလ်",
-                    "emoji": "အီမိုဂျီ"
+                    "mention": "Mention",
+                    "link": "Link",
+                    "hashtag": "Hashtag",
+                    "email": "El. paštas",
+                    "emoji": "Jaustukas"
                 },
                 "visibility": {
-                    "unlisted": "ဒီပို့စ်ကို လူတိုင်းမြင်နိုင်သည်၊ သို့သော် အများမြင်အလင်းစဉ်တွင် မပြသပါ။",
-                    "private": "သူတို့၏ စောင့်ကြည့်သူများသာ ဒီပို့စ်ကို မြင်နိုင်သည်",
-                    "private_from_me": "ကျွန်ုပ်၏ စောင့်ကြည့်သူများသာ ဒီပို့စ်ကို မြင်နိုင်သည်",
-                    "direct": "ရည်ညွှန်းခံရသောအသုံးပြုသူများသာ ဒီပို့စ်ကို မြင်နိုင်သည်"
+                    "unlisted": "Šį įrašą matyti gali visi, bet jis nerodomas viešojoje laiko skalėje.",
+                    "private": "Šį įrašą matyti gali tik jų sekėjai.",
+                    "private_from_me": "Only my followers can see this post.",
+                    "direct": "Only mentioned user can see this post."
                 },
                 "translation": {
                     "translated_from": "Translated from %s using %s",
@@ -243,46 +243,46 @@
                 }
             },
             "friendship": {
-                "follow": "စောင့်ကြည့်ရန်",
+                "follow": "Follow",
                 "follow_back": "Follow back",
-                "following": "စောင့်ကြည့်နေသည်",
+                "following": "Following",
                 "mutual": "Mutual",
-                "request": "တောင်းဆို",
-                "pending": "ဆိုင်းငံ့ထားသည်",
-                "block": "ဘလော့လုပ်ရန်",
-                "block_user": "%s ကို ဘလော့လုပ်ရန်",
+                "request": "Request",
+                "pending": "Pending",
+                "block": "Block",
+                "block_user": "Block %s",
                 "block_domain": "Block domain %s",
-                "unblock": "ဘလော့ဖြုတ်ရန်",
-                "unblock_user": "%s ကို ဘလော့ဖြုတ်ရန်",
-                "blocked": "ဘလော့ထားသည်",
+                "unblock": "Unblock",
+                "unblock_user": "Unblock %s",
+                "blocked": "Blocked",
                 "domain_blocked": "Domain Blocked",
-                "mute": "ပိတ်ထားရန်",
-                "mute_user": "%s ကို ပိတ်ထားရန်",
-                "unmute": "ပြန်ဖွင့်ရန်",
-                "unmute_user": "%s ကို ပြန်ဖွင့်ရန်",
-                "muted": "ပိတ်ထားဆဲ",
-                "edit_info": "အချက်အလက်တည်းဖြတ်",
+                "mute": "Mute",
+                "mute_user": "Mute %s",
+                "unmute": "Unmute",
+                "unmute_user": "Unmute %s",
+                "muted": "Muted",
+                "edit_info": "Edit Info",
                 "show_reblogs": "Show Boosts",
                 "hide_reblogs": "Hide Boosts"
             },
             "timeline": {
-                "filtered": "စစ်ထုတ်ထားသည်",
+                "filtered": "Filtered",
                 "timestamp": {
-                    "now": "ယခု"
+                    "now": "Now"
                 },
                 "loader": {
-                    "load_missing_posts": "ပျောက်နေသော ပို့စ်များကို လုဒ်ပါ",
-                    "loading_missing_posts": "ပျောက်နေသော ပို့စ်များကို လုဒ်ပါ...",
-                    "show_more_replies": "ပြန်စာများထပ်ပြပါ"
+                    "load_missing_posts": "Load missing posts",
+                    "loading_missing_posts": "Loading missing posts...",
+                    "show_more_replies": "Show more replies"
                 },
                 "header": {
-                    "no_status_found": "ပို့စ်ရှာမတွေ့ပါ",
-                    "blocking_warning": "ဒီအသုံးပြုသူ၏ ပရိုဖိုင်ကို ဘလော့မဖြုတ်မချင်း ကြည့်၍မရပါ၊ သင်၏ ပရိုဖိုင်သည် ထိုသူတို့ထံ ဤကဲ့သို့ ပေါ်နေပါမည်။",
-                    "user_blocking_warning": "%s ၏ ပရိုဖိုင်ကို ဘလော့မဖြုတ်မချင်း ကြည့်၍မရပါ၊ သင်၏ ပရိုဖိုင်သည် ထိုသူ့ထံ ဤကဲ့သို့ ပေါ်နေပါမည်။",
-                    "blocked_warning": "ဤပုဂ္ဂိုလ်မှ သင့်ကို ဘလော့မဖြုတ်မချင်း သူ၏ ပရိုဖိုင်သည် သင် ကြည့်၍မရပါ။",
-                    "user_blocked_warning": "%s မှ သင့်ကို ဘလော့မဖြုတ်မချင်း သူ၏ ပရိုဖိုင်သည် သင် ကြည့်၍မရပါ။",
-                    "suspended_warning": "ဤအသုံးပြုသူသည် ဆိုင်းငံ့ခံထားရသည်။",
-                    "user_suspended_warning": "%s ၏အကောင့်သည် ဆိုင်းငံ့ခံထားရသည်။"
+                    "no_status_found": "No Post Found",
+                    "blocking_warning": "You can’t view this user's profile\nuntil you unblock them.\nYour profile looks like this to them.",
+                    "user_blocking_warning": "You can’t view %s’s profile\nuntil you unblock them.\nYour profile looks like this to them.",
+                    "blocked_warning": "You can’t view this user’s profile\nuntil they unblock you.",
+                    "user_blocked_warning": "You can’t view %s’s profile\nuntil they unblock you.",
+                    "suspended_warning": "This user has been suspended.",
+                    "user_suspended_warning": "%s’s account has been suspended."
                 }
             }
         },
@@ -293,20 +293,20 @@
     },
     "scene": {
         "welcome": {
-            "log_in": "လော့ခ်အင်ဝင်ရန်",
+            "log_in": "Log In",
             "learn_more": "Learn more",
             "join_default_server": "Join %@",
             "pick_server": "Pick another server",
             "separator": {
-                "or": "or"
+                "or": "arba"
             },
             "education": {
                 "mastodon": {
-                    "title": "Welcome to Mastodon",
-                    "description": "Mastodon is a decentralized social network, meaning no single company controls it. It’s made up of many independently-run servers, all connected together."
+                    "title": "Sveiki atvykę į „Mastodon“",
+                    "description": "„Mastodon“ – tai decentralizuotas socialinis tinklas ir tai reiškia, kad jo nevaldo nė viena įmonė. Jį sudaro daugybė nepriklausomai veikiančių serverių, sujungtų tarpusavyje."
                 },
                 "servers": {
-                    "title": "What are servers?",
+                    "title": "Kas yra serveriai?",
                     "description": "Every Mastodon account is hosted on a server — each with its own values, rules, & admins. No matter which one you pick, you can follow and interact with people on any server."
                 },
                 "a11y": {
@@ -318,9 +318,9 @@
         },
         "login": {
             "title": "Welcome Back",
-            "subtitle": "Log in with the server where you created your account.",
+            "subtitle": "Log in with the server where you created your account. For example, if your handle is @you@example.social, enter 'example.social'.",
             "server_search_field": {
-                "placeholder": "URL ကို ထည့်သွင်းပါ (သို့) သင်၏ ဆာဗာကို ရှာပါ"
+                "placeholder": "Enter URL or search for your server"
             }
         },
         "server_picker": {
@@ -329,36 +329,36 @@
                 "language": "Language",
                 "signup_speed": "Sign-up Speed",
                 "category": {
-                    "all": "အားလုံး",
-                    "all_accessiblity_description": "အမျိုးအစား - အားလုံး",
-                    "academia": "ပညာရှင်",
-                    "activism": "တက်ကြွလှုပ်ရှားမှု",
-                    "food": "အစားအစာ",
+                    "all": "All",
+                    "all_accessiblity_description": "Category: All",
+                    "academia": "academia",
+                    "activism": "activism",
+                    "food": "food",
                     "furry": "furry",
-                    "games": "ဂိမ်း",
-                    "general": "အထွေထွေ",
-                    "journalism": "သတင်းစာပညာ",
+                    "games": "games",
+                    "general": "general",
+                    "journalism": "journalism",
                     "lgbt": "lgbt",
-                    "regional": "နယ်မြေဆိုင်ရာ",
-                    "art": "အနုပညာ",
-                    "music": "ဂီတ",
-                    "tech": "နည်းပညာ"
+                    "regional": "regional",
+                    "art": "art",
+                    "music": "music",
+                    "tech": "tech"
                 },
-                "see_less": "လျှော့ ကြည့်ရန်",
-                "see_more": "ပိုမိုကြည့်ရှုရန်"
+                "see_less": "See Less",
+                "see_more": "See More"
             },
             "label": {
-                "language": "ဘာသာစကား",
-                "users": "အသုံးပြုသူများ",
-                "category": "အမျိုးအစား"
+                "language": "LANGUAGE",
+                "users": "USERS",
+                "category": "CATEGORY"
             },
             "input": {
-                "search_servers_or_enter_url": "အသိုင်းအဝိုင်းများကို ရှာဖွေ (သို့) URL ကို ဝင်ရောက်"
+                "search_servers_or_enter_url": "Search communities or enter URL"
             },
             "empty_state": {
-                "finding_servers": "အဆင်သင့်သုံးရသော ဆာဗာများကို ရှာနေသည်...",
-                "bad_network": "ဒေတာဖွင့်နေစဉ် တစ်ခုခုမှားယွင်းသွားသည်၊ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။",
-                "no_results": "ရလဒ်မရှိပါ"
+                "finding_servers": "Finding available servers...",
+                "bad_network": "Something went wrong while loading the data. Check your internet connection.",
+                "no_results": "No results"
             },
             "signup_speed": {
                 "all": "All",
@@ -392,69 +392,69 @@
                     "explanation_message": "We have to make sure you're at least %d to join %@. This won't get stored after signup."
                 },
                 "avatar": {
-                    "delete": "ဖျက်"
+                    "delete": "Delete"
                 },
                 "username": {
-                    "placeholder": "အသုံးပြုသူအမည်",
-                    "duplicate_prompt": "ဤအသုံးပြုသူအမည်သည် ရှိနှင့်ပြီးဖြစ်သည်။",
+                    "placeholder": "username",
+                    "duplicate_prompt": "This username is taken.",
                     "suggestion": "amazing_%@"
                 },
                 "display_name": {
-                    "placeholder": "ပြသမည့် အမည်"
+                    "placeholder": "display name"
                 },
                 "email": {
-                    "placeholder": "အီးမေးလ်"
+                    "placeholder": "email"
                 },
                 "password": {
-                    "placeholder": "စကားဝှက်",
+                    "placeholder": "password",
                     "confirmation_placeholder": "Confirm Password",
-                    "require": "သင်၏စကားဝှက်သည် အနည်းဆုံးလိုအပ်သည်:",
-                    "character_limit": "အက္ခရာ ၈ လုံး",
+                    "require": "Your password needs at least:",
+                    "character_limit": "8 characters",
                     "accessibility": {
-                        "checked": "စစ်ဆေးပြီးပြီ",
-                        "unchecked": "မစစ်ဆေးခဲ့ပါ"
+                        "checked": "checked",
+                        "unchecked": "unchecked"
                     },
-                    "hint": "စကားဝှက်သည် အနည်းဆုံး အက္ခရာ ၈ လုံး ရှိရပါမည်။"
+                    "hint": "Your password needs at least eight characters"
                 },
                 "invite": {
-                    "registration_user_invite_request": "သင် ဘာကြောင့် ပါဝင်ချင်တာပါလဲ?"
+                    "registration_user_invite_request": "Why do you want to join?"
                 }
             },
             "error": {
                 "item": {
-                    "username": "အသုံးပြုသူအမည်",
-                    "email": "အီးမေးလ်",
-                    "password": "စကားဝှက်",
-                    "agreement": "သဘောတူညီမှု",
-                    "locale": "ဒေသဆိုင်ရာ",
-                    "reason": "အကြောင်းပြချက်"
+                    "username": "Username",
+                    "email": "Email",
+                    "password": "Password",
+                    "agreement": "Agreement",
+                    "locale": "Locale",
+                    "reason": "Reason"
                 },
                 "reason": {
-                    "blocked": "%s တွင် ခွင့်မပြုထားသော အီးမေးလ်ထောက်ပံ့သူပါဝင်နေသည်။",
-                    "unreachable": "%s တည်ရှိပုံ မပေါ်ပါ",
+                    "blocked": "%s contains a disallowed email provider",
+                    "unreachable": "%s does not seem to exist",
                     "taken": "%s is already taken. How about:",
-                    "reserved": "%s သည် သီးသန့်ဖယ်ထားသောစကားလုံး ဖြစ်သည်။",
-                    "accepted": "%s ကို လက်ခံရမည်ဖြစ်သည်",
-                    "blank": "%s ကို လိုအပ်သည်",
-                    "invalid": "%s သည် မခိုင်လုံပါ",
-                    "too_long": "%s သည် ရှည်လွန်းသည်",
-                    "too_short": "%s သည် တိုလွန်းသည်",
-                    "inclusion": "%s သည် ထောက်ပံ့ထားသောတန်ဖိုး မဟုတ်ပါ"
+                    "reserved": "%s is a reserved keyword",
+                    "accepted": "%s must be accepted",
+                    "blank": "%s is required",
+                    "invalid": "%s is invalid",
+                    "too_long": "%s is too long",
+                    "too_short": "%s is too short",
+                    "inclusion": "%s is not a supported value"
                 },
                 "special": {
-                    "username_invalid": "အသုံးပြုသူအမည်တွင် ဂဏန်းအက္ခရာစာလုံးနှင့် အောက်မျဉ်း သာလျှင် ပါဝင်နိုင်သည်",
-                    "username_too_long": "အသုံးပြုသူအမည်ရှည်လွန်းသည် (စာလုံး ၃၀ လုံးထက် ရှည်၍ မရပါ)",
-                    "email_invalid": "ဤအီးမေးလ်လိပ်စာသည် ခိုင်လုံမှု မရှိပါ",
-                    "password_too_short": "စကားဝှက်တိုလွန်းသည် (အနည်းဆုံး စာလုံး ၈ လုံး ရှိရမည်)"
+                    "username_invalid": "Username must only contain alphanumeric characters and underscores",
+                    "username_too_long": "Username is too long (can’t be longer than 30 characters)",
+                    "email_invalid": "This is not a valid email address",
+                    "password_too_short": "Password is too short (must be at least 8 characters)"
                 }
             }
         },
         "server_rules": {
             "title": "Server Rules",
             "subtitle": "By continuing, you agree to follow by the following rules set and enforced by the **%s** moderators.",
-            "prompt": "ဆက်လက်သွားမည်ဆိုပါက သင်သည် %s အတွက် ဝန်ဆောင်မှုနှင့် ကိုယ်ရေးကိုယ်တာမူဝါဒများကို လိုက်နာရမည်ဖြစ်သည်။",
-            "terms_of_service": "ဝန်ဆောင်မှုစည်းကမ်းချက်များ",
-            "privacy_policy": "ကိုယ်ရေးကိုယ်တာမူဝါဒ",
+            "prompt": "By continuing, you’re subject to the terms of service and privacy policy for %s.",
+            "terms_of_service": "terms of service",
+            "privacy_policy": "privacy policy",
             "button": {
                 "confirm": "I Agree",
                 "disagree": "Disagree"
@@ -464,17 +464,17 @@
             "title": "Check Your Inbox",
             "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tap the link we sent you to verify %@. We’ll wait right here.",
             "button": {
-                "resend": "ပြန်ပို့ပါ"
+                "resend": "Resend"
             },
             "dont_receive_email": {
                 "title": "Check your Email",
                 "description": "Check if your email address is correct as well as your junk folder if you haven’t.",
-                "resend_email": "အီးမေးလ်ကိုပြန်ပို့ပါ"
+                "resend_email": "Resend Email"
             },
             "open_email_app": {
                 "title": "Check your Inbox.",
                 "description": "We just sent you an email. Check your junk folder if you haven’t.",
-                "mail": "မေးလ်",
+                "mail": "Mail",
                 "open_email_client": "Open Email Client"
             },
             "didnt_get_link": {
@@ -484,7 +484,7 @@
             }
         },
         "home_timeline": {
-            "title": "အိမ်",
+            "title": "Home",
             "timeline_menu": {
                 "following": "Following",
                 "local_community": "Local",
@@ -512,21 +512,21 @@
         },
         "compose": {
             "title": {
-                "new_post": "ပို့စ်အသစ်",
-                "new_reply": "စာပြန်အသစ်",
+                "new_post": "New Post",
+                "new_reply": "New Reply",
                 "edit_post": "Edit Post"
             },
             "media_selection": {
-                "camera": "ဓါတ်ပုံရိုက်",
-                "photo_library": "ဓာတ်ပုံပြတိုက်",
-                "browse": "ရှာဖွေ"
+                "camera": "Take Photo",
+                "photo_library": "Photo Library",
+                "browse": "Browse"
             },
             "content_input_placeholder": "Type or paste what’s on your mind",
-            "compose_action": "ပို့စ်တင်",
-            "replying_to_user": "%s ထံ စာပြန်နေသည်",
+            "compose_action": "Publish",
+            "replying_to_user": "replying to %s",
             "attachment": {
-                "photo": "ဓာတ်ပုံ",
-                "video": "ဗီဒီယို",
+                "photo": "photo",
+                "video": "video",
                 "attachment_broken": "This %s is broken and can’t be\nuploaded to Mastodon.",
                 "description_photo": "Describe the photo for the visually-impaired...",
                 "description_video": "Describe the video for the visually-impaired...",
@@ -583,7 +583,7 @@
                 "toggle_poll": "Toggle Poll",
                 "toggle_content_warning": "Toggle Content Warning",
                 "append_attachment_entry": "Add Attachment - %s",
-                "select_visibility_entry": "မြင်နိုင်စွမ်း ရွေးချယ်ရန် - %s"
+                "select_visibility_entry": "Select Visibility - %s"
             },
             "language": {
                 "title": "Post Language",
@@ -833,7 +833,7 @@
                 "general": "General",
                 "notifications": "Notifications",
                 "privacy_safety": "Privacy & Safety",
-                "support_mastodon": "Support Mastodon",
+                "support_mastodon": "Donate to Mastodon",
                 "about_mastodon": "About Mastodon",
                 "server_details": "Server Details",
                 "logout": "Logout %@"
@@ -948,31 +948,31 @@
                 "malicious_links_fake_engagement_or_repetetive_replies": "Malicious links, fake engagement, or repetetive replies",
                 "it_violates_server_rules": "It violates server rules",
                 "you_are_aware_that_it_breaks_specific_rules": "You are aware that it breaks specific rules",
-                "its_something_else": "It’s something else",
-                "the_issue_does_not_fit_into_other_categories": "The issue does not fit into other categories"
+                "its_something_else": "Tai kažkas kita",
+                "the_issue_does_not_fit_into_other_categories": "Problema netinka kitoms kategorijoms"
             },
             "step_two": {
-                "step_2_of_4": "Step 2 of 4",
-                "which_rules_are_being_violated": "Which rules are being violated?",
-                "select_all_that_apply": "Select all that apply",
-                "i_just_don’t_like_it": "I just don’t like it"
+                "step_2_of_4": "2 žingsnis iš 4",
+                "which_rules_are_being_violated": "Kokios taisyklės pažeidžiamos?",
+                "select_all_that_apply": "Pasirinkite viską, kas tinka",
+                "i_just_don’t_like_it": "Man tai tiesiog nepatinka"
             },
             "step_three": {
-                "step_3_of_4": "Step 3 of 4",
-                "are_there_any_posts_that_back_up_this_report": "Are there any posts that back up this report?",
-                "select_all_that_apply": "Select all that apply"
+                "step_3_of_4": "3 žingsnis iš 4",
+                "are_there_any_posts_that_back_up_this_report": "Ar yra kokių nors įrašų, patvirtinančių šį ataskaitą?",
+                "select_all_that_apply": "Pasirinkite viską, kas tinka"
             },
             "step_four": {
-                "step_4_of_4": "Step 4 of 4",
-                "is_there_anything_else_we_should_know": "Is there anything else we should know?"
+                "step_4_of_4": "4 žingsnis iš 4",
+                "is_there_anything_else_we_should_know": "Ar yra dar kas nors, ką turėtume žinoti?"
             },
             "step_final": {
-                "dont_want_to_see_this": "Don’t want to see this?",
-                "when_you_see_something_you_dont_like_on_mastodon_you_can_remove_the_person_from_your_experience.": "When you see something you don’t like on Mastodon, you can remove the person from your experience.",
-                "unfollow": "Unfollow",
-                "unfollowed": "Unfollowed",
-                "unfollow_user": "Unfollow %s",
-                "mute_user": "Mute %s",
+                "dont_want_to_see_this": "Nenorite to matyti?",
+                "when_you_see_something_you_dont_like_on_mastodon_you_can_remove_the_person_from_your_experience.": "Kai „Mastodon“ platformoje pamatote kažką, kas jums nepatinka, galite pašalinti žmogų iš savo patirties.",
+                "unfollow": "Nebesekti",
+                "unfollowed": "Nebesekama",
+                "unfollow_user": "Nebesekti %s",
+                "mute_user": "Nutildyti %s",
                 "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or boosts in your home feed. They won’t know they’ve been muted.",
                 "block_user": "Block %s",
                 "they_will_no_longer_be_able_to_follow_or_see_your_posts_but_they_can_see_if_theyve_been_blocked": "They will no longer be able to follow or see your posts, but they can see if they’ve been blocked.",
@@ -1037,38 +1037,38 @@
         },
         "followers_count": {
             "configuration_display_name": "Followers",
-            "configuration_description": "Show number of followers.",
-            "title": "FOLLOWERS",
-            "followers_today": "%s followers today"
+            "configuration_description": "Rodyti sekėjų skaičių.",
+            "title": "SEKĖJAI",
+            "followers_today": "%s sekėjai (-ų) šiandien"
         },
         "multiple_followers": {
-            "configuration_display_name": "Multiple followers",
-            "configuration_description": "Show number of followers for multiple accounts.",
+            "configuration_display_name": "Keli sekėjai",
+            "configuration_description": "Rodyti sekėjų skaičių kelioms paskyroms.",
             "mock_user": {
-                "display_name": "Another follower",
-                "account_name": "another@follower.social"
+                "display_name": "Dar vienas sekėjas",
+                "account_name": "darvienas@sekejas.socialinis"
             }
         },
         "latest_followers": {
-            "configuration_display_name": "Latest followers",
-            "configuration_description": "Show latest followers.",
-            "title": "Latest followers",
-            "last_update": "Last update: %s"
+            "configuration_display_name": "Naujausi sekėjai",
+            "configuration_description": "Rodyti naujausius sekėjus.",
+            "title": "Naujausi sekėjai",
+            "last_update": "Paskutinį kartą atnaujinta: %s"
         },
         "hashtag": {
             "configuration": {
-                "display_name": "Hashtag",
-                "description": "Shows a recent post with the selected hashtag."
+                "display_name": "Saitažodis",
+                "description": "Rodo naujausią įrašą su pasirinktu saitažodžiu."
             },
             "not_found": {
-                "account_name": "John Mastodon",
-                "account": "@johnMastodon@no-such.account",
-                "content": "Sorry, we couldn’t find any posts with the hashtag <a>#%@</a>. Please try a <a>#DifferentHashtag</a> or check the widget settings."
+                "account_name": "Jonas Mastodon",
+                "account": "@jonasMastodon@nera-tokios.paskyros",
+                "content": "Atsiprašome, neradome įrašų su saitažodžiu <a>#%@</a>. Bandykite <a>#KitokiąSaitažodį</a> arba patikrinkite valdiklio nustatymus."
             },
             "placeholder": {
-                "account_name": "John Mastodon",
-                "account": "@johnMastodon@no-such.account",
-                "content": "This is how a post with a <a>#hashtag</a> would look. Pick whichever <a>#hashtag</a> you want in the widget settings."
+                "account_name": "Jonas Mastodonas",
+                "account": "@jonasMastodon@nera-tokios.paskyros",
+                "content": "Štai kaip atrodytų įrašas su <a>#saitažodžiu</a>. Valdiklio nustatymuose pasirinkite bet kurią norimą <a>#saitažodį</a>."
             }
         }
     }
