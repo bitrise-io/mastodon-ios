@@ -1356,6 +1356,14 @@ public enum L10n {
           /// Delete
           public static let delete = L10n.tr("Localizable", "Scene.Register.Input.Avatar.Delete", fallback: "Delete")
         }
+        public enum BirthDate {
+          /// We have to make sure you're at least %d to join %@. This won't get stored after signup.
+          public static func explanationMessage(_ p1: Int, _ p2: Any) -> String {
+            return L10n.tr("Localizable", "Scene.Register.Input.BirthDate.ExplanationMessage", p1, String(describing: p2), fallback: "We have to make sure you're at least %d to join %@. This won't get stored after signup.")
+          }
+          /// Date of Birth
+          public static let label = L10n.tr("Localizable", "Scene.Register.Input.BirthDate.Label", fallback: "Date of Birth")
+        }
         public enum DisplayName {
           /// display name
           public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.DisplayName.Placeholder", fallback: "display name")
