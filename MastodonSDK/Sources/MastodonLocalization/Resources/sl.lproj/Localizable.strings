@@ -467,6 +467,8 @@ Please retry in a few minutes.";
 "Scene.Register.Error.Special.UsernameInvalid" = "Uporabniško ime lahko vsebuje samo alfanumerične znake ter podčrtaje.";
 "Scene.Register.Error.Special.UsernameTooLong" = "Uporabniško ime je predolgo (ne more biti daljše od 30 znakov)";
 "Scene.Register.Input.Avatar.Delete" = "Izbriši";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "pojavno ime";
 "Scene.Register.Input.Email.Placeholder" = "e-pošta";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Zakaj se želite pridružiti?";

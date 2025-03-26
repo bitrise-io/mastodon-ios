@@ -467,6 +467,8 @@ Mur aontaich thu ris a’ phoileasaidh aig **%@**, rach air ais is tagh fritheal
 "Scene.Register.Error.Special.UsernameInvalid" = "Chan fhaod ach litrichean gun stràcan is fo-loidhnichean a bhith am broinn ainm-cleachdaiche";
 "Scene.Register.Error.Special.UsernameTooLong" = "Tha an t-ainm-cleachdaiche ro fhada (chan fhaod e a bhith nas fhaide na 30 caractar)";
 "Scene.Register.Input.Avatar.Delete" = "Sguab às";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "ainm-taisbeanaidh";
 "Scene.Register.Input.Email.Placeholder" = "post-d";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Carson a bu mhiann leat ballrachd fhaighinn?";

@@ -458,6 +458,8 @@ Als je niet akkoord gaat met het beleid voor **%@**, kun je teruggaan en een and
 "Scene.Register.Error.Special.UsernameInvalid" = "Een gebruikersnaam mag alleen alfanumerieke karakters en underscores bevatten";
 "Scene.Register.Error.Special.UsernameTooLong" = "De gebruikersnaam is te lang (het kan maximaal 30 karakters bevatten)";
 "Scene.Register.Input.Avatar.Delete" = "Verwijderen";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "weergavenaam";
 "Scene.Register.Input.Email.Placeholder" = "e-mail";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Waarom wil je je hier registreren?";

@@ -466,6 +466,8 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.Register.Error.Special.UsernameInvalid" = "Kullanıcı adı yalnızca alfasayısal karakterler ve alt çizgiler içerebilir";
 "Scene.Register.Error.Special.UsernameTooLong" = "Kullanıcı adı çok uzun (30 karakterden uzun olamaz)";
 "Scene.Register.Input.Avatar.Delete" = "Sil";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "görünen ad";
 "Scene.Register.Input.Email.Placeholder" = "e-posta";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Neden katılmak istiyorsun?";

@@ -466,6 +466,8 @@ Si no está de a cuerdo con la política de **%@**, puede volver atrás y elegir
 "Scene.Register.Error.Special.UsernameInvalid" = "El nombre de usuario solo puede contener caracteres alfanuméricos y guiones bajos";
 "Scene.Register.Error.Special.UsernameTooLong" = "El nombre de usuario es demasiado largo (no puede tener más de 30 caracteres)";
 "Scene.Register.Input.Avatar.Delete" = "Borrar";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "nombre a mostrar";
 "Scene.Register.Input.Email.Placeholder" = "correo electrónico";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "¿Por qué quieres unirte?";

@@ -467,6 +467,8 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.Register.Error.Special.UsernameInvalid" = "Användarnamnet kan bara innehålla alfanumeriska tecken och understreck";
 "Scene.Register.Error.Special.UsernameTooLong" = "Användarnamnet är för långt (kan inte vara längre än 30 tecken)";
 "Scene.Register.Input.Avatar.Delete" = "Radera";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "visningsnamn";
 "Scene.Register.Input.Email.Placeholder" = "e-post";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Varför vill du gå med?";

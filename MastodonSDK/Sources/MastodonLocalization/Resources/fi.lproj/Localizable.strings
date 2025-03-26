@@ -467,6 +467,8 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.Register.Error.Special.UsernameInvalid" = "Käyttäjänimi voi sisältää ainoastaan aakkosnumerrisia merkkejä ja alaviivoja";
 "Scene.Register.Error.Special.UsernameTooLong" = "Käyttäjänimi on liian pitkä (ei voi olla pidempi kuin 30 merkkiä)";
 "Scene.Register.Input.Avatar.Delete" = "Poista";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "näyttönimi";
 "Scene.Register.Input.Email.Placeholder" = "sähköposti";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Miksi haluat liittyä?";

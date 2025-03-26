@@ -466,6 +466,8 @@ Please retry in a few minutes.";
 "Scene.Register.Error.Special.UsernameInvalid" = "Імя карыстальніка павінна змяшчаць толькі літары, лічбы і знак падкрэслівання";
 "Scene.Register.Error.Special.UsernameTooLong" = "Імя карыстальніка занадта доўгае (не можа быць больш за 30 сімвалаў)";
 "Scene.Register.Input.Avatar.Delete" = "Выдаліць";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "бачнае імя";
 "Scene.Register.Input.Email.Placeholder" = "электронная пошта";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Чаму вы жадаеце далучыцца?";

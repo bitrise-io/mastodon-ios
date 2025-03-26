@@ -461,6 +461,8 @@
 "Scene.Register.Error.Special.UsernameInvalid" = "使用者名稱僅能包含英文字母數字以及底線";
 "Scene.Register.Error.Special.UsernameTooLong" = "使用者名稱太長了（不能超過 30 個字元）";
 "Scene.Register.Input.Avatar.Delete" = "刪除";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "我們必須確認您至少年滿 %d 以使用 %@。我們不會儲存此資料。";
+"Scene.Register.Input.BirthDate.Label" = "出生日期";
 "Scene.Register.Input.DisplayName.Placeholder" = "顯示名稱";
 "Scene.Register.Input.Email.Placeholder" = "電子郵件";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "為什麼想要加入呢？";

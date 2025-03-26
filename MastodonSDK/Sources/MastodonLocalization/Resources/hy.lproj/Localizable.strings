@@ -467,6 +467,8 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.Register.Error.Special.UsernameInvalid" = "Username must only contain alphanumeric characters and underscores";
 "Scene.Register.Error.Special.UsernameTooLong" = "Username is too long (can’t be longer than 30 characters)";
 "Scene.Register.Input.Avatar.Delete" = "Ջնջել";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "ցուցադրուող անուն";
 "Scene.Register.Input.Email.Placeholder" = "էլ. փոստ";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Why do you want to join?";

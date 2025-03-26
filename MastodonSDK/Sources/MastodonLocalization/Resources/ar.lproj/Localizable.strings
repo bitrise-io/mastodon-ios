@@ -467,6 +467,8 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.Register.Error.Special.UsernameInvalid" = "يُمكِن أن يحتوي اسم المستخدم على أحرف أبجدية، أرقام وشرطات سفلية فقط";
 "Scene.Register.Error.Special.UsernameTooLong" = "اِسم المُستَخدِم طويل جداً (يَجِبُ ألّا يكون أطول من ثلاثين خانة)";
 "Scene.Register.Input.Avatar.Delete" = "حذف";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "اِسمُ عَرض";
 "Scene.Register.Input.Email.Placeholder" = "بَريدٌ إلِكتُرُونِيّ";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "لماذا ترغب في الانضمام؟";

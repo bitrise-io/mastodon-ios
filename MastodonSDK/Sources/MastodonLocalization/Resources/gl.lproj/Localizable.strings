@@ -466,6 +466,8 @@ Se non estás de acordo coas condicións de **%@**, podes volver atrás e elixir
 "Scene.Register.Error.Special.UsernameInvalid" = "O nome de usuaria só pode ter caracteres alfanuméricos e trazos baixos";
 "Scene.Register.Error.Special.UsernameTooLong" = "O nome de usuaria é demasiado longo (maior de 30 caracteres)";
 "Scene.Register.Input.Avatar.Delete" = "Eliminar";
+"Scene.Register.Input.BirthDate.ExplanationMessage" = "We have to make sure you're at least %d to join %@. This won't get stored after signup.";
+"Scene.Register.Input.BirthDate.Label" = "Date of Birth";
 "Scene.Register.Input.DisplayName.Placeholder" = "nome público";
 "Scene.Register.Input.Email.Placeholder" = "email";
 "Scene.Register.Input.Invite.RegistrationUserInviteRequest" = "Por que queres unirte?";
