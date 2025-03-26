@@ -524,4 +524,5 @@ extension Mastodon.Entity.V2.Instance: RegistrationInstance {
     var minAge: Int? { return registrations?.minAge }
     var isBeyondVersion1: Bool { return true }
     var isOpenToNewRegistrations: Bool? { return registrations?.enabled }
+    var approvalRequired: Bool? { return registrations?.approvalRequired }
 }
