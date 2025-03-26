@@ -33,6 +33,12 @@ extension APIService {
     ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.V2.Instance>, Error> {
         return Mastodon.API.V2.Instance.instance(session: session, authorization: authenticationBox?.userAuthorization, domain: domain)
     }
+    public func instanceV2(
+        domain: String,
+        authenticationBox: MastodonAuthenticationBox?
+    ) async throws -> Mastodon.Entity.V2.Instance {
+        return try await Mastodon.API.V2.Instance.instance(session: session, authorization: authenticationBox?.userAuthorization, domain: domain)
+    }
 
     public func extendedDescription(
         domain: String,

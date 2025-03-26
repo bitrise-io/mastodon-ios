@@ -6,7 +6,7 @@ extension Mastodon.Entity.V2 {
     /// - Since: 4.0.0
     /// - Version: 4.0.3
     /// # Last Update
-    ///   2022/12/09
+    ///   2025/03/24
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/instance/)
     public struct Instance: Codable {
@@ -92,6 +92,12 @@ extension Mastodon.Entity.V2.Instance {
 extension Mastodon.Entity.V2.Instance {
     public struct Registrations: Codable {
         public let enabled: Bool
+        public let minAge: Int?
+        
+        enum CodingKeys: String, CodingKey {
+            case enabled
+            case minAge = "min_age"
+        }
     }
 }
 
