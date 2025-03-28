@@ -345,6 +345,7 @@ Please retry in a few minutes.";
 "Scene.Notification.GroupedNotificationDescription.MultiplePeopleBoosted" = "%@ boosted:";
 "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFavourited" = "%@ favorited:";
 "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFollowedYou" = "%@ followed you";
+"Scene.Notification.GroupedNotificationDescription.MultiplePeopleSignedUp" = "%@ new signups";
 "Scene.Notification.GroupedNotificationDescription.SingleNameBoosted" = "%@ boosted:";
 "Scene.Notification.GroupedNotificationDescription.SingleNameEditedAPost" = "%@ edited a post you interacted with";
 "Scene.Notification.GroupedNotificationDescription.SingleNameFavourited" = "%@ favorited:";

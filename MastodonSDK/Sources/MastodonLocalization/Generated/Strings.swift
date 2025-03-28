@@ -972,6 +972,10 @@ public enum L10n {
         public static func multiplePeopleFollowedYou(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFollowedYou", String(describing: p1), fallback: "%@ followed you")
         }
+        /// %@ new signups
+        public static func multiplePeopleSignedUp(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleSignedUp", String(describing: p1), fallback: "%@ new signups")
+        }
         /// %@ boosted:
         public static func singleNameBoosted(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameBoosted", String(describing: p1), fallback: "%@ boosted:")

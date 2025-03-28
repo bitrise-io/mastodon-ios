@@ -785,8 +785,12 @@ extension NotificationRowViewModel {
             } else if let primaryAccount {
                 return .profile(primaryAccount)
             }
-        case .followRequest, .adminSignUp:
+        case .followRequest:
             if let primaryAccount {
+                return .profile(primaryAccount)
+            }
+        case .adminSignUp:
+            if !isGrouped, let primaryAccount {
                 return .profile(primaryAccount)
             }
         case .adminReport:
