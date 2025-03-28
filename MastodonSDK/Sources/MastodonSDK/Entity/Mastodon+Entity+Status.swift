@@ -56,6 +56,8 @@ extension Mastodon.Entity {
         public let language: String?        //  (ISO 639 Part 1 two-letter language code)
         public let text: String?
         
+        public let filtered: [ServerFilterResult]?
+        
         // Authorized user
         public let favourited: Bool?
         public let reblogged: Bool?
@@ -94,6 +96,8 @@ extension Mastodon.Entity {
             case card
             case language
             case text
+            
+            case filtered
 
             case favourited
             case reblogged

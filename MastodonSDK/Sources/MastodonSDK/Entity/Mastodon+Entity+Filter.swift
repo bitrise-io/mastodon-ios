@@ -35,7 +35,7 @@ extension Mastodon.Entity {
         }
     }
     
-    public enum FilterAction: RawRepresentable, Codable {
+    public enum FilterAction: RawRepresentable, Codable, Sendable {
         public typealias RawValue = String
         case warn
         case hide
@@ -133,9 +133,9 @@ extension Mastodon.Entity {
     ///   2024/11/25
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/filter/)
-    public struct FilterV2: FilterInfo, Codable {
+    public struct FilterV2: FilterInfo, Codable, Sendable {
         
-        public struct FilterKeyword: Codable {
+        public struct FilterKeyword: Codable, Sendable {
             let id: String
             let keyword: String
             let wholeWord: Bool
@@ -199,7 +199,7 @@ extension Mastodon.Entity {
 }
 
 extension Mastodon.Entity {
-    public enum FilterContext: RawRepresentable, Codable, Hashable {
+    public enum FilterContext: RawRepresentable, Codable, Hashable, Sendable {
         case home
         case notifications
         case `public`
