@@ -1277,6 +1277,7 @@
 				GroupedNotificationFeedLoader.swift,
 				InlinePostPreview.swift,
 				LastReadMarkers.swift,
+				MastodonPost.swift,
 				NotificationInfo.swift,
 				NotificationListViewController.swift,
 				NotificationRowView.swift,
