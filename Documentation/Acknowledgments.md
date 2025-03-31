@@ -3,7 +3,6 @@
 - [Alamofire](https://github.com/Alamofire/Alamofire)
 - [AlamofireImage](https://github.com/Alamofire/AlamofireImage)
 - [AlamofireNetworkActivityIndicator](https://github.com/Alamofire/AlamofireNetworkActivityIndicator)
-- [Arkana](https://github.com/rogerluan/arkana)
 - [CommonOSLog](https://github.com/mainasuk/CommonOSLog)
 - [CryptoSwift](https://github.com/krzyzanowskim/CryptoSwift)
 - [DateToolSwift](https://github.com/MatthewYork/DateTools)

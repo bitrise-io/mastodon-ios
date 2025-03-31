@@ -34,7 +34,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(name: "ArkanaKeys", path: "../dependencies/ArkanaKeys"),
         .package(url: "https://github.com/will-lumley/FaviconFinder.git", from: "4.5.0"),
         .package(url: "https://github.com/MainasuK/UITextView-Placeholder.git", from: "1.4.1"),
         .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.4.0"),
@@ -89,7 +88,6 @@ let package = Package(
                 "MastodonSDK",
                 .product(name: "Alamofire", package: "Alamofire"),
                 .product(name: "AlamofireImage", package: "AlamofireImage"),
-                .product(name: "ArkanaKeys", package: "ArkanaKeys"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
                 .product(name: "MetaTextKit", package: "MetaTextKit")
             ]

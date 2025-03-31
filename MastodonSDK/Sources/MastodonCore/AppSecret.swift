@@ -35,10 +35,8 @@ public final class AppSecret {
     
     init() {
         #if DEBUG
-        //let keys = Keys.Debug()
-        self.notificationEndpoint = "https://app.joinmastodon.org/relay-to/production"
+        self.notificationEndpoint = "https://app.joinmastodon.org/relay-to/development"
         #else
-        //let keys = Keys.Release()
         self.notificationEndpoint = "https://app.joinmastodon.org/relay-to/production"
         #endif
     }
