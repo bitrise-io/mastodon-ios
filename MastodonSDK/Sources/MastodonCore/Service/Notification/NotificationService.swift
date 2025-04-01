@@ -331,7 +331,7 @@ extension NotificationService {
     }
     
     private func updatePushNotificationSubscription(_ subscriptionObjectID: NSManagedObjectID, for userAuthBox: MastodonAuthenticationBox, policy: Mastodon.API.Subscriptions.QueryData.Policy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts) async throws {
-        guard case let .registrationTokenReceived(deviceToken) = registrationStatus.value else { return }
+        guard let deviceToken = registrationStatus.value.deviceToken else { return }
         let queryData = Mastodon.API.Subscriptions.QueryData(policy: policy, alerts: alerts)
         let query = NotificationService.createSubscribeQuery(
             deviceToken: deviceToken,
