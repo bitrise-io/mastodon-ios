@@ -68,7 +68,7 @@ extension AppDelegate {
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-        NotificationService.shared.registrationStatus.send(.error(error))
+        NotificationService.shared.registrationStatus.send(.errorRegisteringWithAPNS(error))
     }
 }
 

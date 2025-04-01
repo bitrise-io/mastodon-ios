@@ -18,8 +18,19 @@ public final class NotificationService {
     
     public enum PushNotificationRegistrationStatus {
         case registering
-        case error(Error)
+        case errorRegisteringWithAPNS(Error)
         case registrationTokenReceived(Data)
+        case subscriptionsUpdated(deviceToken: Data, subscribedAccounts: [String])
+        case errorUpdatingSubscriptions(Error, deviceToken: Data)
+        
+        var deviceToken: Data? {
+            switch self {
+            case .registering, .errorRegisteringWithAPNS(_):
+                return nil
+            case .registrationTokenReceived(let token), .subscriptionsUpdated(let token, _), .errorUpdatingSubscriptions(_, let token):
+                return token
+            }
+        }
     }
     
     public static let shared = { NotificationService() }()
@@ -53,9 +64,14 @@ public final class NotificationService {
                 switch (auth, registrationStatus) {
                 case (nil, _):
                     break
-                case (_, .registrationTokenReceived):
+                case (_, .registrationTokenReceived), (_, .errorUpdatingSubscriptions):
                     self.requestNotificationPermissionAndUpdateSubscriptions()
-                case (_, .registering), (_, .error):
+                case (_, .subscriptionsUpdated(_, let subscribedAccounts)):
+                    guard let userIdentifier = auth?.globallyUniqueUserIdentifier else { return }
+                    if !subscribedAccounts.contains(userIdentifier) {
+                        self.requestNotificationPermissionAndUpdateSubscriptions()
+                    }
+                case (_, .registering), (_, .errorRegisteringWithAPNS):
                     break
                 }
             })
@@ -95,11 +111,14 @@ extension NotificationService {
             guard self.isNotificationPermissionGranted.value != granted else { return }
             self.isNotificationPermissionGranted.value = granted
             switch (granted, registrationStatus.value) {
-            case (true, .registrationTokenReceived(let token)):
+            case (true, .registrationTokenReceived), (true, .errorUpdatingSubscriptions), (true, .subscriptionsUpdated):
+                guard let token = registrationStatus.value.deviceToken else { return }
                 Task {
                     await self.updatePushNotificationSubscriptions(deviceToken: token)
                 }
-            case (true, .error), (true, .registering):
+            case (true, .errorRegisteringWithAPNS):
+                UIApplication.shared.registerForRemoteNotifications()
+            case (true, .registering):
                 break
             case (false, _):
                 break
@@ -252,11 +271,14 @@ extension NotificationService {
 
 extension NotificationService {
     private func updatePushNotificationSubscriptions(deviceToken: Data) async {
-        do {
-            for userAuthBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
-                guard let setting = SettingService.shared.setting(for: userAuthBox) else { continue }
-                guard let subscription = setting.activeSubscription else { continue }
-                
+        
+        var accountsSubscribed = [String]()
+        var hasNewError = false
+        for userAuthBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
+            guard let setting = SettingService.shared.setting(for: userAuthBox) else { continue }
+            guard let subscription = setting.activeSubscription else { continue }
+            
+            do {
                 let queryData = Mastodon.API.Subscriptions.QueryData(
                     policy: subscription.policy,
                     alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
@@ -281,9 +303,21 @@ extension NotificationService {
                     )
                 }
                 let _ = try await createSubscriptionTask.value
+                accountsSubscribed.append(userAuthBox.globallyUniqueUserIdentifier)
+            } catch {
+                assertionFailure("error creating push notification subscription")
+                registrationStatus.send(.errorUpdatingSubscriptions(error, deviceToken: deviceToken))
+                hasNewError = true
+                do {
+                    try await Task.sleep(nanoseconds: 3 * UInt64.nanosPerUnit)
+                } catch {
+                }
             }
-        } catch {
-            assertionFailure("error creating push notification subscription")
+        }
+        if accountsSubscribed.isEmpty && hasNewError {
+            return
+        } else {
+            registrationStatus.send(.subscriptionsUpdated(deviceToken: deviceToken, subscribedAccounts: accountsSubscribed))
         }
     }
     
