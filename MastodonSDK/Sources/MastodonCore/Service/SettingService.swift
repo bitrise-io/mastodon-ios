@@ -66,62 +66,11 @@ public final class SettingService {
         .sink { [weak self] mastodonAuthenticationBoxes, settings in
             guard let self = self else { return }
             guard let activeMastodonAuthenticationBox = mastodonAuthenticationBoxes.first else { return }
-            let currentSetting = settings.first(where: { setting in
-                return setting.domain == activeMastodonAuthenticationBox.domain
-                    && setting.userID == activeMastodonAuthenticationBox.userID
-            })
+            let currentSetting = setting(for: activeMastodonAuthenticationBox)
             self.currentSetting.value = currentSetting
         }
         .store(in: &disposeBag)
-        
-        Publishers.CombineLatest3(
-            notificationService.deviceToken,
-            currentSetting.eraseToAnyPublisher(),
-            AuthenticationServiceProvider.shared.$mastodonAuthenticationBoxes
-        )
-        .compactMap { [weak self] deviceToken, setting, mastodonAuthenticationBoxes -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Subscription>, Error>? in
-            guard let self = self else { return nil }
-            guard let deviceToken = deviceToken else { return nil }
-            guard let setting = setting else { return nil }
-            guard let authenticationBox = mastodonAuthenticationBoxes.first else { return nil }
-            
-            guard let subscription = setting.activeSubscription else { return nil }
-            
-            guard setting.domain == authenticationBox.domain,
-                  setting.userID == authenticationBox.userID else { return nil }
-            
-            let _viewModel = notificationService.dequeueNotificationViewModel(
-                mastodonAuthenticationBox: authenticationBox
-            )
-            guard let viewModel = _viewModel else { return nil }
-            let queryData = Mastodon.API.Subscriptions.QueryData(
-                policy: subscription.policy,
-                alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
-                    favourite: subscription.alert.favourite,
-                    follow: subscription.alert.follow,
-                    reblog: subscription.alert.reblog,
-                    mention: subscription.alert.mention,
-                    poll: subscription.alert.poll
-                )
-            )
-            let query = viewModel.createSubscribeQuery(
-                deviceToken: deviceToken,
-                queryData: queryData,
-                mastodonAuthenticationBox: authenticationBox
-            )
-    
-            return apiService.createSubscription(
-                subscriptionObjectID: subscription.objectID,
-                query: query,
-                mastodonAuthenticationBox: authenticationBox
-            )
-        }
-        .debounce(for: .seconds(3), scheduler: DispatchQueue.main)      // limit subscribe request emit time interval
-        .sink(receiveValue: { _ in
-        })
-        .store(in: &disposeBag)
     }
-    
 }
 
 extension SettingService {
@@ -136,5 +85,14 @@ extension SettingService {
         let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         return alertController
+    }
+}
+
+extension SettingService {
+    public func setting(for userAuthBox: MastodonAuthenticationBox) -> Setting? {
+        return settingFetchedResultController.settings.value.first(where: { setting in
+            return setting.domain == userAuthBox.domain
+            && setting.userID == userAuthBox.userID
+        })
     }
 }

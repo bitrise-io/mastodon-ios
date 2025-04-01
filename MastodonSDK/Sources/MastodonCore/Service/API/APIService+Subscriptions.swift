@@ -13,43 +13,39 @@ import MastodonSDK
 
 extension APIService {
  
-    public func createSubscription(
+    public func subscribeToPushNotifications(
         subscriptionObjectID: NSManagedObjectID,
         query: Mastodon.API.Subscriptions.CreateSubscriptionQuery,
         mastodonAuthenticationBox: MastodonAuthenticationBox
-    ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Subscription>, Error> {
+    ) async throws -> Mastodon.Entity.Subscription {
         let authorization = mastodonAuthenticationBox.userAuthorization
         let domain = mastodonAuthenticationBox.domain
         
-        return Mastodon.API.Subscriptions.createSubscription(
+        let responseContent = try await Mastodon.API.Subscriptions.createSubscription(
             session: session,
             domain: domain,
             authorization: authorization,
             query: query
         )
-        .flatMap { response -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Subscription>, Error> in
-            let managedObjectContext = self.backgroundManagedObjectContext
-            return managedObjectContext.performChanges {
-                guard let subscription = managedObjectContext.object(with: subscriptionObjectID) as? NotificationSubscription else {
-                    assertionFailure()
-                    return
-                }
-
-                subscription.alert.update(favourite: response.value.alerts.favourite)
-                subscription.alert.update(reblog: response.value.alerts.reblog)
-                subscription.alert.update(follow: response.value.alerts.follow)
-                subscription.alert.update(mention: response.value.alerts.mention)
-
-                subscription.endpoint = response.value.endpoint
-                subscription.serverKey = response.value.serverKey
-                subscription.userToken = authorization.accessToken
-                subscription.didUpdate(at: response.networkDate)
+        
+        let newSubscription = responseContent.value
+        let managedObjectContext = self.backgroundManagedObjectContext
+        try await managedObjectContext.performChanges {
+            guard let subscription = managedObjectContext.object(with: subscriptionObjectID) as? NotificationSubscription else {
+                assertionFailure()
+                return
             }
-            .setFailureType(to: Error.self)
-            .map { _ in return response }
-            .eraseToAnyPublisher()
+            subscription.alert.update(favourite: newSubscription.alerts.favourite)
+            subscription.alert.update(reblog: newSubscription.alerts.reblog)
+            subscription.alert.update(follow: newSubscription.alerts.follow)
+            subscription.alert.update(mention: newSubscription.alerts.mention)
+            
+            subscription.endpoint = newSubscription.endpoint
+            subscription.serverKey = newSubscription.serverKey
+            subscription.userToken = authorization.accessToken
+            subscription.didUpdate(at: responseContent.networkDate)
         }
-        .eraseToAnyPublisher()
+        return newSubscription
     }
     
     func cancelSubscription(

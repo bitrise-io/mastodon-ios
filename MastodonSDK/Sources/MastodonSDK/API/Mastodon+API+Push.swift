@@ -61,24 +61,21 @@ extension Mastodon.API.Subscriptions {
     ///   - session: `URLSession`
     ///   - domain: Mastodon instance domain. e.g. "example.com"
     ///   - authorization: User token. Could be nil if status is public
-    /// - Returns: `AnyPublisher` contains `Subscription` nested in the response
+    /// - Returns: `Subscription`
     public static func createSubscription(
         session: URLSession,
         domain: String,
         authorization: Mastodon.API.OAuth.Authorization,
         query: CreateSubscriptionQuery
-    ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Subscription>, Error>  {
+    ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Subscription> {
         let request = Mastodon.API.post(
             url: pushEndpointURL(domain: domain),
             query: query,
             authorization: authorization
         )
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response in
-                let value = try Mastodon.API.decode(type: Mastodon.Entity.Subscription.self, from: data, response: response)
-                return Mastodon.Response.Content(value: value, response: response)
-            }
-            .eraseToAnyPublisher()
+        let (data, response) = try await session.data(for: request)
+        let value = try Mastodon.API.decode(type: Mastodon.Entity.Subscription.self, from: data, response: response)
+        return Mastodon.Response.Content(value: value, response: response)
     }
     
     /// Change types of notifications

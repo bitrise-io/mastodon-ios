@@ -16,6 +16,12 @@ import MastodonLocalization
 @MainActor
 public final class NotificationService {
     
+    public enum PushNotificationRegistrationStatus {
+        case registering
+        case error(Error)
+        case registrationTokenReceived(Data)
+    }
+    
     public static let shared = { NotificationService() }()
     
     public static let unreadShortcutItemIdentifier = "org.joinmastodon.app.NotificationService.unread-shortcut"
@@ -25,8 +31,8 @@ public final class NotificationService {
     let workingQueue = DispatchQueue(label: "org.joinmastodon.app.NotificationService.working-queue")
     
     // input
+    public let registrationStatus = CurrentValueSubject<PushNotificationRegistrationStatus, Never>(.registering)
     public let isNotificationPermissionGranted = CurrentValueSubject<Bool, Never>(false)
-    public let deviceToken = CurrentValueSubject<Data?, Never>(nil)
     public let applicationIconBadgeNeedsUpdate = CurrentValueSubject<Void, Never>(Void())
         
     // output
@@ -36,13 +42,22 @@ public final class NotificationService {
     public let requestRevealNotificationPublisher = PassthroughSubject<MastodonPushNotification, Never>()
     
     private init() {
-        AuthenticationServiceProvider.shared.currentActiveUser
-            .sink(receiveValue: { [weak self] auth in
+        Publishers.CombineLatest(
+            AuthenticationServiceProvider.shared.currentActiveUser,
+            registrationStatus
+            )
+            .sink(receiveValue: { [weak self] auth, registrationStatus in
                 guard let self = self else { return }
                 
                 // request permission when sign-in
-                guard auth != nil else { return }
-                self.requestNotificationPermission()
+                switch (auth, registrationStatus) {
+                case (nil, _):
+                    break
+                case (_, .registrationTokenReceived):
+                    self.requestNotificationPermissionAndUpdateSubscriptions()
+                case (_, .registering), (_, .error):
+                    break
+                }
             })
             .store(in: &disposeBag)
         
@@ -73,18 +88,22 @@ public final class NotificationService {
 }
 
 extension NotificationService {
-    private func requestNotificationPermission() {
+    private func requestNotificationPermissionAndUpdateSubscriptions() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
             guard let self = self else { return }
-
+            guard self.isNotificationPermissionGranted.value != granted else { return }
             self.isNotificationPermissionGranted.value = granted
-            
-            if let _ = error {
-                // Handle the error here.
+            switch (granted, registrationStatus.value) {
+            case (true, .registrationTokenReceived(let token)):
+                Task {
+                    await self.updatePushNotificationSubscriptions(deviceToken: token)
+                }
+            case (true, .error), (true, .registering):
+                break
+            case (false, _):
+                break
             }
-            
-            // Enable or disable features based on the authorization.
         }
     }
 }
@@ -169,7 +188,7 @@ extension NotificationService {
     private func fetchLatestNotifications(
         pushNotification: MastodonPushNotification
     ) async throws {
-        guard let authenticationBox = try await authenticationBox(for: pushNotification) else { return }
+        guard let authenticationBox = authenticationBox(for: pushNotification) else { return }
         
         _ = try await APIService.shared.notifications(
             olderThan: nil,
@@ -231,6 +250,62 @@ extension NotificationService {
     
 }
 
+extension NotificationService {
+    private func updatePushNotificationSubscriptions(deviceToken: Data) async {
+        do {
+            for userAuthBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
+                guard let setting = SettingService.shared.setting(for: userAuthBox) else { continue }
+                guard let subscription = setting.activeSubscription else { continue }
+                
+                let queryData = Mastodon.API.Subscriptions.QueryData(
+                    policy: subscription.policy,
+                    alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
+                        favourite: subscription.alert.favourite,
+                        follow: subscription.alert.follow,
+                        reblog: subscription.alert.reblog,
+                        mention: subscription.alert.mention,
+                        poll: subscription.alert.poll
+                    )
+                )
+                let query = NotificationService.createSubscribeQuery(
+                    deviceToken: deviceToken,
+                    queryData: queryData,
+                    mastodonAuthenticationBox: userAuthBox
+                )
+                
+                let createSubscriptionTask = Task {
+                    try await APIService.shared.subscribeToPushNotifications(
+                        subscriptionObjectID: subscription.objectID,
+                        query: query,
+                        mastodonAuthenticationBox: userAuthBox
+                    )
+                }
+                let _ = try await createSubscriptionTask.value
+            }
+        } catch {
+            assertionFailure("error creating push notification subscription")
+        }
+    }
+    
+    public func updatePushNotificationSubscription(_ subscriptionObjectID: NSManagedObjectID, for userAuthBox: MastodonAuthenticationBox, policy: Mastodon.API.Subscriptions.QueryData.Policy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts) {
+        guard case let .registrationTokenReceived(deviceToken) = registrationStatus.value else { return }
+        let queryData = Mastodon.API.Subscriptions.QueryData(policy: policy, alerts: alerts)
+        let query = NotificationService.createSubscribeQuery(
+            deviceToken: deviceToken,
+            queryData: queryData,
+            mastodonAuthenticationBox: userAuthBox
+        )
+       
+        Task {
+            let _ = try await APIService.shared.subscribeToPushNotifications(
+                subscriptionObjectID: subscriptionObjectID,
+                query: query,
+                mastodonAuthenticationBox: userAuthBox
+            )
+        }
+    }
+}
+
 // MARK: - NotificationViewModel
 
 extension NotificationService {
@@ -251,8 +326,8 @@ extension NotificationService {
     }
 }
 
-extension NotificationService.NotificationViewModel {
-    public func createSubscribeQuery(
+extension NotificationService {
+    public static func createSubscribeQuery(
         deviceToken: Data,
         queryData: Mastodon.API.Subscriptions.QueryData,
         mastodonAuthenticationBox: MastodonAuthenticationBox

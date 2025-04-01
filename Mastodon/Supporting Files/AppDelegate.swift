@@ -64,7 +64,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        NotificationService.shared.deviceToken.value = deviceToken
+        NotificationService.shared.registrationStatus.send(.registrationTokenReceived(deviceToken))
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
+        NotificationService.shared.registrationStatus.send(.error(error))
     }
 }
 
