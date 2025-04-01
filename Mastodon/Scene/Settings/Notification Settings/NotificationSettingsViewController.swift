@@ -87,7 +87,11 @@ class NotificationSettingsViewController: UIViewController {
         view.addSubview(tableView)
         tableView.pinToParent()
 
-        title = L10n.Scene.Settings.Notifications.title
+        if AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes.count > 1, let username = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount?.acctWithDomain {
+            title = username
+        } else {
+            title = L10n.Scene.Settings.Notifications.title
+        }
         
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
