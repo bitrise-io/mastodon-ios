@@ -1,8 +1,10 @@
 // Copyright © 2023 Mastodon gGmbH. All rights reserved.
 
 import UIKit
+import Combine
 import CoreDataStack
 import MastodonLocalization
+import MastodonCore
 
 protocol NotificationSettingsViewControllerDelegate: AnyObject {
     func viewWillDisappear(_ viewController: UIViewController, viewModel: NotificationSettingsViewModel)
@@ -16,11 +18,15 @@ class NotificationSettingsViewController: UIViewController {
 
     let tableView: UITableView
     var tableViewDataSource: UITableViewDiffableDataSource<NotificationSettingsSection, NotificationSettingEntry>?
+    
+    var isNotificationPermissionGranted = NotificationService.shared.isNotificationPermissionGranted.value
 
-    let sections: [NotificationSettingsSection]
+    var sections: [NotificationSettingsSection] = []
     var viewModel: NotificationSettingsViewModel
+    
+    var disposeBag = Set<AnyCancellable>()
 
-    init(currentSetting: Setting?, notificationsEnabled: Bool) {
+    init(currentSetting: Setting?) {
         let activeSubscription = currentSetting?.activeSubscription
         let alert = activeSubscription?.alert
         viewModel = NotificationSettingsViewModel(selectedPolicy: activeSubscription?.notificationPolicy ?? .noone,
@@ -29,27 +35,21 @@ class NotificationSettingsViewController: UIViewController {
                                                   notifyFavorites: alert?.favourite ?? false,
                                                   notifyNewFollowers: alert?.follow ?? false)
 
-        if notificationsEnabled {
-            sections = [
-                NotificationSettingsSection(entries: [.policy]),
-                NotificationSettingsSection(entries: NotificationAlert.allCases.map { NotificationSettingEntry.alert($0) } )
-            ]
-        } else {
-            sections = [
-                NotificationSettingsSection(entries: [.notificationDisabled]),
-                NotificationSettingsSection(entries: [.policy]),
-                NotificationSettingsSection(entries: NotificationAlert.allCases.map { NotificationSettingEntry.alert($0) } )
-            ]
-        }
-
         tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.register(NotificationSettingTableViewCell.self, forCellReuseIdentifier: NotificationSettingTableViewCell.reuseIdentifier)
         tableView.register(NotificationSettingTableViewToggleCell.self, forCellReuseIdentifier: NotificationSettingTableViewToggleCell.reuseIdentifier)
         tableView.register(NotificationSettingsDisabledTableViewCell.self, forCellReuseIdentifier: NotificationSettingsDisabledTableViewCell.reuseIdentifier)
-
+        
         super.init(nibName: nil, bundle: nil)
-
+        
+        NotificationService.shared.isNotificationPermissionGranted
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] granted in
+                self?.reloadTableview(notificationsAllowed: granted)
+            }
+            .store(in: &disposeBag)
+        
         let tableViewDataSource = UITableViewDiffableDataSource<NotificationSettingsSection, NotificationSettingEntry>(tableView: tableView) { [ weak self] tableView, indexPath, itemIdentifier in
 
             let cell: UITableViewCell
@@ -64,14 +64,14 @@ class NotificationSettingsViewController: UIViewController {
                     guard let self,
                           let notificationCell = tableView.dequeueReusableCell(withIdentifier: NotificationSettingTableViewCell.reuseIdentifier, for: indexPath) as? NotificationSettingTableViewCell else { fatalError("WTF Wrong cell!?") }
 
-                    notificationCell.configure(with: .policy, viewModel: self.viewModel, notificationsEnabled: notificationsEnabled)
+                    notificationCell.configure(with: .policy, viewModel: self.viewModel, notificationsEnabled: isNotificationPermissionGranted)
                     cell = notificationCell
 
                 case .alert(let alert):
                     guard let self,
                           let toggleCell = tableView.dequeueReusableCell(withIdentifier: NotificationSettingTableViewToggleCell.reuseIdentifier, for: indexPath) as? NotificationSettingTableViewToggleCell else { fatalError("WTF Wrong cell!?") }
                     
-                    toggleCell.configure(with: alert, viewModel: self.viewModel, notificationsEnabled: notificationsEnabled)
+                    toggleCell.configure(with: alert, viewModel: self.viewModel, notificationsEnabled: isNotificationPermissionGranted)
                 toggleCell.delegate = self
                 cell = toggleCell
             }
@@ -88,35 +88,61 @@ class NotificationSettingsViewController: UIViewController {
         tableView.pinToParent()
 
         title = L10n.Scene.Settings.Notifications.title
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
     
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        var snapshot = NSDiffableDataSourceSnapshot<NotificationSettingsSection, NotificationSettingEntry>()
-
-        for section in sections {
-            snapshot.appendSections([section])
-            snapshot.appendItems(section.entries)
-        }
-
-        tableViewDataSource?.apply(snapshot, animatingDifferences: false)
+        reloadTableview(notificationsAllowed: isNotificationPermissionGranted)
+        checkIfPermissionGranted()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        if let snapshot = tableViewDataSource?.snapshot() {
-            tableViewDataSource?.applySnapshotUsingReloadData(snapshot)
-        }
+        checkIfPermissionGranted()
+    }
+    
+    @objc func willEnterForeground() {
+        checkIfPermissionGranted()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         delegate?.viewWillDisappear(self, viewModel: viewModel)
+    }
+    
+    func checkIfPermissionGranted() {
+        NotificationService.shared.requestUpdate(.allAccounts)
+    }
+    
+    func reloadTableview(notificationsAllowed: Bool) {
+        guard viewIfLoaded != nil else { return }
+        isNotificationPermissionGranted = notificationsAllowed
+        if notificationsAllowed {
+            sections = [
+                NotificationSettingsSection(entries: [.policy]),
+                NotificationSettingsSection(entries: NotificationAlert.allCases.map { NotificationSettingEntry.alert($0) } )
+            ]
+        } else {
+            sections = [
+                NotificationSettingsSection(entries: [.notificationDisabled]),
+                NotificationSettingsSection(entries: [.policy]),
+                NotificationSettingsSection(entries: NotificationAlert.allCases.map { NotificationSettingEntry.alert($0) } )
+            ]
+        }
+        
+        var snapshot = NSDiffableDataSourceSnapshot<NotificationSettingsSection, NotificationSettingEntry>()
+        
+        for section in sections {
+            snapshot.appendSections([section])
+            snapshot.appendItems(section.entries)
+        }
+        
+        tableViewDataSource?.applySnapshotUsingReloadData(snapshot)
     }
 }
 

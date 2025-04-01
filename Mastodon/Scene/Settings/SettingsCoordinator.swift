@@ -85,9 +85,8 @@ extension SettingsCoordinator: SettingsViewControllerDelegate {
                 navigationController.pushViewController(generalSettingsViewController, animated: true)
             case .notifications:
 
-            let currentSetting = SettingService.shared.currentSetting.value
-            let notificationsEnabled = NotificationService.shared.isNotificationPermissionGranted.value
-                let notificationViewController = NotificationSettingsViewController(currentSetting: currentSetting, notificationsEnabled: notificationsEnabled)
+                let currentSetting = SettingService.shared.currentSetting.value
+                let notificationViewController = NotificationSettingsViewController(currentSetting: currentSetting)
                 notificationViewController.delegate = self
 
                 navigationController.pushViewController(notificationViewController, animated: true)
@@ -220,13 +219,14 @@ extension SettingsCoordinator: NotificationSettingsViewControllerDelegate {
               setting.domain == authenticationBox.domain,
               setting.userID == authenticationBox.userID else { return }
 
-        NotificationService.shared.updatePushNotificationSubscription(subscription.objectID, for: authenticationBox, policy:  viewModel.selectedPolicy.subscriptionPolicy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
-            favourite: viewModel.notifyFavorites,
-            follow: viewModel.notifyNewFollowers,
-            reblog: viewModel.notifyBoosts,
-            mention: viewModel.notifyMentions,
-            poll: subscription.alert.poll
-        )
+        NotificationService.shared.requestUpdate(
+            .singleAccount(subscriptionObjectID: subscription.objectID, userAuthBox: authenticationBox, policy:  viewModel.selectedPolicy.subscriptionPolicy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
+                favourite: viewModel.notifyFavorites,
+                follow: viewModel.notifyNewFollowers,
+                reblog: viewModel.notifyBoosts,
+                mention: viewModel.notifyMentions,
+                poll: subscription.alert.poll)
+            )
         )
     }
     

@@ -16,6 +16,11 @@ import MastodonLocalization
 @MainActor
 public final class NotificationService {
     
+    public enum UpdateOperation {
+        case allAccounts
+        case singleAccount(subscriptionObjectID: NSManagedObjectID, userAuthBox: MastodonAuthenticationBox, policy: Mastodon.API.Subscriptions.QueryData.Policy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts)
+    }
+    
     public enum PushNotificationRegistrationStatus {
         case registering
         case errorRegisteringWithAPNS(Error)
@@ -37,9 +42,17 @@ public final class NotificationService {
     
     public static let unreadShortcutItemIdentifier = "org.joinmastodon.app.NotificationService.unread-shortcut"
     
-    var disposeBag = Set<AnyCancellable>()
+    private var disposeBag = Set<AnyCancellable>()
     
-    let workingQueue = DispatchQueue(label: "org.joinmastodon.app.NotificationService.working-queue")
+    private let workingQueue = DispatchQueue(label: "org.joinmastodon.app.NotificationService.working-queue")
+    private var subscriptionUpdateQueue = [UpdateOperation]()
+    private var currentUpdateInProgress: UpdateOperation? = nil {
+        didSet {
+            if currentUpdateInProgress == nil {
+                doNextUpdate()
+            }
+        }
+    }
     
     // input
     public let registrationStatus = CurrentValueSubject<PushNotificationRegistrationStatus, Never>(.registering)
@@ -65,11 +78,11 @@ public final class NotificationService {
                 case (nil, _):
                     break
                 case (_, .registrationTokenReceived), (_, .errorUpdatingSubscriptions):
-                    self.requestNotificationPermissionAndUpdateSubscriptions()
+                    self.requestUpdate(.allAccounts)
                 case (_, .subscriptionsUpdated(_, let subscribedAccounts)):
                     guard let userIdentifier = auth?.globallyUniqueUserIdentifier else { return }
                     if !subscribedAccounts.contains(userIdentifier) {
-                        self.requestNotificationPermissionAndUpdateSubscriptions()
+                        self.requestUpdate(.allAccounts)
                     }
                 case (_, .registering), (_, .errorRegisteringWithAPNS):
                     break
@@ -104,25 +117,21 @@ public final class NotificationService {
 }
 
 extension NotificationService {
-    private func requestNotificationPermissionAndUpdateSubscriptions() {
+    private func requestNotificationPermissionAndUpdateSubscriptions() async throws {
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
-            guard let self = self else { return }
-            guard self.isNotificationPermissionGranted.value != granted else { return }
-            self.isNotificationPermissionGranted.value = granted
-            switch (granted, registrationStatus.value) {
-            case (true, .registrationTokenReceived), (true, .errorUpdatingSubscriptions), (true, .subscriptionsUpdated):
-                guard let token = registrationStatus.value.deviceToken else { return }
-                Task {
-                    await self.updatePushNotificationSubscriptions(deviceToken: token)
-                }
-            case (true, .errorRegisteringWithAPNS):
-                UIApplication.shared.registerForRemoteNotifications()
-            case (true, .registering):
-                break
-            case (false, _):
-                break
-            }
+        let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+        guard isNotificationPermissionGranted.value != granted else { return }
+        isNotificationPermissionGranted.value = granted
+        switch (granted, registrationStatus.value) {
+        case (true, .registrationTokenReceived), (true, .errorUpdatingSubscriptions), (true, .subscriptionsUpdated):
+            guard let token = registrationStatus.value.deviceToken else { return }
+            await updatePushNotificationSubscriptions(deviceToken: token)
+        case (true, .errorRegisteringWithAPNS):
+            UIApplication.shared.registerForRemoteNotifications()
+        case (true, .registering):
+            break
+        case (false, _):
+            break
         }
     }
 }
@@ -321,7 +330,7 @@ extension NotificationService {
         }
     }
     
-    public func updatePushNotificationSubscription(_ subscriptionObjectID: NSManagedObjectID, for userAuthBox: MastodonAuthenticationBox, policy: Mastodon.API.Subscriptions.QueryData.Policy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts) {
+    private func updatePushNotificationSubscription(_ subscriptionObjectID: NSManagedObjectID, for userAuthBox: MastodonAuthenticationBox, policy: Mastodon.API.Subscriptions.QueryData.Policy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts) async throws {
         guard case let .registrationTokenReceived(deviceToken) = registrationStatus.value else { return }
         let queryData = Mastodon.API.Subscriptions.QueryData(policy: policy, alerts: alerts)
         let query = NotificationService.createSubscribeQuery(
@@ -329,13 +338,37 @@ extension NotificationService {
             queryData: queryData,
             mastodonAuthenticationBox: userAuthBox
         )
-       
-        Task {
-            let _ = try await APIService.shared.subscribeToPushNotifications(
-                subscriptionObjectID: subscriptionObjectID,
-                query: query,
-                mastodonAuthenticationBox: userAuthBox
-            )
+        let _ = try await APIService.shared.subscribeToPushNotifications(
+            subscriptionObjectID: subscriptionObjectID,
+            query: query,
+            mastodonAuthenticationBox: userAuthBox
+        )
+    }
+}
+
+extension NotificationService {
+    public func requestUpdate(_ updateOperation: UpdateOperation) {
+        subscriptionUpdateQueue.append(updateOperation)
+        doNextUpdate()
+    }
+    
+    private func doNextUpdate() {
+        guard currentUpdateInProgress == nil else { return }
+        guard !subscriptionUpdateQueue.isEmpty else { return }
+        currentUpdateInProgress = subscriptionUpdateQueue.removeFirst()
+        switch currentUpdateInProgress {
+        case .allAccounts:
+            Task {
+                try? await requestNotificationPermissionAndUpdateSubscriptions()
+                currentUpdateInProgress = nil
+            }
+        case let .singleAccount(subscriptionObjectID, userAuthBox, policy, alerts):
+            Task {
+                try? await updatePushNotificationSubscription(subscriptionObjectID, for: userAuthBox, policy: policy, alerts: alerts)
+                currentUpdateInProgress = nil
+            }
+        case nil:
+            break
         }
     }
 }
