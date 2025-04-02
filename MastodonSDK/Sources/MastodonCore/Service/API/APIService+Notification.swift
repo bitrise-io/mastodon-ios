@@ -73,7 +73,7 @@ extension APIService {
         switch scope {
         case .everything:
             types = nil
-            excludedTypes = nil
+            excludedTypes = [.adminReport, .adminSignUp]
         case .mentions:
             types = [.mention]
             excludedTypes = [.follow, .followRequest, .reblog, .favourite, .poll]
