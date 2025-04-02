@@ -375,6 +375,7 @@ Please retry in a few minutes.";
 "Scene.Notification.Headers.Status" = "Post";
 "Scene.Notification.Keyobard.ShowEverything" = "Show Everything";
 "Scene.Notification.Keyobard.ShowMentions" = "Show Mentions";
+"Scene.Notification.ViewReport" = "View report";
 "Scene.Notification.LearnMoreAboutServerBlocks" = "Learn more about server blocks";
 "Scene.Notification.NotificationDescription.FavoritedYourPost" = "favorited your post";
 "Scene.Notification.NotificationDescription.FollowedYou" = "followed you";

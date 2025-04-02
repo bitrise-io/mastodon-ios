@@ -32,7 +32,7 @@ enum GroupedNotificationType {
     case status(Mastodon.Entity.Status?)  // Someone you enabled notifications for has posted a status
     case update(Mastodon.Entity.Status?)  // A status you interacted with has been edited
     case adminSignUp  // Someone signed up (optionally sent to admins)
-    case adminReport(Mastodon.Entity.Report?)  // A new report has been filed
+    case adminReport(Mastodon.Entity.Report?, URL?)  // A new report has been filed
     case severedRelationships(Mastodon.Entity.RelationshipSeveranceEvent?, URL?)  // Some of your follow relationships have been severed as a result of a moderation or block event
     case moderationWarning(Mastodon.Entity.AccountWarning?, URL?)  //  A moderator has taken action against your account or has sent you a warning
 

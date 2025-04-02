@@ -803,6 +803,7 @@
                 "suspend": "Your account has been suspended.",
                 "learn_more": "Learn More"
             },
+            "view_report" : "View report",
             "learn_more_about_server_blocks" : "Learn more about server blocks",
             "filtered_notification": {
                 "title": "Filtered Notifications",

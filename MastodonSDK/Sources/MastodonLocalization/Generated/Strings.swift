@@ -941,6 +941,8 @@ public enum L10n {
     public enum Notification {
       /// Learn more about server blocks
       public static let learnMoreAboutServerBlocks = L10n.tr("Localizable", "Scene.Notification.LearnMoreAboutServerBlocks", fallback: "Learn more about server blocks")
+      /// View report
+      public static let viewReport = L10n.tr("Localizable", "Scene.Notification.ViewReport", fallback: "View report")
       public enum FilteredNotification {
         /// Accept
         public static let accept = L10n.tr("Localizable", "Scene.Notification.FilteredNotification.Accept", fallback: "Accept")

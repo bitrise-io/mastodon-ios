@@ -206,7 +206,7 @@ class NotificationRowViewModel: ObservableObject {
                         ?? "")
                 ]
             }
-        case .adminReport(let report):
+        case .adminReport(let report, _):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = report?.summary {
                 if let timestamp = notificationInfo.timestamp {
@@ -635,7 +635,7 @@ extension NotificationRowViewModel {
             let status = group.statusID == nil ? nil : statuses[group.statusID!]
             
             let type = GroupedNotificationType(
-                group, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts, status: status)
+                group, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts, status: status, adminReportID: group.adminReport?.id)
 
             let info = GroupedNotificationInfo(
                 id: group.id,
@@ -718,7 +718,7 @@ extension NotificationRowViewModel {
                 })
             
             let groupedNotificationType = GroupedNotificationType(
-                notification, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts)
+                notification, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts, adminReportID: notification.adminReport?.id)
             let info = GroupedNotificationInfo(
                 id: notification.id,
                 timestamp: notification.createdAt,
@@ -793,8 +793,9 @@ extension NotificationRowViewModel {
             if !isGrouped, let primaryAccount {
                 return .profile(primaryAccount)
             }
-        case .adminReport:
-            break
+        case .adminReport(_, let url):
+            let linkDescription = L10n.Scene.Notification.viewReport
+            return .link(linkDescription, url)
         case .severedRelationships(_, let url):
             let linkDescription = L10n.Scene.Notification.learnMoreAboutServerBlocks
             return .link(linkDescription, url)
@@ -812,7 +813,8 @@ extension GroupedNotificationType {
     init(
         _ notification: Mastodon.Entity.Notification,
         myAccountDomain: String,
-        sourceAccounts: NotificationSourceAccounts
+        sourceAccounts: NotificationSourceAccounts,
+        adminReportID: String?
     ) {
         switch notification.typeFromServer {
         case .follow:
@@ -838,7 +840,13 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            self = .adminReport(notification.adminReport)
+            let url: URL?
+            if let adminReportID {
+                url = adminReportUrl(forDomain: myAccountDomain, reportID: adminReportID)
+            } else {
+                url = nil
+            }
+            self = .adminReport(notification.adminReport, url)
         case .severedRelationships:
             let url = severedRelationshipsUrl(
                 forDomain: myAccountDomain,
@@ -857,7 +865,8 @@ extension GroupedNotificationType {
         _ notificationGroup: Mastodon.Entity.NotificationGroup,
         myAccountDomain: String,
         sourceAccounts: NotificationSourceAccounts,
-        status: Mastodon.Entity.Status?
+        status: Mastodon.Entity.Status?,
+        adminReportID: String?
     ) {
         switch notificationGroup.type {
         case .follow:
@@ -883,7 +892,13 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            self = .adminReport(notificationGroup.adminReport)
+            let url: URL?
+            if let adminReportID {
+                url = adminReportUrl(forDomain: myAccountDomain, reportID: adminReportID)
+            } else {
+                url = nil
+            }
+            self = .adminReport(notificationGroup.adminReport, url)
         case .severedRelationships:
             let url = severedRelationshipsUrl(forDomain: myAccountDomain, notificationID: String(notificationGroup.mostRecentNotificationID))
             self = .severedRelationships(
@@ -932,6 +947,19 @@ func moderationWarningUrl(forDomain domain: String, notificationID: String) -> U
 func severedRelationshipsUrl(forDomain domain: String, notificationID: String) -> URL?
 {
     let trailingPathComponents = ["severed_relationships"]
+    var url = URL(string: "https://" + domain)
+    for component in trailingPathComponents {
+        url?.append(component: component)
+    }
+    return url
+}
+
+func adminReportUrl(forDomain domain: String, reportID: String) -> URL? {
+    let trailingPathComponents = [
+        "admin",
+        "reports",
+        reportID
+    ]
     var url = URL(string: "https://" + domain)
     for component in trailingPathComponents {
         url?.append(component: component)
