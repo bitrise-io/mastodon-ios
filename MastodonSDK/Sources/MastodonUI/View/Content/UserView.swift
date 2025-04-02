@@ -345,6 +345,16 @@ public extension UserView {
         }
 
         followButton.addTarget(self, action: #selector(didTapFollowButton), for: .touchUpInside)
+        
+        accessibilityHint = L10n.Common.Controls.Status.showUserProfile
+        guard let followButtonLabel = followButton.configuration?.title, !followButton.isHidden, followButton.isEnabled else { accessibilityCustomActions = []; return }
+        accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: followButtonLabel) { [weak self] action in
+                guard let self else { return false }
+                self.didTapFollowButton()
+                return true
+            }
+        ]
     }
 }
 
