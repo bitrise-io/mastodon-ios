@@ -49,6 +49,7 @@ extension Mastodon.Entity {
         public let fields: [Field]?
         public let bot: Bool?
         public let source: Source?
+        public let role: Role?
         public let suspended: Bool?
         public let muteExpiresAt: Date?
     }
@@ -82,6 +83,7 @@ extension Mastodon.Entity.Account: Codable {
         case fields
         case bot
         case source
+        case role
         case suspended
         case muteExpiresAt = "mute_expires_at"
     }
@@ -166,4 +168,51 @@ extension Mastodon.Entity.Account {
 
 extension Mastodon.Entity.Account {
     public static let missingImageName = "missing.png"
+}
+
+extension Mastodon.Entity.Account {
+    public final class Role: Codable, Sendable {
+        public let id: String
+        public let name: String
+        public let color: String
+        public let permissions: String // To determine the permissions available to a certain role, convert the permissions attribute to binary and compare from the least significant bit upwards.
+        public let highlighted: Bool
+        
+        public func hasPermissions(_ desiredPermissions: Permissions) -> Bool {
+            let binaryData = Data(permissions.utf8)
+            let rawPermissions = binaryData.withUnsafeBytes { rawBuffer in
+                rawBuffer.load(as: UInt32.self)
+            }
+            return Permissions(rawValue: rawPermissions).contains(desiredPermissions)
+        }
+        
+        public struct Permissions: OptionSet {
+            public let rawValue: UInt32
+            
+            public init(rawValue: UInt32) {
+                self.rawValue = rawValue
+            }
+            
+            public static let administrator = Permissions(rawValue: 1 << 0)
+            public static let devops = Permissions(rawValue: 1 << 1)
+            public static let viewAuditLog = Permissions(rawValue: 1 << 2)
+            public static let viewDashboard = Permissions(rawValue: 1 << 3)
+            public static let manageReports = Permissions(rawValue: 1 << 4)
+            public static let manageFederation = Permissions(rawValue: 1 << 5)
+            public static let manageSettings = Permissions(rawValue: 1 << 6)
+            public static let manageBlocks = Permissions(rawValue: 1 << 7)
+            public static let manageTaxonomies = Permissions(rawValue: 1 << 8)
+            public static let manageAppeals = Permissions(rawValue: 1 << 9)
+            public static let manageUsers = Permissions(rawValue: 1 << 10)
+            public static let manageInvites = Permissions(rawValue: 1 << 11)
+            public static let manageRules = Permissions(rawValue: 1 << 12)
+            public static let manageAnnouncements = Permissions(rawValue: 1 << 13)
+            public static let manageCustomEmojis = Permissions(rawValue: 1 << 14)
+            public static let manageWebhooks = Permissions(rawValue: 1 << 15)
+            public static let inviteUsers = Permissions(rawValue: 1 << 16)
+            public static let manageRoles = Permissions(rawValue: 1 << 17)
+            public static let manageUserAccess = Permissions(rawValue: 1 << 18)
+            public static let deleteUserData = Permissions(rawValue: 1 << 19)
+        }
+    }
 }
