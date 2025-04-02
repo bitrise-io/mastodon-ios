@@ -16,7 +16,7 @@ protocol NotificationInfo {
     var authorAvatarUrls: [URL] { get }
     func availableRelationshipElement() async -> RelationshipElement?
     func fetchRelationshipElement() async -> RelationshipElement
-    var ruleViolationReport: Mastodon.Entity.Report? { get }
+    var adminReport: Mastodon.Entity.Report? { get }
     var relationshipSeveranceEvent: Mastodon.Entity.RelationshipSeveranceEvent?
     { get }
 }

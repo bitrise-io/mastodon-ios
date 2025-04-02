@@ -163,15 +163,42 @@ extension GroupedNotificationType {
 
 extension Mastodon.Entity.Report {
     // "Someone reported X posts from someone else for rule violation"
+    // "Someone reported X posts from someone else for spam"
+    // "Someone reported X posts from someone else"
     var summary: AttributedString {
         if let targetedAccountName = targetAccount?.displayNameWithFallback {
-            let summaryPlainstring: String
-            if let postCount = flaggedStatusIDs?.count {
-                let postsString = L10n.Plural.Count.post(postCount)
-                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForRuleViolation(postsString, targetedAccountName)
-            } else {
-                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForRuleViolation(targetedAccountName)
-            }
+            
+            let postCountString: String? = {
+                if let postCount = flaggedStatusIDs?.count {
+                    return L10n.Plural.Count.post(postCount)
+                } else {
+                    return nil
+                }
+            }()
+            
+            let summaryPlainstring: String = {
+                switch category {
+                case .spam:
+                    if let postCountString {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForSpam(postCountString, targetedAccountName)
+                    } else {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForSpam(targetedAccountName)
+                    }
+                case .violation:
+                    if let postCountString {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForRuleViolation(postCountString, targetedAccountName)
+                    } else {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForRuleViolation(targetedAccountName)
+                    }
+                case ._other, nil:
+                    if let postCountString {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccount(postCountString, targetedAccountName)
+                    } else {
+                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccount(targetedAccountName)
+                    }
+                }
+            }()
+            
             var attributedString = AttributedString(summaryPlainstring)
             let boldedName = styledNameComponent(targetedAccountName, style: AttributeContainer.font(
                 .system(.body, weight: .bold)), emojis: targetAccount?.emojiMeta)

@@ -1012,13 +1012,29 @@ public enum L10n {
         public static func singleNameSignedUp(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameSignedUp", String(describing: p1), fallback: "%@ signed up")
         }
+        /// Someone reported %@.
+        public static func someoneReportedAccount(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccount", String(describing: p1), fallback: "Someone reported %@.")
+        }
         /// Someone reported %@ for rule violation.
         public static func someoneReportedAccountForRuleViolation(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccountForRuleViolation", String(describing: p1), fallback: "Someone reported %@ for rule violation.")
         }
+        /// Someone reported %@ for spam.
+        public static func someoneReportedAccountForSpam(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccountForSpam", String(describing: p1), fallback: "Someone reported %@ for spam.")
+        }
+        /// Someone reported %@ from %@.
+        public static func someoneReportedPostsFromAccount(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccount", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@.")
+        }
         /// Someone reported %@ from %@ for rule violation.
         public static func someoneReportedPostsFromAccountForRuleViolation(_ p1: Any, _ p2: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccountForRuleViolation", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@ for rule violation.")
+        }
+        /// Someone reported %@ from %@ for spam.
+        public static func someoneReportedPostsFromAccountForSpam(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccountForSpam", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@ for spam.")
         }
         /// Your poll has ended
         public static let yourPollHasEnded = L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.YourPollHasEnded", fallback: "Your poll has ended")

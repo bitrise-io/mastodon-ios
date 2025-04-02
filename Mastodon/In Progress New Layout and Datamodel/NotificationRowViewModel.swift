@@ -838,7 +838,7 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            self = .adminReport(notification.ruleViolationReport)
+            self = .adminReport(notification.adminReport)
         case .severedRelationships:
             let url = severedRelationshipsUrl(
                 forDomain: myAccountDomain,
@@ -883,7 +883,7 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            self = .adminReport(notificationGroup.ruleViolationReport)
+            self = .adminReport(notificationGroup.adminReport)
         case .severedRelationships:
             let url = severedRelationshipsUrl(forDomain: myAccountDomain, notificationID: String(notificationGroup.mostRecentNotificationID))
             self = .severedRelationships(

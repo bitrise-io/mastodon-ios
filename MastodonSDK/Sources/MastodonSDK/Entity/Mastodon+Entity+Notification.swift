@@ -25,7 +25,7 @@ extension Mastodon.Entity {
         public let groupKey: String?
         public let account: Account
         public let status: Status?
-        public let ruleViolationReport: Report?
+        public let adminReport: Report?
         public let relationshipSeveranceEvent: RelationshipSeveranceEvent?
         public let accountWarning: AccountWarning?
 
@@ -36,7 +36,7 @@ extension Mastodon.Entity {
             case createdAt = "created_at"
             case account
             case status
-            case ruleViolationReport = "report"
+            case adminReport = "report"
             case accountWarning = "moderation_warning"
             case relationshipSeveranceEvent = "event"
         }
@@ -62,7 +62,7 @@ extension Mastodon.Entity {
         public let latestPageNotificationAt: Date? // Date at which the most recent notification from this group within the current page has been created. This is only returned when paginating through notification groups.
         public let sampleAccountIDs: [String] // IDs of some of the accounts who most recently triggered notifications in this group.
         public let statusID: ID?
-        public let ruleViolationReport: Report? // Attached when type of the notification is admin.report
+        public let adminReport: Report? // Attached when type of the notification is admin.report
         public let relationshipSeveranceEvent: RelationshipSeveranceEvent? // Attached when type of the notification is severed_relationships
         public let accountWarning: AccountWarning?
         
@@ -76,7 +76,7 @@ extension Mastodon.Entity {
             case latestPageNotificationAt = "latest_page_notification_at"
             case sampleAccountIDs = "sample_account_ids"
             case statusID = "status_id"
-            case ruleViolationReport = "report"
+            case adminReport = "report"
             case accountWarning = "moderation_warning"
             case relationshipSeveranceEvent = "event"
         }
