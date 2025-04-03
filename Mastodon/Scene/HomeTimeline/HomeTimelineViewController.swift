@@ -645,17 +645,6 @@ extension HomeTimelineViewController {
             return
         }
     }
-    
-    @objc func signOutAction(_ sender: UIAction) {
-
-        Task { @MainActor in
-            try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
-            let userIdentifier = authenticationBox
-            PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
-            self.sceneCoordinator?.setup()
-            self.sceneCoordinator?.setup()
-        }
-    }
 
     @objc private func timelinePillTouched(_ sender: TimelineStatusPill) {
         UIView.animate(withDuration: 0.05) {

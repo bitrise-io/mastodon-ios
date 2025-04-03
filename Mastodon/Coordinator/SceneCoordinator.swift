@@ -599,7 +599,7 @@ extension SceneCoordinator: MastodonLoginViewControllerDelegate {
 
 //MARK: - SettingsCoordinatorDelegate
 extension SceneCoordinator: SettingsCoordinatorDelegate {
-    func logout(_ settingsCoordinator: SettingsCoordinator) {
+    func logout(_ user: MastodonAuthentication, presentingFrom viewController: UIViewController) {
 
         let preferredStyle: UIAlertController.Style
 
@@ -617,17 +617,17 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
 
         let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
         let signOutAction = UIAlertAction(title: L10n.Common.Alerts.SignOut.confirm, style: .destructive) { [weak self] _ in
-            guard let self, let authenticationBox = self.authenticationBox else { return }
+            guard let self else { return }
 
             NotificationService.shared.clearNotificationCountForActiveUser()
 
             Task { @MainActor in
                 try await AuthenticationServiceProvider.shared.signOutMastodonUser(
-                    authentication: authenticationBox.authentication
+                    authentication: user
                 )
-                let userIdentifier = authenticationBox
-                PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
                 self.setup()
+                PersistenceManager.shared.removeAllCaches(forUser: user)
+                try await BodegaPersistence.removeUser(user)
             }
 
         }
@@ -635,7 +635,7 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
         alertController.addAction(cancelAction)
         alertController.addAction(signOutAction)
 
-        settingsCoordinator.navigationController.present(alertController, animated: true)
+        (viewController.navigationController ?? viewController).present(alertController, animated: true)
     }
 
     @MainActor

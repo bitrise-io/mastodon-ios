@@ -10,7 +10,7 @@ import MetaTextKit
 import MastodonUI
 
 protocol SettingsCoordinatorDelegate: AnyObject {
-    func logout(_ settingsCoordinator: SettingsCoordinator)
+    func logout(_ user: MastodonAuthentication, presentingFrom viewController: UIViewController)
     func openGithubURL(_ settingsCoordinator: SettingsCoordinator)
     func openPrivacyURL(_ settingsCoordinator: SettingsCoordinator)
     func openProfileSettingsURL(_ settingsCoordinator: SettingsCoordinator)
@@ -142,7 +142,8 @@ extension SettingsCoordinator: SettingsViewControllerDelegate {
 
                 navigationController.pushViewController(aboutViewController, animated: true)
             case .logout(_):
-                delegate?.logout(self)
+                guard let user = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication else { return }
+                delegate?.logout(user, presentingFrom: self.navigationController)
             case .manageBetaFeatures:
                 let betaTestSettingsViewController = BetaTestSettingsViewController()
             
