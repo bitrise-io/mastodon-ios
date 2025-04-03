@@ -344,8 +344,9 @@ extension GroupedNotificationFeedLoader {
                 .currentActiveUser.value
         else { throw APIService.APIError.implicit(.authenticationMissing) }
 
+        let adminFilterPreferences = await BodegaPersistence.Notifications.currentPreferences(for: authenticationBox)
         let results = try await APIService.shared.groupedNotifications(
-            olderThan: maxID, newerThan: minID, fromAccount: nil, scope: scope,
+            olderThan: maxID, newerThan: minID, fromAccount: nil, scope: scope, excludingAdminTypes: adminFilterPreferences?.excludedNotificationTypes,
             authenticationBox: authenticationBox
         )
 

@@ -62,11 +62,25 @@ class NotificationListViewController: UIHostingController<NotificationListView>
     @objc private func showNotificationPolicySettings(_ sender: Any) {
         guard let policy = viewModel.filteredNotificationsViewModel.policy else { return }
         Task {
+            let adminSettings: AdminNotificationFilterSettings? = await {
+                guard let user = AuthenticationServiceProvider.shared.currentActiveUser.value, let role = user.cachedAccount?.role else { print("no role"); return nil }
+                let hasAdminPermissions = role.hasPermissions(.administrator) || role.hasPermissions(.manageReports) || role.hasPermissions(.manageUsers)
+                guard hasAdminPermissions else { print("no permissions"); return nil }
+                if let existingPreferences = await BodegaPersistence.Notifications.currentPreferences(for: user.authentication) {
+                    return existingPreferences
+                } else {
+                    return AdminNotificationFilterSettings(filterOutReports: false, filterOutSignups: false)
+                }
+            }()
+            
             let policyViewModel = await NotificationFilterViewModel(
-                notFollowing: policy.filterNotFollowing,
-                noFollower: policy.filterNotFollowers,
-                newAccount: policy.filterNewAccounts,
-                privateMentions: policy.filterPrivateMentions
+                NotificationFilterSettings(
+                    notFollowing: policy.filterNotFollowing,
+                    noFollower: policy.filterNotFollowers,
+                    newAccount: policy.filterNewAccounts,
+                    privateMentions: policy.filterPrivateMentions
+                ),
+                adminSettings: adminSettings
             )
             
             guard let policyViewController = self.sceneCoordinator?.present(scene: .notificationPolicy(viewModel: policyViewModel), transition: .formSheet) as? NotificationPolicyViewController else { return }

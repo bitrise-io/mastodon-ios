@@ -943,6 +943,20 @@ public enum L10n {
       public static let learnMoreAboutServerBlocks = L10n.tr("Localizable", "Scene.Notification.LearnMoreAboutServerBlocks", fallback: "Learn more about server blocks")
       /// View report
       public static let viewReport = L10n.tr("Localizable", "Scene.Notification.ViewReport", fallback: "View report")
+      public enum AdminFilter {
+        public enum Reports {
+          /// Hide reports of spam, rule violations, and other complaints
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Subtitle", fallback: "Hide reports of spam, rule violations, and other complaints")
+          /// Admin reports
+          public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Title", fallback: "Admin reports")
+        }
+        public enum Signups {
+          /// Hide notifications of new accounts created on this instance
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Subtitle", fallback: "Hide notifications of new accounts created on this instance")
+          /// Account signups
+          public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Title", fallback: "Account signups")
+        }
+      }
       public enum FilteredNotification {
         /// Accept
         public static let accept = L10n.tr("Localizable", "Scene.Notification.FilteredNotification.Accept", fallback: "Accept")

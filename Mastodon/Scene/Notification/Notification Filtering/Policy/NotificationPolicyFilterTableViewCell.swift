@@ -31,17 +31,7 @@ class NotificationPolicyFilterTableViewCell: ToggleTableViewCell {
         subtitleLabel.text = filterItem.subtitle
         self.filterItem = filterItem
 
-        let toggleIsOn: Bool
-        switch filterItem {
-        case .notFollowing:
-            toggleIsOn = viewModel.notFollowing
-        case .noFollower:
-            toggleIsOn = viewModel.noFollower
-        case .newAccount:
-            toggleIsOn = viewModel.newAccount
-        case .privateMentions:
-            toggleIsOn = viewModel.privateMentions
-        }
+        let toggleIsOn = viewModel.value(forItem: filterItem)
 
         toggle.isOn = toggleIsOn
     }

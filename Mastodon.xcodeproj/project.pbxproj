@@ -513,6 +513,7 @@
 		FB7C4CCC2CD55DEB00F6129A /* NavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCB2CD55DEB00F6129A /* NavigationFlow.swift */; };
 		FB7C4CCE2CD55DFF00F6129A /* NewDonationNavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCD2CD55DFE00F6129A /* NewDonationNavigationFlow.swift */; };
 		FB91184C2D9EB96E003F410B /* Bodega in Frameworks */ = {isa = PBXBuildFile; productRef = FB91184B2D9EB96E003F410B /* Bodega */; };
+		FB91188D2D9EECE7003F410B /* BodegaPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB91188C2D9EC208003F410B /* BodegaPersistence.swift */; };
 		FBD689B52CCBF0AC00CE29F3 /* DonationCampaignViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBD689B42CCBF09F00CE29F3 /* DonationCampaignViewModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -1269,6 +1270,7 @@
 		FB8522712CEE302300BA2757 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/WidgetExtension.strings; sourceTree = "<group>"; };
 		FB8522722CEE302300BA2757 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		FB8522732CEE302300BA2757 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = hu; path = hu.lproj/Intents.stringsdict; sourceTree = "<group>"; };
+		FB91188C2D9EC208003F410B /* BodegaPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodegaPersistence.swift; sourceTree = "<group>"; };
 		FBD689B42CCBF09F00CE29F3 /* DonationCampaignViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonationCampaignViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -2214,6 +2216,7 @@
 		DB427DD425BAA00100D1B89D /* Mastodon */ = {
 			isa = PBXGroup;
 			children = (
+				FB91188C2D9EC208003F410B /* BodegaPersistence.swift */,
 				FBBEA04E2D380FC70000A900 /* In Progress New Layout and Datamodel */,
 				DB89BA1025C10FF5008580ED /* Mastodon.entitlements */,
 				DB427DE325BAA00100D1B89D /* Info.plist */,
@@ -3818,6 +3821,7 @@
 				2A4C3B5D2C579CFB008DD42B /* NotificationRequestConstants.swift in Sources */,
 				DB4AA6B327BA34B6009EC082 /* CellFrameCacheContainer.swift in Sources */,
 				DB0FCB942797E2B0006C02E2 /* SearchResultViewModel+Diffable.swift in Sources */,
+				FB91188D2D9EECE7003F410B /* BodegaPersistence.swift in Sources */,
 				DB63F752279944AA00455B82 /* SearchHistorySectionHeaderCollectionReusableView.swift in Sources */,
 				DB3E6FDD2806A40F00B035AE /* DiscoveryHashtagsViewController.swift in Sources */,
 				D8F9170B2A4B2C80008A5370 /* AboutSettings.swift in Sources */,

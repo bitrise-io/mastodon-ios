@@ -63,6 +63,7 @@ extension APIService {
         newerThan minID: Mastodon.Entity.Notification.ID?,
         fromAccount accountID: String? = nil,
         scope: MastodonNotificationScope?,
+        excludingAdminTypes: [Mastodon.Entity.NotificationType]?,
         authenticationBox: MastodonAuthenticationBox
     ) async throws -> Mastodon.Entity.GroupedNotificationsResults {
         let authorization = authenticationBox.userAuthorization
@@ -73,10 +74,10 @@ extension APIService {
         switch scope {
         case .everything:
             types = nil
-            excludedTypes = [.adminReport, .adminSignUp]
+            excludedTypes = excludingAdminTypes
         case .mentions:
             types = [.mention]
-            excludedTypes = [.follow, .followRequest, .reblog, .favourite, .poll]
+            excludedTypes = [.follow, .followRequest, .reblog, .favourite, .poll,.adminReport, .adminSignUp]
         case nil:
             types = nil
             excludedTypes = nil
