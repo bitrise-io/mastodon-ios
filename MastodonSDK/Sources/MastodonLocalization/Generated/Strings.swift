@@ -974,10 +974,6 @@ public enum L10n {
         public static func multiplePeopleFollowedYou(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFollowedYou", String(describing: p1), fallback: "%@ followed you")
         }
-        /// %@ new signups
-        public static func multiplePeopleSignedUp(_ p1: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleSignedUp", String(describing: p1), fallback: "%@ new signups")
-        }
         /// %@ boosted:
         public static func singleNameBoosted(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameBoosted", String(describing: p1), fallback: "%@ boosted:")
@@ -2136,6 +2132,10 @@ public enum L10n {
       /// Plural format key: "%#@media_count@"
       public static func media(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.media", p1, fallback: "Plural format key: \"%#@media_count@\"")
+      }
+      /// Plural format key: "%#@count_signups@"
+      public static func newSignups(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "plural.count.new_signups", p1, fallback: "Plural format key: \"%#@count_signups@\"")
       }
       /// Plural format key: "%#@count_of_your_followers@"
       public static func ofYourFollowers(_ p1: Int) -> String {

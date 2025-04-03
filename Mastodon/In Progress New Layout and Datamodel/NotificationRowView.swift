@@ -143,7 +143,7 @@ extension GroupedNotificationType {
                 case .reblog:
                     plainString = L10n.Plural.Count.peopleBoosted(totalAuthorCount)
                 case .adminSignUp:
-                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleSignedUp(totalAuthorCount)
+                    plainString = L10n.Plural.Count.newSignups(totalAuthorCount)
                 default:
                     plainString = L10n.Plural.Count.others(totalAuthorCount)
                 }
