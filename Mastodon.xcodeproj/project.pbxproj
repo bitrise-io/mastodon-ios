@@ -421,7 +421,6 @@
 		DB98EB6227B215EB0082E365 /* ReportResultViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB98EB6127B215EB0082E365 /* ReportResultViewController.swift */; };
 		DB98EB6527B216500082E365 /* ReportResultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB98EB6427B216500082E365 /* ReportResultViewModel.swift */; };
 		DB9D6BE925E4F5340051B173 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9D6BE825E4F5340051B173 /* SearchViewController.swift */; };
-		DB9D6BF825E4F5690051B173 /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9D6BF725E4F5690051B173 /* NotificationViewController.swift */; };
 		DB9D6BFF25E4F5940051B173 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9D6BFE25E4F5940051B173 /* ProfileViewController.swift */; };
 		DB9E0D6F25EE008500CFDD76 /* UIInterpolatingMotionEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9E0D6E25EE008500CFDD76 /* UIInterpolatingMotionEffect.swift */; };
 		DB9F58EC26EF435000E7BBE9 /* AccountViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F58EB26EF435000E7BBE9 /* AccountViewController.swift */; };
@@ -1140,7 +1139,6 @@
 		DB98EB6127B215EB0082E365 /* ReportResultViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportResultViewController.swift; sourceTree = "<group>"; };
 		DB98EB6427B216500082E365 /* ReportResultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportResultViewModel.swift; sourceTree = "<group>"; };
 		DB9D6BE825E4F5340051B173 /* SearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
-		DB9D6BF725E4F5690051B173 /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
 		DB9D6BFE25E4F5940051B173 /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
 		DB9E0D6E25EE008500CFDD76 /* UIInterpolatingMotionEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInterpolatingMotionEffect.swift; sourceTree = "<group>"; };
 		DB9F58EB26EF435000E7BBE9 /* AccountViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountViewController.swift; sourceTree = "<group>"; };
@@ -2786,7 +2784,6 @@
 				DB63F765279A5E5600455B82 /* NotificationTimeline */,
 				2D35237F26256F470031AF25 /* Cell */,
 				D80F627E2B5C32E400877059 /* NotificationView */,
-				DB9D6BF725E4F5690051B173 /* NotificationViewController.swift */,
 				2D607AD726242FC500B70763 /* NotificationViewModel.swift */,
 				2D35237926256D920031AF25 /* NotificationSection.swift */,
 				2D7867182625B77500211898 /* NotificationListItem.swift */,
@@ -3850,7 +3847,6 @@
 				DBEFCD7B282A162400C0ABEA /* ReportReasonView.swift in Sources */,
 				D8E5C346296DAB84007E76A7 /* DataSourceFacade+Status+History.swift in Sources */,
 				DB63F77B279ACAE500455B82 /* DataSourceFacade+Favorite.swift in Sources */,
-				DB9D6BF825E4F5690051B173 /* NotificationViewController.swift in Sources */,
 				2DAC9E46262FC9FD0062E1A6 /* SuggestionAccountTableViewCell.swift in Sources */,
 				D8D688F92AB8B970000F651A /* SearchResultOverviewCoordinator.swift in Sources */,
 				DB4FFC2C269EC39600D62E92 /* SearchTransitionController.swift in Sources */,

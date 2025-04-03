@@ -68,9 +68,6 @@ class MainTabBarController: UITabBarController {
         meProfileViewController.configureTabBarItem(with: .me)
 
         if let authenticationBox {
-            if let notificationController = notificationViewController as? NotificationViewController {
-                notificationController.viewModel = NotificationViewModel(context: AppContext.shared, authenticationBox: authenticationBox)
-            }
             homeTimelineViewController.viewModel = HomeTimelineViewModel(authenticationBox: authenticationBox)
             searchViewController.viewModel = SearchViewModel(authenticationBox: authenticationBox)
         }
