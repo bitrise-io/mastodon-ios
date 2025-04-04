@@ -64,7 +64,8 @@ class NotificationListViewController: UIHostingController<NotificationListView>
         Task {
             let adminSettings: AdminNotificationFilterSettings? = await {
                 guard let user = AuthenticationServiceProvider.shared.currentActiveUser.value, let role = user.cachedAccount?.role else { print("no role"); return nil }
-                let hasAdminPermissions = role.hasPermissions(.administrator) || role.hasPermissions(.manageReports) || role.hasPermissions(.manageUsers)
+                let permissions = role.rolePermissions()
+                let hasAdminPermissions = permissions.contains(.administrator) || permissions.contains(.manageReports) || permissions.contains(.manageUsers)
                 guard hasAdminPermissions else { print("no permissions"); return nil }
                 if let existingPreferences = await BodegaPersistence.Notifications.currentPreferences(for: user.authentication) {
                     return existingPreferences
