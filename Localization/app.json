@@ -826,16 +826,34 @@
                 "private_mentions": {
                     "title": "Unsolicited private mentions",
                     "subtitle": "Filtered unless it’s in reply to your own mention or if you follow the sender"
+                },
+                "moderated_accounts": {
+                    "title": "Moderated accounts",
+                    "subtitle": "Limited by server moderators"
+                },
+                "action": {
+                    "filter": {
+                        "title": "Filter",
+                        "subtitle": "Send to filtered notifications inbox"
+                    },
+                    "accept": {
+                        "title": "Accept",
+                        "subtitle": "Show in notifications"
+                    },
+                    "drop": {
+                        "title": "Ignore",
+                        "subtitle": "Send to the void, never to be seen again"
+                    }
                 }
             },
             "admin_filter": {
                 "reports": {
                     "title": "Admin reports",
-                    "subtitle": "Hide reports of spam, rule violations, and other complaints on this instance"
+                    "subtitle": "Show reports of spam, rule violations, and other complaints on this instance"
                 },
                 "signups": {
                     "title": "Account signups",
-                    "subtitle": "Hide notifications of new accounts created on this instance"
+                    "subtitle": "Show notifications of new accounts created on this instance"
                 }
             }
         },

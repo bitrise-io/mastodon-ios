@@ -70,16 +70,17 @@ class NotificationListViewController: UIHostingController<NotificationListView>
                 if let existingPreferences = await BodegaPersistence.Notifications.currentPreferences(for: user.authentication) {
                     return existingPreferences
                 } else {
-                    return AdminNotificationFilterSettings(filterOutReports: false, filterOutSignups: false)
+                    return AdminNotificationFilterSettings(forReports: .accept, forSignups: .accept)
                 }
             }()
             
             let policyViewModel = await NotificationFilterViewModel(
                 NotificationFilterSettings(
-                    notFollowing: policy.filterNotFollowing,
-                    noFollower: policy.filterNotFollowers,
-                    newAccount: policy.filterNewAccounts,
-                    privateMentions: policy.filterPrivateMentions
+                    forNotFollowing: policy.forNotFollowing,
+                    forNotFollowers: policy.forNotFollowers,
+                    forNewAccounts: policy.forNewAccounts,
+                    forPrivateMentions: policy.forPrivateMentions,
+                    forLimitedAccounts: policy.forLimitedAccounts
                 ),
                 adminSettings: adminSettings
             )

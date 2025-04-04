@@ -945,14 +945,14 @@ public enum L10n {
       public static let viewReport = L10n.tr("Localizable", "Scene.Notification.ViewReport", fallback: "View report")
       public enum AdminFilter {
         public enum Reports {
-          /// Hide reports of spam, rule violations, and other complaints
-          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Subtitle", fallback: "Hide reports of spam, rule violations, and other complaints")
+          /// Show reports of spam, rule violations, and other complaints
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Subtitle", fallback: "Show reports of spam, rule violations, and other complaints")
           /// Admin reports
           public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Title", fallback: "Admin reports")
         }
         public enum Signups {
-          /// Hide notifications of new accounts created on this instance
-          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Subtitle", fallback: "Hide notifications of new accounts created on this instance")
+          /// Show notifications of new accounts created on this instance
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Subtitle", fallback: "Show notifications of new accounts created on this instance")
           /// Account signups
           public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Title", fallback: "Account signups")
         }
@@ -1102,6 +1102,32 @@ public enum L10n {
       public enum Policy {
         /// Filter Notifications from…
         public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Title", fallback: "Filter Notifications from…")
+        public enum Action {
+          public enum Accept {
+            /// Show in notifications
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Accept.Subtitle", fallback: "Show in notifications")
+            /// Accept
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Accept.Title", fallback: "Accept")
+          }
+          public enum Drop {
+            /// Send to the void, never to be seen again
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Drop.Subtitle", fallback: "Send to the void, never to be seen again")
+            /// Ignore
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Drop.Title", fallback: "Ignore")
+          }
+          public enum Filter {
+            /// Send to filtered notifications inbox
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Filter.Subtitle", fallback: "Send to filtered notifications inbox")
+            /// Filter
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Filter.Title", fallback: "Filter")
+          }
+        }
+        public enum ModeratedAccounts {
+          /// Limited by server moderators
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.ModeratedAccounts.Subtitle", fallback: "Limited by server moderators")
+          /// Moderated accounts
+          public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.ModeratedAccounts.Title", fallback: "Moderated accounts")
+        }
         public enum NewAccount {
           /// Created within the past 30 days
           public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.NewAccount.Subtitle", fallback: "Created within the past 30 days")
