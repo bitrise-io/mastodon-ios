@@ -14,7 +14,7 @@ enum NotificationListItem {
     case filteredNotificationsInfo(
         Mastodon.Entity.NotificationPolicy?,
         FilteredNotificationsRowView.ViewModel?)
-    case notification(MastodonFeedItemIdentifier)  // TODO: remove
+    case notification(MastodonFeedItemIdentifier)  // TODO: Remove. Will require rewriting the NotificationRequestsTableViewController.
     case groupedNotification(NotificationRowViewModel)
     case bottomLoader
     
@@ -82,7 +82,18 @@ extension NotificationListItem: Identifiable, Equatable, Hashable {
     static func == (lhs: NotificationListItem, rhs: NotificationListItem)
         -> Bool
     {
-        return lhs.id == rhs.id
+        switch (lhs, rhs) {
+        case (.filteredNotificationsInfo(let lPolicy, _), .filteredNotificationsInfo(let rPolicy, _)):
+            return lPolicy == rPolicy
+        case (.groupedNotification(let lViewModel), .groupedNotification(let rViewModel)):
+            return lViewModel.identifier == rViewModel.identifier && lViewModel.newestID == rViewModel.newestID
+        case (.bottomLoader, .bottomLoader):
+            return true
+        case (.notification(let lFeedItem), .notification(let rFeedItem)):
+            return lFeedItem == rFeedItem
+        default:
+            return false
+        }
     }
 
     func hash(into hasher: inout Hasher) {
