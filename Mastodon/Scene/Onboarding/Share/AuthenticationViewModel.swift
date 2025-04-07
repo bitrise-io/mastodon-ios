@@ -151,7 +151,7 @@ extension AuthenticationViewModel {
                 disclaimer: LocalizedStringKey(L10n.Scene.ServerRules.subtitle(server.domain)),
                 rules: rules.map({ $0.text }),
                 onAgree: { [weak self] in
-                    let privacyViewModel = PrivacyViewModel(domain: server.domain, authenticateInfo: authenticateInfo, rows: [.iOSApp, .server(domain: server.domain)], instance: instance, applicationToken: applicationToken, didAccept: { doStartRegistration() })
+                    let privacyViewModel = PolicyViewModel(domain: server.domain, authenticateInfo: authenticateInfo, instance: instance, applicationToken: applicationToken, didAccept: { doStartRegistration() })
                     self?.stateStreamContinuation.yield(.showingPrivacyPolicy(privacyViewModel))
                 },
                 onDisagree: { [weak self] in self?.stateStreamContinuation.yield(.showingRules(nil)) })
@@ -281,7 +281,7 @@ extension AuthenticationViewModel {
         case joiningServer(Mastodon.Entity.Server)
         case showingRules(MastodonServerRulesView.ViewModel?) // nil when we're returning to a previously configured state
         case registering(MastodonRegisterViewModel)
-        case showingPrivacyPolicy(PrivacyViewModel)
+        case showingPrivacyPolicy(PolicyViewModel)
         case confirmingEmail(MastodonConfirmEmailViewModel)
         case authenticatingUser
         case authenticatedUser(MastodonAuthenticationBox)

@@ -70,4 +70,13 @@ public extension String {
         
         return majorVersionInt >= comparedVersion
     }
+    func serverVersionGreaterThanOrEqual(toMajorVersion majorThreshold: Int, minorVersion minorThreshold: Int?) -> Bool {
+        let majorAndMinor = split(separator: ".").prefix(2)
+        let major = majorAndMinor.first
+        let minor = majorAndMinor.count > 1 ? majorAndMinor[1] : "0"
+        guard let major, let majorVersionInt = Int(major) else { return false }
+        guard let minorThreshold, minorThreshold > 0 else { return majorVersionInt >= majorThreshold }
+        guard let minorVersionInt = Int(minor) else { return false }
+        return majorVersionInt >= majorThreshold && minorVersionInt >= minorThreshold
+    }
 }

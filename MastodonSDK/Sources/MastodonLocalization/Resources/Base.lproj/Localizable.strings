@@ -418,12 +418,15 @@ Please retry in a few minutes.";
 "Scene.Preview.Keyboard.ShowNext" = "Show Next";
 "Scene.Preview.Keyboard.ShowPrevious" = "Show Previous";
 "Scene.Privacy.Button.Confirm" = "I Agree";
+"Scene.Privacy.TermsOfServiceDescription" = "Please review the terms of service for **%@**. If you disagree, you can go back and pick a different server.";
+"Scene.Privacy.Policy.TermsOfService" = "Terms of Service - %@";
 "Scene.Privacy.Description" = "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.
 
 If you disagree with the policy for **%@**, you can go back and pick a different server.";
 "Scene.Privacy.Policy.Ios" = "Privacy Policy - Mastodon for iOS";
 "Scene.Privacy.Policy.Server" = "Privacy Policy - %@";
 "Scene.Privacy.Title" = "Your Privacy";
+"Scene.Privacy.TermsOfServiceTitle" = "Terms of Service";
 "Scene.Profile.Accessibility.DoubleTapToOpenTheList" = "Double tap to open the list";
 "Scene.Profile.Accessibility.EditAvatarImage" = "Edit avatar image";
 "Scene.Profile.Accessibility.ShowAvatarImage" = "Show avatar image";

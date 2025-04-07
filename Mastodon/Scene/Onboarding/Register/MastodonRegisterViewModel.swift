@@ -513,6 +513,8 @@ protocol RegistrationInstance {
     var isBeyondVersion1: Bool { get }
     var isOpenToNewRegistrations: Bool? { get }
     var rules: [Mastodon.Entity.Instance.Rule]? { get }
+    var termsOfService: URL? { get }
+    var privacyPolicy: URL? { get }
 }
 
 extension Mastodon.Entity.Instance: RegistrationInstance {
@@ -524,6 +526,14 @@ extension Mastodon.Entity.Instance: RegistrationInstance {
     var reasonRequired: Bool {
         return approvalRequired ?? false
     }
+    
+    var termsOfService: URL? {
+        return nil
+    }
+    
+    var privacyPolicy: URL? {
+        return URL(string: "https://\(uri)/privacy-policy")
+    }
 }
 
 extension Mastodon.Entity.V2.Instance: RegistrationInstance {
@@ -533,5 +543,28 @@ extension Mastodon.Entity.V2.Instance: RegistrationInstance {
     var approvalRequired: Bool? { return registrations?.approvalRequired }
     var reasonRequired: Bool {
         return registrations?.reasonRequired ?? approvalRequired ?? false
+    }
+    
+    var termsOfService: URL? {
+        if version?.serverVersionGreaterThanOrEqual(toMajorVersion: 4, minorVersion: 4) ?? false {
+            if let string = urls?.termsOfService {
+                return URL(string: string)
+            } else {
+                guard let domain else { return nil }
+                return URL(string: "https://\(domain)/terms-of-service")
+            }
+        } else {
+            return nil
+        }
+    }
+    
+    var privacyPolicy: URL? {
+        if version?.serverVersionGreaterThanOrEqual(toMajorVersion: 4, minorVersion: 4) ?? false {
+            guard let string = urls?.privacyPolicy else { return nil }
+            return URL(string: string)
+        } else {
+            guard let domain else { return nil }
+            return URL(string: "https://\(domain)/privacy-policy")
+        }
     }
 }

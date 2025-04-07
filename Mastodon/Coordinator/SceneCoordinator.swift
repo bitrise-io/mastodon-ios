@@ -160,7 +160,7 @@ extension SceneCoordinator {
         case welcome
         case mastodonPickServer(viewMode: MastodonPickServerViewModel)
         case mastodonRegister(viewModel: MastodonRegisterViewModel)
-        case mastodonPrivacyPolicies(viewModel: PrivacyViewModel)
+        case mastodonPrivacyPolicies(viewModel: PolicyViewModel)
         case mastodonServerRules(viewModel: MastodonServerRulesView.ViewModel)
         case mastodonConfirmEmail(viewModel: MastodonConfirmEmailViewModel)
         case mastodonResendEmail(viewModel: MastodonResendEmailViewModel)
@@ -408,8 +408,8 @@ private extension SceneCoordinator {
 
             viewController = loginViewController
         case .mastodonPrivacyPolicies(let viewModel):
-            let privacyViewController = PrivacyTableViewController(coordinator: self, viewModel: viewModel)
-            viewController = privacyViewController
+            let policyViewController = PolicyTableViewController(coordinator: self, viewModel: viewModel)
+            viewController = policyViewController
         case .mastodonResendEmail(let viewModel):
             let _viewController = MastodonResendEmailViewController()
             _viewController.viewModel = viewModel
@@ -651,11 +651,7 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
 
     @MainActor
     func openPrivacyURL(_ settingsCoordinator: SettingsCoordinator) {
-        guard let authenticationBox else { return }
-
-        let domain = authenticationBox.domain
-        let privacyURL = Mastodon.API.privacyURL(domain: domain)
-
+        guard let privacyURL = URL(string: "https://joinmastodon.org/ios/privacy") else { return }
         _ = present(scene: .safari(url: privacyURL),
                     from: settingsCoordinator.navigationController,
                     transition: .safariPresent(animated: true))

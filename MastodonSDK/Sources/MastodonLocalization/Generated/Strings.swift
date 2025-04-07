@@ -1195,6 +1195,12 @@ public enum L10n {
       public static func description(_ p1: Any) -> String {
         return L10n.tr("Localizable", "Scene.Privacy.Description", String(describing: p1), fallback: "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.\n\nIf you disagree with the policy for **%@**, you can go back and pick a different server.")
       }
+      /// Please review the terms of service for **%@**. If you disagree, you can go back and pick a different server.
+      public static func termsOfServiceDescription(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "Scene.Privacy.TermsOfServiceDescription", String(describing: p1), fallback: "Please review the terms of service for **%@**. If you disagree, you can go back and pick a different server.")
+      }
+      /// Terms of Service
+      public static let termsOfServiceTitle = L10n.tr("Localizable", "Scene.Privacy.TermsOfServiceTitle", fallback: "Terms of Service")
       /// Your Privacy
       public static let title = L10n.tr("Localizable", "Scene.Privacy.Title", fallback: "Your Privacy")
       public enum Button {
@@ -1207,6 +1213,10 @@ public enum L10n {
         /// Privacy Policy - %@
         public static func server(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Privacy.Policy.Server", String(describing: p1), fallback: "Privacy Policy - %@")
+        }
+        /// Terms of Service - %@
+        public static func termsOfService(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Privacy.Policy.TermsOfService", String(describing: p1), fallback: "Terms of Service - %@")
         }
       }
     }

@@ -87,14 +87,6 @@ extension Mastodon.API {
     public static func resendEmailURL(domain: String) -> URL {
         return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/auth/confirmation/new")!
     }
-    
-    public static func serverRulesURL(domain: String) -> URL {
-        return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/about/more")!
-    }
-    
-    public static func privacyURL(domain: String) -> URL {
-        return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/terms")!
-    }
 
     public static func profileSettingsURL(domain: String) -> URL {
         return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/auth/edit")!
