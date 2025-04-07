@@ -16,22 +16,6 @@ public final class InstanceService {
     
     static let shared = InstanceService()
     
-    var disposeBag = Set<AnyCancellable>()
-    
-    // output
-
-    init() {
-        AuthenticationServiceProvider.shared.currentActiveUser
-            .receive(on: DispatchQueue.main)
-            .asyncMap { [weak self] in
-                if let domain = $0?.domain {
-                    await self?.updateInstance(domain: domain)
-                }
-            }
-            .sink {}
-            .store(in: &disposeBag)
-    }
-    
 }
 
 extension InstanceService {

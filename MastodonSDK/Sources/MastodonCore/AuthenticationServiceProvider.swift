@@ -39,6 +39,15 @@ public class AuthenticationServiceProvider: ObservableObject {
             .store(in: &disposeBag)
 
         // TODO: verify credentials for active authentication
+        currentActiveUser
+            .throttle(for: 3, scheduler: DispatchQueue.main, latest: true)
+            .sink { authBox in
+                guard let domain = authBox?.domain else { return }
+                Task {
+                    await InstanceService.shared.updateInstance(domain: domain)
+                }
+            }
+            .store(in: &disposeBag)
         
         Task {
             if authenticationMigrationRequired {
