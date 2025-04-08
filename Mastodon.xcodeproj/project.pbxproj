@@ -165,8 +165,6 @@
 		D84FA0932AE6915800987F47 /* MBProgressHUD in Frameworks */ = {isa = PBXBuildFile; productRef = D84FA0922AE6915800987F47 /* MBProgressHUD */; };
 		D852C23C2AC5D02C00309232 /* AboutInstanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D852C23B2AC5D02C00309232 /* AboutInstanceViewController.swift */; };
 		D852C23E2AC5D03300309232 /* InstanceRulesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D852C23D2AC5D03300309232 /* InstanceRulesViewController.swift */; };
-		D85DF96B2C481AF700A01408 /* NotificationPolicyFilterTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85DF9682C481AF400A01408 /* NotificationPolicyFilterTableViewCell.swift */; };
-		D85DF96C2C481AF700A01408 /* NotificationPolicyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85DF9692C481AF700A01408 /* NotificationPolicyViewController.swift */; };
 		D85DF96D2C481AF700A01408 /* NotificationPolicyHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85DF96A2C481AF700A01408 /* NotificationPolicyHeaderView.swift */; };
 		D85DF9712C481B1100A01408 /* NotificationRequestsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85DF96E2C481B1100A01408 /* NotificationRequestsTableViewController.swift */; };
 		D85DF9722C481B1100A01408 /* NotificationRequestTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85DF96F2C481B1100A01408 /* NotificationRequestTableViewCell.swift */; };
@@ -820,8 +818,6 @@
 		D84C09A42B0F9E41009E685E /* Acknowledgments.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Acknowledgments.md; sourceTree = "<group>"; };
 		D852C23B2AC5D02C00309232 /* AboutInstanceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutInstanceViewController.swift; sourceTree = "<group>"; };
 		D852C23D2AC5D03300309232 /* InstanceRulesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstanceRulesViewController.swift; sourceTree = "<group>"; };
-		D85DF9682C481AF400A01408 /* NotificationPolicyFilterTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NotificationPolicyFilterTableViewCell.swift; path = Policy/NotificationPolicyFilterTableViewCell.swift; sourceTree = "<group>"; };
-		D85DF9692C481AF700A01408 /* NotificationPolicyViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NotificationPolicyViewController.swift; path = Policy/NotificationPolicyViewController.swift; sourceTree = "<group>"; };
 		D85DF96A2C481AF700A01408 /* NotificationPolicyHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NotificationPolicyHeaderView.swift; path = Policy/NotificationPolicyHeaderView.swift; sourceTree = "<group>"; };
 		D85DF96E2C481B1100A01408 /* NotificationRequestsTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationRequestsTableViewController.swift; sourceTree = "<group>"; };
 		D85DF96F2C481B1100A01408 /* NotificationRequestTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotificationRequestTableViewCell.swift; sourceTree = "<group>"; };
@@ -1842,9 +1838,7 @@
 		D80EC2602C2978CB009724A5 /* Notification Filtering */ = {
 			isa = PBXGroup;
 			children = (
-				D85DF9682C481AF400A01408 /* NotificationPolicyFilterTableViewCell.swift */,
 				D85DF96A2C481AF700A01408 /* NotificationPolicyHeaderView.swift */,
-				D85DF9692C481AF700A01408 /* NotificationPolicyViewController.swift */,
 				FB0F8E922DA54A090058C09E /* NotificationPolicyHostingViewController.swift */,
 			);
 			path = "Notification Filtering";
@@ -3710,7 +3704,6 @@
 				2D38F1EB25CD477000561493 /* HomeTimelineViewModel+LoadLatestState.swift in Sources */,
 				DB5B7295273112B100081888 /* FollowingListViewController.swift in Sources */,
 				0F202201261326E6000C64BF /* HashtagTimelineViewModel.swift in Sources */,
-				D85DF96C2C481AF700A01408 /* NotificationPolicyViewController.swift in Sources */,
 				D81A94172B07A1D30067A19D /* ProfileCardView+Configuration.swift in Sources */,
 				DB63F7452799056400455B82 /* HashtagTableViewCell.swift in Sources */,
 				D82BD7552ABC73AF009A374A /* NotificationPolicyTableViewCell.swift in Sources */,
@@ -3732,7 +3725,6 @@
 				2DAC9E38262FC2320062E1A6 /* SuggestionAccountViewController.swift in Sources */,
 				DB6180E02639194B0018D199 /* MediaPreviewPagingViewController.swift in Sources */,
 				D8E5C349296DB8A3007E76A7 /* StatusEditHistoryViewController.swift in Sources */,
-				D85DF96B2C481AF700A01408 /* NotificationPolicyFilterTableViewCell.swift in Sources */,
 				DBE0822425CD3F1E00FD6BBD /* MastodonRegisterViewModel.swift in Sources */,
 				D8318A882A4468D300C0FB73 /* NotificationSettingsViewController.swift in Sources */,
 				2D82B9FF25E7863200E36F0F /* OnboardingViewControllerAppearance.swift in Sources */,
