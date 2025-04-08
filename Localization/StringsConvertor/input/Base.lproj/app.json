@@ -851,6 +851,7 @@
                 }
             },
             "admin_filter": {
+                "title": "Admin Notifications",
                 "reports": {
                     "title": "Admin reports",
                     "subtitle": "Show reports of spam, rule violations, and other complaints on this instance"

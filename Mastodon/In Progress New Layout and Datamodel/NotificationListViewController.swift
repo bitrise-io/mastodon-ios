@@ -74,7 +74,7 @@ class NotificationListViewController: UIHostingController<NotificationListView>
                 }
             }()
             
-            let policyViewModel = await NotificationFilterViewModel(
+            let policyViewModel = await NotificationPolicyViewModel(
                 NotificationFilterSettings(
                     forNotFollowing: policy.forNotFollowing,
                     forNotFollowers: policy.forNotFollowers,

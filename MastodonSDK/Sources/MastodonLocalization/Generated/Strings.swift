@@ -944,6 +944,8 @@ public enum L10n {
       /// View report
       public static let viewReport = L10n.tr("Localizable", "Scene.Notification.ViewReport", fallback: "View report")
       public enum AdminFilter {
+        /// Admin Notifications
+        public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Title", fallback: "Admin Notifications")
         public enum Reports {
           /// Show reports of spam, rule violations, and other complaints
           public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Subtitle", fallback: "Show reports of spam, rule violations, and other complaints")

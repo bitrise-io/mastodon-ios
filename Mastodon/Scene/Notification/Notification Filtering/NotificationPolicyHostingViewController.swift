@@ -1,0 +1,446 @@
+// Copyright © 2025 Mastodon gGmbH. All rights reserved.
+
+import MastodonAsset
+import MastodonCore
+import MastodonLocalization
+import MastodonSDK
+import SwiftUI
+
+private typealias FilterAction = Mastodon.Entity.NotificationPolicy
+    .NotificationFilterAction
+
+protocol NotificationPolicyViewControllerDelegate: AnyObject {
+    func policyUpdated(
+        _ viewController: NotificationPolicyViewController,
+        newPolicy: Mastodon.Entity.NotificationPolicy)
+}
+
+class NotificationPolicyViewController: UIHostingController<
+    NotificationPolicyView
+>
+{
+    let viewModel: NotificationPolicyViewModel
+    weak var delegate: NotificationPolicyViewControllerDelegate?
+
+    init(_ viewModel: NotificationPolicyViewModel) {
+        self.viewModel = viewModel
+        let root = NotificationPolicyView(viewModel: viewModel)
+        super.init(rootView: root)
+
+        viewModel.dismissView = { [weak self] in
+            self?.dismiss(animated: true)
+        }
+        viewModel.didDismissView = { updatedPolicy in
+            self.didUpdatePolicy(updatedPolicy)
+            viewModel.didDismissView = nil  // break retain cycle
+        }
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init with coder not implemented")
+    }
+
+    private func didUpdatePolicy(
+        _ updatedPolicy: Mastodon.Entity.NotificationPolicy?
+    ) {
+        if let updatedPolicy {
+            delegate?.policyUpdated(self, newPolicy: updatedPolicy)
+        }
+        NotificationCenter.default.post(
+            name: .notificationFilteringChanged, object: nil)
+    }
+}
+
+struct NotificationPolicyView: View {
+    @StateObject var viewModel: NotificationPolicyViewModel
+
+    var body: some View {
+        VStack {
+            HStack {
+                Spacer()
+                    .frame(maxWidth: .infinity)
+                Button {
+                    viewModel.dismissView?()
+                } label: {
+                    Image(systemName: "x.circle")
+                        .frame(width: 45, height: 45)
+                        .font(.title)
+                }
+            }
+            .padding()
+
+            List {
+                ForEach(viewModel.sections, id: \.self) { section in
+                    Section(header: Text(section.headerText).font(.title)) {
+                        ForEach(section.items, id: \.self) { policyItem in
+                            rowView(policyItem)
+                        }
+                    }
+                    .textCase(nil)
+                }
+            }
+            .listStyle(.insetGrouped)
+
+            Spacer()
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .onDisappear {
+            Task {
+                let updatedPolicy = try await viewModel.saveChanges()
+                viewModel.didDismissView?(updatedPolicy)
+            }
+        }
+    }
+
+    @ViewBuilder func rowView(
+        _ settingType: NotificationPolicyViewModel.NotificationFilterItem
+    ) -> some View {
+
+            VStack(alignment: .leading) {
+                // title
+                HStack(alignment: verticalAlignmentForControl(settingType)) {
+                    Text(settingType.title)
+                        .multilineTextAlignment(.leading)
+                        .font(.headline)
+                    Spacer()
+                    // menu or toggle
+                    control(settingType)
+                        .fixedSize()
+                }
+                
+                HStack {
+                    Spacer().frame(width: 5)
+                    
+                    // subtitle
+                    Text(settingType.subtitle)
+                        .multilineTextAlignment(.leading)
+                        .font(.subheadline)
+                    
+                    Spacer()
+                   
+                }
+            }
+            .frame(maxWidth: .infinity)
+    }
+    
+    @ViewBuilder func control(_ settingType: NotificationPolicyViewModel.NotificationFilterItem) -> some View {
+        // the control
+        switch settingType {
+        case .notFollowing, .notFollowers, .newAccounts, .privateMentions,
+                .limitedAccounts:
+            Picker("", selection: viewModel.binding(for: settingType)) {
+                ForEach([FilterAction.accept, .filter, .drop], id: \.self) {
+                    option in
+                    Text(option.displayTitle)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(Asset.Colors.Brand.blurple.swiftUIColor)
+            .fixedSize()
+        case .adminReports, .adminSignups:
+            Toggle(
+                isOn: Binding(
+                    get: {
+                        viewModel.value(forItem: settingType) == .accept
+                    },
+                    set: {
+                        viewModel.setValue(
+                            $0 ? .accept : .filter, forItem: settingType)
+                    })
+            ) {}
+                .tint(Asset.Colors.Brand.blurple.swiftUIColor)
+                .fixedSize()
+        }
+    }
+    
+    func verticalAlignmentForControl(_ settingType: NotificationPolicyViewModel.NotificationFilterItem) -> VerticalAlignment {
+        switch settingType {
+        case .notFollowing, .notFollowers, .newAccounts, .privateMentions, .limitedAccounts:
+                .center
+        case .adminReports, .adminSignups:
+                .top
+        }
+    }
+}
+
+@MainActor
+class NotificationPolicyViewModel: ObservableObject {
+
+    let sections: [NotificationPolicyViewModel.NotificationFilterSection]
+
+    let originalRegularSettings: NotificationFilterSettings
+    let originalAdminSettings: AdminNotificationFilterSettings?
+
+    var dismissView: (() -> Void)?
+    var didDismissView: ((Mastodon.Entity.NotificationPolicy?) -> Void)?
+
+    @Published var regularFilterSettings: NotificationFilterSettings
+    @Published var adminFilterSettings: AdminNotificationFilterSettings?
+
+    var hasUnsavedChangesToRegularSettings: Bool {
+        return regularFilterSettings != originalRegularSettings
+    }
+
+    var hasUnsavedChangesToAdminSettings: Bool {
+        return adminFilterSettings != originalAdminSettings
+    }
+
+    init(
+        _ regularSettings: NotificationFilterSettings,
+        adminSettings: AdminNotificationFilterSettings?
+    ) async {
+        self.originalRegularSettings = regularSettings
+        self.regularFilterSettings = regularSettings
+        self.originalAdminSettings = adminSettings
+        self.adminFilterSettings = adminSettings
+
+        self.sections = [.main, .admin].compactMap { $0 }
+    }
+
+    fileprivate func value(forItem item: NotificationFilterItem) -> FilterAction
+    {
+        switch item {
+        case .notFollowing:
+            return regularFilterSettings.forNotFollowing
+        case .notFollowers:
+            return regularFilterSettings.forNotFollowers
+        case .newAccounts:
+            return regularFilterSettings.forNewAccounts
+        case .privateMentions:
+            return regularFilterSettings.forPrivateMentions
+        case .limitedAccounts:
+            return regularFilterSettings.forLimitedAccounts
+        case .adminReports:
+            return adminFilterSettings?.forReports ?? .drop
+        case .adminSignups:
+            return adminFilterSettings?.forSignups ?? .drop
+        }
+    }
+
+    fileprivate func setValue(
+        _ value: FilterAction, forItem item: NotificationFilterItem
+    ) {
+        switch item {
+        case .notFollowing:
+            regularFilterSettings = NotificationFilterSettings(
+                forNotFollowing: value,
+                forNotFollowers: regularFilterSettings.forNotFollowers,
+                forNewAccounts: regularFilterSettings.forNewAccounts,
+                forPrivateMentions: regularFilterSettings.forPrivateMentions,
+                forLimitedAccounts: regularFilterSettings.forLimitedAccounts)
+        case .notFollowers:
+            regularFilterSettings = NotificationFilterSettings(
+                forNotFollowing: regularFilterSettings.forNotFollowing,
+                forNotFollowers: value,
+                forNewAccounts: regularFilterSettings.forNewAccounts,
+                forPrivateMentions: regularFilterSettings.forPrivateMentions,
+                forLimitedAccounts: regularFilterSettings.forLimitedAccounts)
+        case .newAccounts:
+            regularFilterSettings = NotificationFilterSettings(
+                forNotFollowing: regularFilterSettings.forNotFollowing,
+                forNotFollowers: regularFilterSettings.forNotFollowers,
+                forNewAccounts: value,
+                forPrivateMentions: regularFilterSettings.forPrivateMentions,
+                forLimitedAccounts: regularFilterSettings.forLimitedAccounts)
+        case .privateMentions:
+            regularFilterSettings = NotificationFilterSettings(
+                forNotFollowing: regularFilterSettings.forNotFollowing,
+                forNotFollowers: regularFilterSettings.forNotFollowers,
+                forNewAccounts: regularFilterSettings.forNewAccounts,
+                forPrivateMentions: value,
+                forLimitedAccounts: regularFilterSettings.forLimitedAccounts)
+        case .limitedAccounts:
+            regularFilterSettings = NotificationFilterSettings(
+                forNotFollowing: regularFilterSettings.forNotFollowing,
+                forNotFollowers: regularFilterSettings.forNotFollowers,
+                forNewAccounts: regularFilterSettings.forNewAccounts,
+                forPrivateMentions: regularFilterSettings.forPrivateMentions,
+                forLimitedAccounts: value)
+
+        case .adminReports:
+            guard let adminFilterSettings else { return }
+            self.adminFilterSettings = AdminNotificationFilterSettings(
+                forReports: value,
+                forSignups: adminFilterSettings.forSignups)
+        case .adminSignups:
+            guard let adminFilterSettings else { return }
+            self.adminFilterSettings = AdminNotificationFilterSettings(
+                forReports: adminFilterSettings.forReports,
+                forSignups: value)
+        }
+    }
+
+    func saveChanges() async throws -> Mastodon.Entity.NotificationPolicy? {
+        guard
+            let authenticationBox = AuthenticationServiceProvider.shared
+                .currentActiveUser.value
+        else { return nil }
+
+        if let adminFilterSettings, hasUnsavedChangesToAdminSettings {
+            do {
+                try await BodegaPersistence.Notifications.updatePreferences(
+                    adminFilterSettings, for: authenticationBox)
+            } catch {}
+        }
+
+        if hasUnsavedChangesToRegularSettings {
+            let updatedPolicy = try await APIService.shared
+                .updateNotificationPolicy(
+                    authenticationBox: authenticationBox,
+                    forNotFollowing: value(forItem: .notFollowing),
+                    forNotFollowers: value(forItem: .notFollowers),
+                    forNewAccounts: value(forItem: .newAccounts),
+                    forPrivateMentions: value(forItem: .privateMentions),
+                    forLimitedAccounts: value(forItem: .limitedAccounts)
+                ).value
+            return updatedPolicy
+        } else {
+            return nil
+        }
+    }
+}
+
+extension NotificationPolicyViewModel {
+    fileprivate func binding(for settingItem: NotificationFilterItem)
+        -> Binding<FilterAction>
+    {
+        return Binding(
+            get: { [weak self] in
+                self?.value(forItem: settingItem) ?? ._other("unset")
+            }, set: { [weak self] in self?.setValue($0, forItem: settingItem) })
+    }
+}
+
+extension NotificationPolicyViewModel {
+    enum NotificationFilterSection: Hashable {
+        case main
+        case admin
+
+        var items: [NotificationFilterItem] {
+            switch self {
+            case .main:
+                return [
+                    .notFollowing, .notFollowers, .newAccounts,
+                    .privateMentions, .limitedAccounts,
+                ]
+            case .admin:
+                return [.adminReports, .adminSignups]
+            }
+        }
+
+        var headerText: String {
+            switch self {
+            case .main:
+                L10n.Scene.Notification.Policy.title
+            case .admin:
+                L10n.Scene.Notification.AdminFilter.title
+            }
+        }
+    }
+
+    enum NotificationFilterItem: Hashable {
+        case notFollowing
+        case notFollowers
+        case newAccounts
+        case privateMentions
+        case limitedAccounts
+
+        case adminReports
+        case adminSignups
+
+        static let regularOptions = [
+            Self.notFollowing, .notFollowers, .newAccounts, .privateMentions,
+            .limitedAccounts,
+        ]
+        static let adminOptions = [Self.adminReports, .adminSignups]
+
+        var title: String {
+            switch self {
+            case .notFollowing:
+                return L10n.Scene.Notification.Policy.NotFollowing.title
+            case .notFollowers:
+                return L10n.Scene.Notification.Policy.NoFollower.title
+            case .newAccounts:
+                return L10n.Scene.Notification.Policy.NewAccount.title
+            case .privateMentions:
+                return L10n.Scene.Notification.Policy.PrivateMentions.title
+            case .limitedAccounts:
+                return L10n.Scene.Notification.Policy.ModeratedAccounts.title
+
+            case .adminReports:
+                return L10n.Scene.Notification.AdminFilter.Reports.title
+            case .adminSignups:
+                return L10n.Scene.Notification.AdminFilter.Signups.title
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .notFollowing:
+                return L10n.Scene.Notification.Policy.NotFollowing.subtitle
+            case .notFollowers:
+                return L10n.Scene.Notification.Policy.NoFollower.subtitle
+            case .newAccounts:
+                return L10n.Scene.Notification.Policy.NewAccount.subtitle
+            case .privateMentions:
+                return L10n.Scene.Notification.Policy.PrivateMentions.subtitle
+            case .limitedAccounts:
+                return L10n.Scene.Notification.Policy.ModeratedAccounts.subtitle
+
+            case .adminReports:
+                return L10n.Scene.Notification.AdminFilter.Reports.subtitle
+            case .adminSignups:
+                return L10n.Scene.Notification.AdminFilter.Signups.subtitle
+            }
+        }
+    }
+}
+
+struct NotificationFilterSettings: Codable, Equatable {
+    let forNotFollowing:
+        Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+    let forNotFollowers:
+        Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+    let forNewAccounts:
+        Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+    let forPrivateMentions:
+        Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+    let forLimitedAccounts:
+        Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+}
+
+struct AdminNotificationFilterSettings: Codable, Equatable {
+    let forReports: Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+    let forSignups: Mastodon.Entity.NotificationPolicy.NotificationFilterAction
+
+    var excludedNotificationTypes: [Mastodon.Entity.NotificationType]? {
+        var excluded = [Mastodon.Entity.NotificationType]()
+        if forReports != .accept {
+            excluded.append(.adminReport)
+        }
+        if forSignups != .accept {
+            excluded.append(.adminSignUp)
+        }
+        return excluded.isEmpty ? nil : excluded
+    }
+}
+
+extension FilterAction {
+    var displayTitle: String {
+        switch self {
+        case .accept:  return L10n.Scene.Notification.Policy.Action.Accept.title
+        case .filter:  return L10n.Scene.Notification.Policy.Action.Filter.title
+        case .drop:    return L10n.Scene.Notification.Policy.Action.Drop.title
+        case ._other(let string): return string
+        }
+    }
+    
+    var displaySubtitle: String {
+        switch self {
+        case .accept:  return L10n.Scene.Notification.Policy.Action.Accept.subtitle
+        case .filter:  return L10n.Scene.Notification.Policy.Action.Filter.subtitle
+        case .drop:    return L10n.Scene.Notification.Policy.Action.Drop.subtitle
+        case ._other: return ""
+        }
+    }
+}

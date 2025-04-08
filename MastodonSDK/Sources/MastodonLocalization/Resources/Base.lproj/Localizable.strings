@@ -400,6 +400,7 @@ Please retry in a few minutes.";
 "Scene.Notification.Policy.Action.Drop.Title" = "Ignore";
 "Scene.Notification.Policy.Action.Drop.Subtitle" = "Send to the void, never to be seen again";
 "Scene.Notification.Policy.Title" = "Filter Notifications from…";
+"Scene.Notification.AdminFilter.Title" = "Admin Notifications";
 "Scene.Notification.AdminFilter.Reports.Title" = "Admin reports";
 "Scene.Notification.AdminFilter.Reports.Subtitle" = "Show reports of spam, rule violations, and other complaints";
 "Scene.Notification.AdminFilter.Signups.Title" = "Account signups";

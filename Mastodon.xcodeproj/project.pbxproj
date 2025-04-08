@@ -508,6 +508,7 @@
 		DBFEEC99279BDCDE004F81DD /* ProfileAboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC98279BDCDE004F81DD /* ProfileAboutViewModel.swift */; };
 		DBFEEC9B279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9A279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift */; };
 		DBFEEC9D279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9C279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift */; };
+		FB0F8E932DA54A180058C09E /* NotificationPolicyHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0F8E922DA54A090058C09E /* NotificationPolicyHostingViewController.swift */; };
 		FB7C4CC62CD2CAB000F6129A /* DonationCompletionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CC52CD2CAA800F6129A /* DonationCompletionViewController.swift */; };
 		FB7C4CCC2CD55DEB00F6129A /* NavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCB2CD55DEB00F6129A /* NavigationFlow.swift */; };
 		FB7C4CCE2CD55DFF00F6129A /* NewDonationNavigationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7C4CCD2CD55DFE00F6129A /* NewDonationNavigationFlow.swift */; };
@@ -1261,6 +1262,7 @@
 		DBFEF06726A58D07006D7ED1 /* ShareActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareActionExtension.entitlements; sourceTree = "<group>"; };
 		E9AABD3D26B64B8C00E237DA /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Intents.strings; sourceTree = "<group>"; };
 		E9AABD4026B64B8D00E237DA /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		FB0F8E922DA54A090058C09E /* NotificationPolicyHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPolicyHostingViewController.swift; sourceTree = "<group>"; };
 		FB7C4CC52CD2CAA800F6129A /* DonationCompletionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonationCompletionViewController.swift; sourceTree = "<group>"; };
 		FB7C4CCB2CD55DEB00F6129A /* NavigationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationFlow.swift; sourceTree = "<group>"; };
 		FB7C4CCD2CD55DFE00F6129A /* NewDonationNavigationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewDonationNavigationFlow.swift; sourceTree = "<group>"; };
@@ -1843,6 +1845,7 @@
 				D85DF9682C481AF400A01408 /* NotificationPolicyFilterTableViewCell.swift */,
 				D85DF96A2C481AF700A01408 /* NotificationPolicyHeaderView.swift */,
 				D85DF9692C481AF700A01408 /* NotificationPolicyViewController.swift */,
+				FB0F8E922DA54A090058C09E /* NotificationPolicyHostingViewController.swift */,
 			);
 			path = "Notification Filtering";
 			sourceTree = "<group>";
@@ -3849,6 +3852,7 @@
 				DB63F77B279ACAE500455B82 /* DataSourceFacade+Favorite.swift in Sources */,
 				2DAC9E46262FC9FD0062E1A6 /* SuggestionAccountTableViewCell.swift in Sources */,
 				D8D688F92AB8B970000F651A /* SearchResultOverviewCoordinator.swift in Sources */,
+				FB0F8E932DA54A180058C09E /* NotificationPolicyHostingViewController.swift in Sources */,
 				DB4FFC2C269EC39600D62E92 /* SearchTransitionController.swift in Sources */,
 				2A3D9B7E29A8F33A00F30313 /* StatusHistoryView.swift in Sources */,
 				D81A227B2AB47B9A00905D71 /* SearchResultDefaultSectionTableViewCell.swift in Sources */,
