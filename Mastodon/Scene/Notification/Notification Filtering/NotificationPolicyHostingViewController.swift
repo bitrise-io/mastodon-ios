@@ -170,7 +170,7 @@ struct NotificationPolicyView: View {
             }
             .background(Color(uiColor: .systemGroupedBackground))
             
-            // Close button
+            // Dismiss button
             Button {
                 viewModel.dismissView?()
             } label: {
@@ -209,6 +209,7 @@ struct NotificationPolicyView: View {
                     .multilineTextAlignment(.leading)
                     .font(.subheadline)
             }
+            .accessibilityElement(children: .combine)
             
             Spacer()
 
@@ -300,12 +301,11 @@ extension NotificationPolicyView {
                 .padding(7)
                 .fixedSize(horizontal: false, vertical: true)
                 .onTapGesture {
-                    withAnimation {
-                        if viewModel.value(forItem: filterItem) != option {
-                            viewModel.setValue(option, forItem: filterItem)
-                        }
-                        viewModel.isShowingMenu = nil
-                    }
+                    updateSelectedOption(option, for: filterItem)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAction {
+                    updateSelectedOption(option, for: filterItem)
                 }
                 
                 if option != .drop {
@@ -323,6 +323,13 @@ extension NotificationPolicyView {
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
                 .shadow(radius: 5)
         }
+    }
+    
+    fileprivate func updateSelectedOption(_ option: FilterAction, for filterItem: NotificationPolicyViewModel.NotificationFilterItem) {
+        if viewModel.value(forItem: filterItem) != option {
+            viewModel.setValue(option, forItem: filterItem)
+        }
+        viewModel.isShowingMenu = nil
     }
 }
 
