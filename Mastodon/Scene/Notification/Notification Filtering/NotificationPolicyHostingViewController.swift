@@ -226,12 +226,10 @@ struct NotificationPolicyView: View {
         case .notFollowing, .notFollowers, .newAccounts, .privateMentions,
                 .limitedAccounts:
             Button {
-                withAnimation {
-                    if viewModel.isShowingMenu == nil {
-                        viewModel.isShowingMenu = settingType
-                    } else {
-                        viewModel.isShowingMenu = nil
-                    }
+                if viewModel.isShowingMenu == nil {
+                    viewModel.isShowingMenu = settingType
+                } else {
+                    viewModel.isShowingMenu = nil
                 }
             } label: {
                 HStack {
