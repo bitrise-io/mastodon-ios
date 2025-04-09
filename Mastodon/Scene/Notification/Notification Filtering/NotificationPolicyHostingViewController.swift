@@ -327,7 +327,7 @@ class NotificationPolicyViewModel: ObservableObject {
         self.originalAdminSettings = adminSettings
         self.adminFilterSettings = adminSettings
 
-        self.sections = [.main, .admin].compactMap { $0 }
+        self.sections = [.main, adminSettings != nil ? .admin : nil].compactMap { $0 }
     }
 
     fileprivate func value(forItem item: NotificationFilterItem) -> FilterAction
