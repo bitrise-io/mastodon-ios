@@ -85,7 +85,7 @@ class NotificationListViewController: UIHostingController<NotificationListView>
                 adminSettings: adminSettings
             )
             
-            guard let policyViewController = self.sceneCoordinator?.present(scene: .notificationPolicy(viewModel: policyViewModel), transition: .formSheet) as? NotificationPolicyViewController else { return }
+            guard let policyViewController = self.sceneCoordinator?.present(scene: .notificationPolicy(viewModel: policyViewModel), transition: .formSheet(policyViewModel.adminFilterSettings != nil ? [.large()] : nil)) as? NotificationPolicyViewController else { return }
             
             policyViewController.delegate = self
         }

@@ -320,7 +320,7 @@ extension MainTabBarController {
         case .me:
             guard let authenticationBox else { return }
             let accountListViewModel = AccountListViewModel(authenticationBox: authenticationBox)
-            _ = self.sceneCoordinator?.present(scene: .accountList(viewModel: accountListViewModel), from: self, transition: .formSheet)
+            _ = self.sceneCoordinator?.present(scene: .accountList(viewModel: accountListViewModel), from: self, transition: .formSheet(nil))
         default:
             break
         }

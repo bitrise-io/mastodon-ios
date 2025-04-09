@@ -151,7 +151,7 @@ extension SceneCoordinator {
         case safariPresent(animated: Bool, completion: (() -> Void)? = nil)
         case alertController(animated: Bool, completion: (() -> Void)? = nil)
         case activityViewControllerPresent(animated: Bool, completion: (() -> Void)? = nil)
-        case formSheet
+        case formSheet([UISheetPresentationController.Detent]?)
         case none
     }
 
@@ -357,10 +357,10 @@ extension SceneCoordinator {
             viewController.modalPresentationCapturesStatusBarAppearance = true
             presentingViewController.present(viewController, animated: animated, completion: completion)
 
-        case .formSheet:
+        case .formSheet(let detents):
             viewController.modalPresentationStyle = .formSheet
             if let sheetPresentation = viewController.sheetPresentationController {
-                sheetPresentation.detents = [.large(), .medium()]
+                sheetPresentation.detents = detents ?? [.medium(), .large()]
             }
             presentingViewController.present(viewController, animated: true)
         }
