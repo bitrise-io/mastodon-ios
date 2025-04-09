@@ -71,6 +71,24 @@ extension HorizontalAlignment {
     static let menuAlign = HorizontalAlignment(MenuAlign.self)
 }
 
+extension VerticalAlignment {
+    enum ToggleAlign: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[.top]
+        }
+    }
+    
+    static let toggleAlign = VerticalAlignment(ToggleAlign.self)
+    
+    enum ButtonAlign: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[VerticalAlignment.center]
+        }
+    }
+    
+    static let buttonAlign = VerticalAlignment(ButtonAlign.self)
+}
+
 struct NotificationPolicyView: View {
     @Namespace private var menuAnimation
     @StateObject var viewModel: NotificationPolicyViewModel
@@ -169,31 +187,36 @@ struct NotificationPolicyView: View {
         _ settingType: NotificationPolicyViewModel.NotificationFilterItem
     ) -> some View {
 
+        let controlAlignment = verticalAlignmentForControl(settingType)
+        HStack(alignment: controlAlignment) {
+            // title and subtitle
             VStack(alignment: .leading) {
-                // title
-                HStack(alignment: verticalAlignmentForControl(settingType)) {
-                    Text(settingType.title)
-                        .multilineTextAlignment(.leading)
-                        .font(.headline)
-                    Spacer()
-                    // menu or toggle
-                    control(settingType)
-                        .fixedSize()
-                }
-                
-                HStack {
-                    Spacer().frame(width: 5)
-                    
-                    // subtitle
-                    Text(settingType.subtitle)
-                        .multilineTextAlignment(.leading)
-                        .font(.subheadline)
-                    
-                    Spacer()
-                   
-                }
+                Text(settingType.title)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize()
+                    .font(.headline)
+                    .alignmentGuide(controlAlignment) { d in
+                        switch controlAlignment {
+                        case .buttonAlign:
+                            return d[VerticalAlignment.center]
+                        case .toggleAlign:
+                            return d[.top]
+                        default:
+                            return d[.top]
+                        }
+                    }
+                Text(settingType.subtitle)
+                    .multilineTextAlignment(.leading)
+                    .font(.subheadline)
             }
-            .frame(maxWidth: .infinity)
+            
+            Spacer()
+
+            // menu or toggle
+            control(settingType)
+                .fixedSize()
+        }
+        .frame(maxWidth: .infinity)
     }
     
     @ViewBuilder func control(_ settingType: NotificationPolicyViewModel.NotificationFilterItem) -> some View {
@@ -217,6 +240,7 @@ struct NotificationPolicyView: View {
             }
             .tint(Asset.Colors.Brand.blurple.swiftUIColor)
             .fixedSize()
+            .alignmentGuide(.buttonAlign) { d in return d[VerticalAlignment.center] }
             .transition(.identity)
             .overlay {
                 if settingType == viewModel.isShowingMenu {
@@ -236,15 +260,16 @@ struct NotificationPolicyView: View {
             ) {}
                 .tint(Asset.Colors.Brand.blurple.swiftUIColor)
                 .fixedSize()
+                .alignmentGuide(.toggleAlign) { d in d[.top] }
         }
     }
     
     func verticalAlignmentForControl(_ settingType: NotificationPolicyViewModel.NotificationFilterItem) -> VerticalAlignment {
         switch settingType {
         case .notFollowing, .notFollowers, .newAccounts, .privateMentions, .limitedAccounts:
-                .center
+                .buttonAlign
         case .adminReports, .adminSignups:
-                .top
+                .toggleAlign
         }
     }
 }
