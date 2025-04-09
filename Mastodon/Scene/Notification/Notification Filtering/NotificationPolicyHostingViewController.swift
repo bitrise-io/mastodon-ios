@@ -177,7 +177,7 @@ struct NotificationPolicyView: View {
                 Image(systemName: "xmark.circle.fill")
                     .frame(width: 45, height: 45)
                     .font(.title)
-                    .foregroundStyle(SeparatorShapeStyle())
+                    .foregroundStyle(Color.secondary)
             }
             .padding()
         }
