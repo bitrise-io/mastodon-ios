@@ -51,10 +51,83 @@ class NotificationPolicyViewController: UIHostingController<
     }
 }
 
+extension VerticalAlignment {
+    enum MenuAlign: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[.top]
+        }
+    }
+    
+    static let menuAlign = VerticalAlignment(MenuAlign.self)
+}
+
+extension HorizontalAlignment {
+    enum MenuAlign: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[.trailing]
+        }
+    }
+    
+    static let menuAlign = HorizontalAlignment(MenuAlign.self)
+}
+
 struct NotificationPolicyView: View {
+    @Namespace private var menuAnimation
     @StateObject var viewModel: NotificationPolicyViewModel
+    @State var menuAnchor: CGPoint?
+    @State var readyToShowMenu: Bool = false
+    
+    private let mainViewPositionPrefKey = "mainView"
+    private let menuPositionPrefKey = "menu"
 
     var body: some View {
+        ZStack(alignment: Alignment(horizontal: .menuAlign, vertical: .menuAlign)) {
+            
+            mainView()
+                .overlay {
+                    ReferencePointReader(id: mainViewPositionPrefKey, referencePoint: .leadingTop)
+                }
+                .alignmentGuide(HorizontalAlignment.menuAlign) { d in
+                  
+                    guard let menuAnchor else { return d[HorizontalAlignment.center] }
+        
+                    return menuAnchor.x
+                }
+                .alignmentGuide(VerticalAlignment.menuAlign) { d in
+                    guard let menuAnchor else { return d[HorizontalAlignment.center] }
+                    return menuAnchor.y
+                }
+            
+            if readyToShowMenu, let menuItem = viewModel.isShowingMenu {
+                menu(for: menuItem)
+                    .alignmentGuide(HorizontalAlignment.menuAlign) { d in
+                        return d[HorizontalAlignment.trailing]
+                    }
+                    .alignmentGuide(VerticalAlignment.menuAlign) { d in
+                        return d[VerticalAlignment.center]
+                    }
+            }
+        }
+        .onDisappear {
+            Task {
+                let updatedPolicy = try await viewModel.saveChanges()
+                viewModel.didDismissView?(updatedPolicy)
+            }
+        }
+        .onPreferenceChange(PositionKey.self) { preferences in
+            menuAnchor = preferences.deltaFrom(mainViewPositionPrefKey, to: menuPositionPrefKey)
+            let canShowMenuNow = menuAnchor != nil
+            if canShowMenuNow != readyToShowMenu {
+                Task { @MainActor in
+                    withAnimation {
+                        readyToShowMenu = menuAnchor != nil
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder func mainView() -> some View {
         VStack {
             HStack {
                 Spacer()
@@ -68,10 +141,10 @@ struct NotificationPolicyView: View {
                 }
             }
             .padding()
-
+            
             List {
                 ForEach(viewModel.sections, id: \.self) { section in
-                    Section(header: Text(section.headerText).font(.title)) {
+                    Section(header: Text(section.headerText).font(.title2)) {
                         ForEach(section.items, id: \.self) { policyItem in
                             rowView(policyItem)
                         }
@@ -80,16 +153,11 @@ struct NotificationPolicyView: View {
                 }
             }
             .listStyle(.insetGrouped)
-
+            
             Spacer()
         }
         .background(Color(uiColor: .systemGroupedBackground))
-        .onDisappear {
-            Task {
-                let updatedPolicy = try await viewModel.saveChanges()
-                viewModel.didDismissView?(updatedPolicy)
-            }
-        }
+        
     }
 
     @ViewBuilder func rowView(
@@ -128,15 +196,28 @@ struct NotificationPolicyView: View {
         switch settingType {
         case .notFollowing, .notFollowers, .newAccounts, .privateMentions,
                 .limitedAccounts:
-            Picker("", selection: viewModel.binding(for: settingType)) {
-                ForEach([FilterAction.accept, .filter, .drop], id: \.self) {
-                    option in
-                    Text(option.displayTitle)
+            Button {
+                withAnimation {
+                    if viewModel.isShowingMenu == nil {
+                        viewModel.isShowingMenu = settingType
+                    } else {
+                        viewModel.isShowingMenu = nil
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(viewModel.value(forItem: settingType).displayTitle)
+                    Image(systemName: "chevron.up.chevron.down")
                 }
             }
-            .pickerStyle(.menu)
             .tint(Asset.Colors.Brand.blurple.swiftUIColor)
             .fixedSize()
+            .transition(.identity)
+            .overlay {
+                if settingType == viewModel.isShowingMenu {
+                    ReferencePointReader(id: menuPositionPrefKey, referencePoint: .trailingCenter)
+                }
+            }
         case .adminReports, .adminSignups:
             Toggle(
                 isOn: Binding(
@@ -163,9 +244,61 @@ struct NotificationPolicyView: View {
     }
 }
 
+extension NotificationPolicyView {
+    @ViewBuilder func menu(for filterItem: NotificationPolicyViewModel.NotificationFilterItem) -> some View {
+        
+        VStack(alignment: .leading) {
+            ForEach([FilterAction.accept, .filter, .drop], id: \.self) { option in
+                HStack(alignment: .top, spacing: 0) {
+                    let checkmarkWidth: CGFloat = 25
+                    if viewModel.value(forItem: filterItem) == option {
+                        Image(systemName: "checkmark")
+                            .font(.caption)
+                            .frame(width: checkmarkWidth, height: checkmarkWidth)
+                    } else {
+                        Spacer()
+                            .frame(width: checkmarkWidth, height: checkmarkWidth)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text(option.displayTitle)
+                        Text(option.displaySubtitle)
+                            .font(.caption2)
+                    }
+                    .padding(5)
+                }
+                .padding()
+                .fixedSize(horizontal: false, vertical: true)
+                .onTapGesture {
+                    withAnimation {
+                        if viewModel.value(forItem: filterItem) != option {
+                            viewModel.setValue(option, forItem: filterItem)
+                        }
+                        viewModel.isShowingMenu = nil
+                    }
+                }
+                
+                if option != .drop {
+                    Spacer()
+                        .frame(height: 0.5)
+                        .frame(maxWidth: .infinity)
+                        .background(SeparatorShapeStyle())
+                }
+            }
+        }
+        .frame(width: 250)
+        .fixedSize(horizontal: false, vertical: true)
+        .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                .shadow(radius: 5)
+        }
+    }
+}
+
 @MainActor
 class NotificationPolicyViewModel: ObservableObject {
-
+    
     let sections: [NotificationPolicyViewModel.NotificationFilterSection]
 
     let originalRegularSettings: NotificationFilterSettings
@@ -174,6 +307,7 @@ class NotificationPolicyViewModel: ObservableObject {
     var dismissView: (() -> Void)?
     var didDismissView: ((Mastodon.Entity.NotificationPolicy?) -> Void)?
 
+    @Published var isShowingMenu: NotificationFilterItem?
     @Published var regularFilterSettings: NotificationFilterSettings
     @Published var adminFilterSettings: AdminNotificationFilterSettings?
 
@@ -442,5 +576,75 @@ extension FilterAction {
         case .drop:    return L10n.Scene.Notification.Policy.Action.Drop.subtitle
         case ._other: return ""
         }
+    }
+}
+
+struct ReferencePointReader: View {
+    static let referenceSpace = "ReferencePointReaderSpace"
+    let id: String
+    
+    let referencePoint: PositionReferencePoint
+    
+    enum PositionReferencePoint {
+        case trailingCenter
+        case leadingTop
+    }
+    
+    var body: some View {
+        GeometryReader { metrics in
+            let position =  {
+                switch referencePoint {
+                case .trailingCenter:
+                    CGPoint(
+                        x: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).maxX,
+                        y: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).midY
+                    )
+                case .leadingTop:
+                    CGPoint(
+                        x: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).minX,
+                        y: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).minY
+                    )
+                }
+               
+            }()
+            
+            Rectangle()
+                .fill(Color.clear)
+                .preference(
+                    key: PositionKey.self,
+                    value: [PositionValue(id: id, referencePosition: position)]
+                )
+        }
+    }
+}
+
+struct PositionValue: Equatable {
+    typealias ID = String
+    let id: ID
+    let referencePosition: CGPoint
+}
+
+struct PositionKey: PreferenceKey {
+    static var defaultValue: [PositionValue] = []
+    static func reduce(value: inout [PositionValue], nextValue: () -> [PositionValue]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+extension Array<PositionValue> {
+    func deltaFrom(_ startKey: PositionValue.ID, to endKey: PositionValue.ID) -> CGPoint? {
+        var startPoint: CGPoint?
+        var endPoint: CGPoint?
+        for pref in self {
+            if pref.id == startKey {
+                startPoint = pref.referencePosition
+            } else if pref.id == endKey {
+                endPoint = pref.referencePosition
+            }
+        }
+        guard let endPoint, let startPoint else { return nil }
+        let deltaX = endPoint.x - startPoint.x
+        let deltaY = endPoint.y - startPoint.y
+        return CGPoint(x: deltaX, y: deltaY)
     }
 }
