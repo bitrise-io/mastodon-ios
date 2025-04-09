@@ -81,50 +81,49 @@ struct NotificationPolicyView: View {
     private let menuPositionPrefKey = "menu"
 
     var body: some View {
-        ZStack(alignment: Alignment(horizontal: .menuAlign, vertical: .menuAlign)) {
-            
-            mainView()
-                .overlay {
-                    ReferencePointReader(id: mainViewPositionPrefKey, referencePoint: .leadingTop)
-                }
-                .alignmentGuide(HorizontalAlignment.menuAlign) { d in
-                  
-                    guard let menuAnchor else { return d[HorizontalAlignment.center] }
         
-                    return menuAnchor.x
-                }
-                .alignmentGuide(VerticalAlignment.menuAlign) { d in
-                    guard let menuAnchor else { return d[HorizontalAlignment.center] }
-                    return menuAnchor.y
-                }
-            
-            if readyToShowMenu, let menuItem = viewModel.isShowingMenu {
-                menu(for: menuItem)
-                    .alignmentGuide(HorizontalAlignment.menuAlign) { d in
-                        return d[HorizontalAlignment.trailing]
-                    }
-                    .alignmentGuide(VerticalAlignment.menuAlign) { d in
-                        return d[VerticalAlignment.center]
-                    }
+        mainView()
+            .overlay {
+                ReferencePointReader(id: mainViewPositionPrefKey, referencePoint: .leadingTop)
             }
-        }
-        .onDisappear {
-            Task {
-                let updatedPolicy = try await viewModel.saveChanges()
-                viewModel.didDismissView?(updatedPolicy)
+            .alignmentGuide(HorizontalAlignment.menuAlign) { d in
+                
+                guard let menuAnchor else { return d[HorizontalAlignment.center] }
+                
+                return menuAnchor.x
             }
-        }
-        .onPreferenceChange(PositionKey.self) { preferences in
-            menuAnchor = preferences.deltaFrom(mainViewPositionPrefKey, to: menuPositionPrefKey)
-            let canShowMenuNow = menuAnchor != nil
-            if canShowMenuNow != readyToShowMenu {
-                Task { @MainActor in
-                    withAnimation {
-                        readyToShowMenu = menuAnchor != nil
-                    }
+            .alignmentGuide(VerticalAlignment.menuAlign) { d in
+                guard let menuAnchor else { return d[HorizontalAlignment.center] }
+                return menuAnchor.y
+            }
+            .overlay(alignment: Alignment(horizontal: .menuAlign, vertical: .menuAlign)) {
+                if readyToShowMenu, let menuItem = viewModel.isShowingMenu {
+                    menu(for: menuItem)
+                        .alignmentGuide(HorizontalAlignment.menuAlign) { d in
+                            return d[HorizontalAlignment.trailing]
+                        }
+                        .alignmentGuide(VerticalAlignment.menuAlign) { d in
+                            return d[VerticalAlignment.center]
+                        }
                 }
             }
-        }
+            .onDisappear {
+                Task {
+                    let updatedPolicy = try await viewModel.saveChanges()
+                    viewModel.didDismissView?(updatedPolicy)
+                }
+            }
+            .onPreferenceChange(PositionKey.self) { preferences in
+                menuAnchor = preferences.deltaFrom(mainViewPositionPrefKey, to: menuPositionPrefKey)
+                let canShowMenuNow = menuAnchor != nil
+                if canShowMenuNow != readyToShowMenu {
+                    Task { @MainActor in
+                        withAnimation {
+                            readyToShowMenu = menuAnchor != nil
+                        }
+                    }
+                }
+            }
     }
     
     @ViewBuilder func mainView() -> some View {
