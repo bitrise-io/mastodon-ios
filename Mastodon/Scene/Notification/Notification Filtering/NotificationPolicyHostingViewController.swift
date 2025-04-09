@@ -286,7 +286,8 @@ extension NotificationPolicyView {
                             .font(.caption)
                             .frame(width: checkmarkWidth, height: checkmarkWidth)
                     } else {
-                        Spacer()
+                        Rectangle()
+                            .fill(Color.clear)
                             .frame(width: checkmarkWidth, height: checkmarkWidth)
                     }
                     
@@ -295,9 +296,8 @@ extension NotificationPolicyView {
                         Text(option.displaySubtitle)
                             .font(.caption2)
                     }
-                    .padding(5)
                 }
-                .padding()
+                .padding(7)
                 .fixedSize(horizontal: false, vertical: true)
                 .onTapGesture {
                     withAnimation {
