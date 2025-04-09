@@ -127,36 +127,42 @@ struct NotificationPolicyView: View {
     }
     
     @ViewBuilder func mainView() -> some View {
-        VStack {
-            HStack {
+        ZStack(alignment: Alignment(horizontal: .trailing, vertical: .top)) {
+            
+            // Settings table
+            VStack() {
                 Spacer()
-                    .frame(maxWidth: .infinity)
-                Button {
-                    viewModel.dismissView?()
-                } label: {
-                    Image(systemName: "x.circle")
-                        .frame(width: 45, height: 45)
-                        .font(.title)
+                    .frame(height: 40)
+                List {
+                    ForEach(viewModel.sections, id: \.self) { section in
+                        Section(
+                            header:
+                                Text(section.headerText).font(.title2).fixedSize()
+                        ) {
+                            ForEach(section.items, id: \.self) { policyItem in
+                                rowView(policyItem)
+                            }
+                        }
+                        .textCase(nil)
+                    }
                 }
+                .listStyle(.insetGrouped)
+                
+                Spacer()
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            
+            // Close button
+            Button {
+                viewModel.dismissView?()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .frame(width: 45, height: 45)
+                    .font(.title)
+                    .foregroundStyle(SeparatorShapeStyle())
             }
             .padding()
-            
-            List {
-                ForEach(viewModel.sections, id: \.self) { section in
-                    Section(header: Text(section.headerText).font(.title2)) {
-                        ForEach(section.items, id: \.self) { policyItem in
-                            rowView(policyItem)
-                        }
-                    }
-                    .textCase(nil)
-                }
-            }
-            .listStyle(.insetGrouped)
-            
-            Spacer()
         }
-        .background(Color(uiColor: .systemGroupedBackground))
-        
     }
 
     @ViewBuilder func rowView(
