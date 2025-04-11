@@ -170,18 +170,19 @@ final public class FeedDataController {
                 if let idx = newRecords.firstIndex(where: { $0.id == record.id }) {
                     let existingRecord = newRecords[idx]
 //                    print("replacing record for \(existingRecord.status?.id) (reblog of \(existingRecord.status?.reblog))...")
-                    if existingRecord.status?.entity.reblogged == true || existingRecord.status?.reblog?.entity.reblogged == true {
+//                    if existingRecord.status?.entity.reblogged == true || existingRecord.status?.reblog?.entity.reblogged == true {
 //                        print("- was reblogged by me")
-                    } else {
+//                    } else {
 //                        print("- NOT reblogged by me")
-                    }
+//                    }
                     let newRecord = MastodonFeed.fromStatus(MastodonStatus(entity: record, showDespiteContentWarning: existingRecord.status?.showDespiteContentWarning ?? false), kind: existingRecord.kind)
                     newRecords[idx] = newRecord
 //                    print("replaced with \(newRecord.status?.id) (reblog of \(newRecord.status?.reblog?.id))")
-                    if newRecord.status?.entity.reblogged == true || newRecord.status?.reblog?.entity.reblogged == true {
+//                    if newRecord.status?.entity.reblogged == true || newRecord.status?.reblog?.entity.reblogged == true {
 //                        print("- was reblogged by me")
-                    } else {
+//                    } else {
 //                        print("- NOT reblogged by me")
+//                    }
                     }
                 } else {
                     logger.warning("\(Self.entryNotFoundMessage)")
