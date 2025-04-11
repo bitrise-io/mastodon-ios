@@ -320,7 +320,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 let newStatus: MastodonStatus = .fromEntity(entity)
                 newStatus.poll = MastodonPoll(poll: newPoll, status: newStatus)
                 
-                self.update(status: newStatus, intent: .pollVote)
+                self.update(contentStatus: newStatus, intent: .pollVote)
             } catch {
                 let alert = UIAlertController(title: "Poll Error", message: "Something went wrong while processing your response: \(error)", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "OK", style: .cancel))

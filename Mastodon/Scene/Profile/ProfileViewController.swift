@@ -1030,15 +1030,15 @@ extension ProfileViewController: DataSourceProvider {
         profilePagingViewController?.reloadTables()
     }
     
-    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
-        updateViewModelsWithDataControllers(status: status, intent: intent)
+    func update(contentStatus: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        updateViewModelsWithDataControllers(status: contentStatus, intent: intent)
     }
     
     func updateViewModelsWithDataControllers(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
         
-        profilePagingViewController?.viewModel?.postUserTimelineViewController.update(status: status, intent: intent)
-        profilePagingViewController?.viewModel?.repliesUserTimelineViewController.update(status: status, intent: intent)
-        profilePagingViewController?.viewModel?.mediaUserTimelineViewController.update(status: status, intent: intent)
+        profilePagingViewController?.viewModel?.postUserTimelineViewController.update(contentStatus: status, intent: intent)
+        profilePagingViewController?.viewModel?.repliesUserTimelineViewController.update(contentStatus: status, intent: intent)
+        profilePagingViewController?.viewModel?.mediaUserTimelineViewController.update(contentStatus: status, intent: intent)
     }
 }
 

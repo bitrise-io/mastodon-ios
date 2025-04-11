@@ -28,6 +28,6 @@ extension DataSourceFacade {
         newStatus.showDespiteContentWarning = status.showDespiteContentWarning
         newStatus.showDespiteFilter = status.showDespiteFilter
         
-        provider.update(status: newStatus, intent: .bookmark(updatedStatus.bookmarked == true))
+        provider.update(contentStatus: newStatus, intent: .bookmark(updatedStatus.bookmarked == true))
     }
 }

@@ -36,7 +36,7 @@ extension FavoritedByViewController: DataSourceProvider {
         }
     }
     
-    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+    func update(contentStatus: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
         assertionFailure("Not required")
     }
 

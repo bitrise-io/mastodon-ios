@@ -39,8 +39,8 @@ extension HomeTimelineViewController: DataSourceProvider {
         }
     }
 
-    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
-        viewModel?.dataController.update(status: status, intent: intent)
+    func update(contentStatus: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        viewModel?.dataController.update(status: contentStatus, intent: intent)
     }
 
     private func indexPath(for cell: UITableViewCell) -> IndexPath? {

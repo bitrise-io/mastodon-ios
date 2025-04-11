@@ -585,7 +585,7 @@ extension NotificationTableViewCellDelegate where Self: DataSourceProvider & Aut
                 let newStatus: MastodonStatus = .fromEntity(entity)
                 newStatus.poll = MastodonPoll(poll: newPoll, status: newStatus)
                 
-                self.update(status: newStatus, intent: .pollVote)
+                self.update(contentStatus: newStatus, intent: .pollVote)
             } catch {
                 notificationView.statusView.viewModel.isVoting = false
             }

@@ -197,13 +197,13 @@ extension ThreadViewController: StatusTableViewControllerNavigateable {
 extension UINavigationController {
     func notifyChildrenAboutStatusDeletion(_ status: MastodonStatus) {
         viewControllers.compactMap { $0 as? DataSourceProvider }.forEach { provider in
-            provider?.update(status: status, intent: .delete)
+            provider?.update(contentStatus: status, intent: .delete)
         }
     }
     
     func notifyChildrenAboutStatusEdit(_ status: MastodonStatus) {
         viewControllers.compactMap { $0 as? DataSourceProvider }.forEach { provider in
-            provider?.update(status: status, intent: .edit)
+            provider?.update(contentStatus: status, intent: .edit)
         }
     }
 }

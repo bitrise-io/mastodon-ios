@@ -37,7 +37,7 @@ extension ThreadViewController: DataSourceProvider {
         }
     }
     
-    func update(status _status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+    func update(contentStatus _status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
         let status = _status.reblog ?? _status
         if case MastodonStatus.UpdateIntent.delete = intent {
             return handleDelete(status)

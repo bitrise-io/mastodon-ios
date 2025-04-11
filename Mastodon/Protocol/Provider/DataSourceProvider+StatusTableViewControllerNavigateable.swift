@@ -139,11 +139,12 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
     @MainActor
     private func toggleReblog() async {
         guard let status = await statusRecord() else { return }
-        
+        let contentStatus = status.reblog ?? status
         do {
             try await DataSourceFacade.responseToStatusReblogAction(
                 provider: self,
-                status: status
+                wrappingStatus: status,
+                contentStatus: contentStatus
             )
         } catch {
             assertionFailure()
@@ -153,11 +154,12 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
     @MainActor
     private func toggleFavorite() async {
         guard let status = await statusRecord() else { return }
-
+        let contentStatus = status.reblog ?? status
         do {
             try await DataSourceFacade.responseToStatusFavoriteAction(
                 provider: self,
-                status: status
+                wrappingStatus: status,
+                contentStatus: contentStatus
             )
         } catch {
             assertionFailure()
