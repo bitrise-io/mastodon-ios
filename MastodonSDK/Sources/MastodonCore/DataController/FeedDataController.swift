@@ -183,6 +183,14 @@ final public class FeedDataController {
 //                    } else {
 //                        print("- NOT reblogged by me")
 //                    }
+                } else if !isReblogged, let idx = newRecords.firstIndex(where: { let contentID = $0.status?.reblog?.id
+                    return contentID == record.id }) {
+                    // possible this is the now-deleted record of my own reblog action
+                    // if so, replace it with the unboosted version
+                    let existingRecord = newRecords[idx]
+                    if existingRecord.status?.entity.account.acct == authenticationBox.cachedAccount?.acct {
+                        let sensitivityUpdated = status.inheritSensitivityToggled(from: existingRecord.status?.reblog)
+                        newRecords[idx] = MastodonFeed.fromStatus(sensitivityUpdated, kind: existingRecord.kind)
                     }
                 } else {
                     logger.warning("\(Self.entryNotFoundMessage)")
@@ -234,9 +242,15 @@ final public class FeedDataController {
         default:
             var refetched = [Mastodon.Entity.Status]()
             for item in items {
-                if let refetchedItem = try? await APIService.shared.status(statusID: item.id, authenticationBox: authenticationBox) {
+                do {
+                    let refetchedItem = try await APIService.shared.status(statusID: item.id, authenticationBox: authenticationBox)
                     refetched.append(refetchedItem.value)
-                } else {
+                } catch {
+                    if let contentItemID = item.status?.reblog?.id {
+                        if let refetchedContentItem = try? await APIService.shared.status(statusID: contentItemID, authenticationBox: authenticationBox) {
+                            refetched.append(refetchedContentItem.value)
+                        }
+                    }
                 }
             }
             return refetched
