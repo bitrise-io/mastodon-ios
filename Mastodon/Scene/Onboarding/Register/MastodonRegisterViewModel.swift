@@ -546,21 +546,15 @@ extension Mastodon.Entity.V2.Instance: RegistrationInstance {
     }
     
     var termsOfService: URL? {
-        if version?.serverVersionGreaterThanOrEqual(toMajorVersion: 4, minorVersion: 4) ?? false {
-            if let string = urls?.termsOfService {
-                return URL(string: string)
-            } else {
-                guard let domain else { return nil }
-                return URL(string: "https://\(domain)/terms-of-service")
-            }
+        if let string = configuration?.urls?.termsOfService {
+            return URL(string: string)
         } else {
             return nil
         }
     }
     
     var privacyPolicy: URL? {
-        if version?.serverVersionGreaterThanOrEqual(toMajorVersion: 4, minorVersion: 4) ?? false {
-            guard let string = urls?.privacyPolicy else { return nil }
+        if let string = configuration?.urls?.privacyPolicy {
             return URL(string: string)
         } else {
             guard let domain else { return nil }
