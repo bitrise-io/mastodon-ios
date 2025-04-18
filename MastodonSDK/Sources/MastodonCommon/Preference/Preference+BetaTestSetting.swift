@@ -32,4 +32,17 @@ extension UserDefaults {
         let useStaging = UserDefaults.standard.useStagingForDonations
         UserDefaults.standard.useStagingForDonations = !useStaging
     }
+    
+    @objc public dynamic var testUnreadMarkersForNotifications: Bool {
+        get {
+            register(defaults: [#function: false])
+            return bool(forKey: #function) && UserDefaults.isDebugOrTestflightOrSimulator
+        }
+        set { self[#function] = newValue }
+    }
+    
+    public func toggleTestUnreadMarkersForNotifications() {
+        let testUnreadMarkersForNotifications = UserDefaults.standard.testUnreadMarkersForNotifications
+        UserDefaults.standard.testUnreadMarkersForNotifications = !testUnreadMarkersForNotifications
+    }
 }
