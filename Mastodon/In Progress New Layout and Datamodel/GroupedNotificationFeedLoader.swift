@@ -405,16 +405,20 @@ extension GroupedNotificationFeedLoader {
 }
 
 extension GroupedNotificationFeedLoader {
-    public func markAsRead(_ identifier: Mastodon.Entity.NotificationGroup.ID) {
+    public func markAsRead(_ identifier: Mastodon.Entity.Notification.ID) {
         cacheManager?.updateToNewerMarker(.local(lastReadID: identifier))
     }
     
-    public func isUnread(_ identifier: Mastodon.Entity.NotificationGroup.ID) -> Bool {
+    public func isUnread(_ identifier: Mastodon.Entity.Notification.ID) -> Bool {
         if let lastRead = cacheManager?.currentLastReadMarker?.lastReadID {
             return identifier > lastRead
         } else {
-            return true
+            return false
         }
+    }
+    
+    public func lastRead() -> Mastodon.Entity.Notification.ID? {
+        return cacheManager?.currentLastReadMarker?.lastReadID
     }
 }
 

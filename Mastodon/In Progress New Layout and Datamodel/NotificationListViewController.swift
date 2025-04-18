@@ -128,6 +128,7 @@ extension ListType: Identifiable {
 
 struct NotificationListView: View {
     @ObservedObject private var viewModel: NotificationListViewModel
+    @State private var scrollManager = ScrollManager()
 
     fileprivate init(viewModel: NotificationListViewModel) {
         self.viewModel = viewModel
@@ -193,9 +194,9 @@ struct NotificationListView: View {
         case .groupedNotification(let viewModel):
             NotificationRowView(viewModel: viewModel)
                 .padding(.vertical, 4)
-//                .listRowBackground(
-//                    backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
-//                )
+                .listRowBackground(
+                    backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
+                )
         }
     }
     
@@ -203,7 +204,7 @@ struct NotificationListView: View {
     @ViewBuilder func backgroundView(isPrivate: Bool, isUnread: Bool) -> some View {
         HStack(spacing: 0) {
             Spacer().frame(width: 3)
-            if isUnread {
+            if isUnread && UserDefaults.standard.testUnreadMarkersForNotifications {
                 Rectangle()
                     .fill(Asset.Colors.accent.swiftUIColor)
                     .frame(width: 5)
@@ -223,20 +224,24 @@ struct NotificationListView: View {
         default:
             break
         }
+        scrollManager.didAppear(item)
     }
 
     func didDisappear(_ item: NotificationListItem, wasUnread: Bool) {
         if wasUnread {
             viewModel.markAsRead(item)
         }
+        scrollManager.didDisappear(item)
     }
     
     func viewDidAppear() {
+        scrollManager.viewDidAppear()
         NotificationService.shared.clearNotificationCountForActiveUser()
         viewModel.requestLoad(.newer)
     }
     
     func viewDidDisappear() {
+        scrollManager.viewDidDisappear()
         NotificationService.shared.clearNotificationCountForActiveUser()
         Task {
             await viewModel.commitToCache()
@@ -472,3 +477,66 @@ extension NotificationRowViewModel.NotificationNavigation {
         }
     }
 }
+
+fileprivate class ScrollManager {
+    
+    enum ScrollRequest {
+        case middle(Mastodon.Entity.NotificationGroup.ID)
+        case top(Mastodon.Entity.NotificationGroup.ID)
+    }
+    
+    public var isAppeared: Bool = false
+    public var pendingStableScroll: ScrollRequest? = nil
+    
+    private var visibleItems = Set<NotificationRowViewModel>()
+    
+    private var newestVisibleItem: NotificationRowViewModel? {
+        var newest: NotificationRowViewModel? = nil
+        for item in visibleItems {
+            if let thisNewestID = item.newestID {
+                if let currentNewestID = newest?.newestID {
+                    if currentNewestID < thisNewestID {
+                        newest = item
+                    }
+                } else {
+                    newest = item
+                    continue
+                }
+            }
+        }
+        return newest
+    }
+    
+    func reset() {
+        visibleItems.removeAll()
+    }
+    
+    func viewDidAppear() {
+        assert(!isAppeared)
+        isAppeared = true
+    }
+    
+    func viewDidDisappear() {
+        assert(isAppeared)
+        isAppeared = false
+    }
+    
+    func didAppear(_ item: NotificationListItem) {
+        switch item {
+        case .bottomLoader, .filteredNotificationsInfo, .notification:
+            break
+        case .groupedNotification(let viewModel):
+            visibleItems.insert(viewModel)
+        }
+    }
+    
+    func didDisappear(_ item: NotificationListItem) {
+        switch item {
+        case .bottomLoader, .filteredNotificationsInfo, .notification:
+            break
+        case .groupedNotification(let viewModel):
+            visibleItems.remove(viewModel)
+        }
+    }
+}
+
