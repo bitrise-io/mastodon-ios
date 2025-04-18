@@ -60,8 +60,10 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
             do {
                 switch feedKind {
                 case .notificationsAll, .notificationsMentionsOnly:
-                    let cachedMarkers: [LastReadMarkers] = try PersistenceManager.shared.cached(.lastReadMarkers(userIdentifier))
-                    self.staleMarkers = cachedMarkers.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
+                    Task { [weak self] in
+                        guard let self, self.staleMarkers == nil else { return }
+                        self.staleMarkers = await BodegaPersistence.LastRead.lastReadMarkers(for: userIdentifier)
+                    }
                 case .notificationsWithAccount:
                     self.staleMarkers = nil
                 }
@@ -132,7 +134,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
     
     func commitToCache() async {
         if let mostRecentMarkers {
-            PersistenceManager.shared.cache([mostRecentMarkers], for: .lastReadMarkers(userIdentifier))
+            try? await BodegaPersistence.LastRead.saveLastReadMarkers(mostRecentMarkers, for: userIdentifier)
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
@@ -147,6 +149,21 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
     }
 }
 
+enum Fetchable<T> {
+    case initial
+    case fetching
+    case known(T?)
+    
+    var value: T? {
+        switch self {
+        case .initial, .fetching:
+            return nil
+        case .known(let value):
+            return value
+        }
+    }
+}
+
 @MainActor
 class GroupedNotificationCacheManager: NotificationsCacheManager {
     typealias T = Mastodon.Entity.GroupedNotificationsResults
@@ -157,17 +174,15 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     private let feedKind: MastodonFeedKind
     
     private var staleResults: T?
-    private var staleMarkers: LastReadMarkers?
+    private var staleMarkers: Fetchable<LastReadMarkers> = .initial
     
     internal var mostRecentlyFetchedResults: T?
-    private var mostRecentMarkers: LastReadMarkers?
+    private var mostRecentMarkers: Fetchable<LastReadMarkers> = .initial
     
     init(feedKind: MastodonFeedKind, userIdentifier: MastodonUserIdentifier) {
         
         self.feedKind = feedKind
         self.userIdentifier = userIdentifier
-        staleMarkers = nil
-        staleResults = nil
     }
     
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
@@ -271,16 +286,16 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     }
     
     func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
-        let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
-        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
+        let updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        mostRecentMarkers = .known(updatable.bySettingLastRead(newMarker, forKind: feedKind))
     }
     
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
-        var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        var updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
         if let notifications = updatedMarkers.notifications {
             updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
         }
-        mostRecentMarkers = updatable
+        mostRecentMarkers = .known(updatable)
     }
     
     func currentResults() -> T? {
@@ -289,37 +304,32 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         } else if let staleResults {
             return staleResults
         } else {
-            do {
-                switch feedKind {
-                case .notificationsAll, .notificationsMentionsOnly:
-                    let cachedMarkers: [LastReadMarkers] = try PersistenceManager.shared.cached(.lastReadMarkers(userIdentifier))
-                    self.staleMarkers = cachedMarkers.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
-                case .notificationsWithAccount:
-                    self.staleMarkers = nil
-                }
-                
-                let notificationGroups: [Mastodon.Entity.NotificationGroup]
-                let accounts: [Mastodon.Entity.Account]
-                let partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
-                let statuses: [Mastodon.Entity.Status]
-                switch feedKind {
-                case .notificationsAll:
-                    notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsAll(userIdentifier))) ?? []
-                    accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllAccounts(userIdentifier))) ?? []
-                    partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllPartialAccounts(userIdentifier))) ?? []
-                    statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsAllStatuses(userIdentifier))) ?? []
-                case .notificationsMentionsOnly:
-                    notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsMentions(userIdentifier))) ?? []
-                    accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsAccounts(userIdentifier))) ?? []
-                    partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsPartialAccounts(userIdentifier))) ?? []
-                    statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsStatuses(userIdentifier))) ?? []
-                case .notificationsWithAccount:
-                    return mostRecentlyFetchedResults
-                }
-                staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroups, fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
-            } catch {
-                assertionFailure("error reading notifications cache: \(error)")
+            switch feedKind {
+            case .notificationsAll, .notificationsMentionsOnly:
+                loadCachedMarkers()
+            case .notificationsWithAccount:
+                staleMarkers = .known(nil)
             }
+            
+            let notificationGroups: [Mastodon.Entity.NotificationGroup]
+            let accounts: [Mastodon.Entity.Account]
+            let partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
+            let statuses: [Mastodon.Entity.Status]
+            switch feedKind {
+            case .notificationsAll:
+                notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsAll(userIdentifier))) ?? []
+                accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllAccounts(userIdentifier))) ?? []
+                partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllPartialAccounts(userIdentifier))) ?? []
+                statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsAllStatuses(userIdentifier))) ?? []
+            case .notificationsMentionsOnly:
+                notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsMentions(userIdentifier))) ?? []
+                accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsAccounts(userIdentifier))) ?? []
+                partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsPartialAccounts(userIdentifier))) ?? []
+                statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsStatuses(userIdentifier))) ?? []
+            case .notificationsWithAccount:
+                return mostRecentlyFetchedResults
+            }
+            staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroups, fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
             return mostRecentlyFetchedResults ?? staleResults
         }
     }
@@ -327,15 +337,32 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
         switch feedKind {
         case .notificationsAll, .notificationsMentionsOnly:
-            return (mostRecentMarkers ?? staleMarkers)?.lastRead(forKind: feedKind)
+            return (mostRecentMarkers.value ?? staleMarkers.value)?.lastRead(forKind: feedKind)
         case .notificationsWithAccount:
             return nil
         }
     }
     
+    func loadCachedMarkers() {
+        switch staleMarkers {
+        case .fetching, .known:
+            return
+        case .initial:
+           break
+        }
+        staleMarkers = .fetching
+        Task { [weak self] in
+            guard let self else { return }
+            let fromCache = await BodegaPersistence.LastRead.lastReadMarkers(for: self.userIdentifier)
+            staleMarkers = .known(fromCache)
+        }
+    }
+    
     func commitToCache() async {
-        if let mostRecentMarkers {
-            PersistenceManager.shared.cache([mostRecentMarkers], for: .lastReadMarkers(userIdentifier))
+        if let updatedMarkers = mostRecentMarkers.value {
+            Task {
+                try await BodegaPersistence.LastRead.saveLastReadMarkers(updatedMarkers, for: userIdentifier)
+            }
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
