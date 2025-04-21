@@ -56,7 +56,7 @@ struct LastReadMarkers: Identifiable, Codable {
     
     func bySettingPosition(_ newPosition: MarkerPosition, forKind kind: MastodonFeedKind, enforceForwardProgress: Bool) -> LastReadMarkers {
         if let previous = lastRead(forKind: kind) {
-            guard !enforceForwardProgress || previous.lastReadID < newPosition.lastReadID else { return self }
+            guard !enforceForwardProgress || LastReadMarkers.id(previous.lastReadID, isOlderThan: newPosition.lastReadID) else { return self }
         }
         switch kind {
         case .notificationsAll:
@@ -69,3 +69,12 @@ struct LastReadMarkers: Identifiable, Codable {
     }
 }
 
+extension LastReadMarkers {
+    static func id(_ thisId: String, isOlderThan otherId: String) -> Bool {
+        if let thisInt = Int(thisId), let otherInt = Int(otherId) {
+            return thisInt < otherInt
+        } else {
+            return thisId < otherId
+        }
+    }
+}

@@ -411,7 +411,7 @@ extension GroupedNotificationFeedLoader {
     
     public func isUnread(_ identifier: Mastodon.Entity.Notification.ID) -> Bool {
         if let lastRead = cacheManager?.currentLastReadMarker?.lastReadID {
-            return identifier > lastRead
+            return LastReadMarkers.id(lastRead, isOlderThan: identifier)
         } else {
             return false
         }
