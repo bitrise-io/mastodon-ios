@@ -332,6 +332,7 @@ fileprivate extension NotificationListView {
     }
     
     func doScrollRequest(_ stableScroll: ScrollManager.ScrollRequest, currentItems: [NotificationListItem], proxy: ScrollViewProxy) {
+        guard UserDefaults.standard.testUnreadMarkersForNotifications else { return }
         switch stableScroll {
         case .middle(let id):
             if let scrollItem = currentItems.first(where: { $0.id == id }) {
