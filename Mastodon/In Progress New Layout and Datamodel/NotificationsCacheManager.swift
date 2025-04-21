@@ -12,7 +12,7 @@ protocol NotificationsCacheManager<T> {
     var mostRecentlyFetchedResults: T? { get }
     func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker)
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition)
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool)
     func commitToCache() async
 }
 
@@ -122,14 +122,14 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
         var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
         if let notifications = updatedMarkers.notifications {
-            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+            updatable = updatable.bySettingPosition(.fromServer(notifications), forKind: .notificationsAll, enforceForwardProgress: true)
         }
         mostRecentMarkers = updatable
     }
  
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool) {
         let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
-        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
+        mostRecentMarkers = updatable.bySettingPosition(newMarker, forKind: feedKind, enforceForwardProgress: enforceForwardProgress)
     }
     
     func commitToCache() async {
@@ -285,15 +285,15 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         mostRecentlyFetchedResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: Array(truncatedGroups), fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
     }
     
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool) {
         let updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
-        mostRecentMarkers = .known(updatable.bySettingLastRead(newMarker, forKind: feedKind))
+        mostRecentMarkers = .known(updatable.bySettingPosition(newMarker, forKind: feedKind, enforceForwardProgress: enforceForwardProgress))
     }
     
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
         var updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
         if let notifications = updatedMarkers.notifications {
-            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+            updatable = updatable.bySettingPosition(.fromServer(notifications), forKind: .notificationsAll, enforceForwardProgress: true)
         }
         mostRecentMarkers = .known(updatable)
     }

@@ -156,6 +156,12 @@ struct NotificationListView: View {
                 .refreshable {
                     await viewModel.refreshFeedFromTop()
                 }
+                .onChange(of: viewModel.notificationItems, initial: true) { oldValue, newValue in
+                    if let newest = newValue.first?.rowViewModel, let stableScroll = scrollManager.stableScroll(withNewestOfAll: newest, newestRead: newValue.first(where: { !(viewModel.isUnread($0) ?? false) })?.rowViewModel)
+                    {
+                        doScrollRequest(stableScroll, currentItems: viewModel.notificationItems, proxy: proxy)
+                    }
+                }
                 .onAppear() {
                     viewDidAppear()
                 }
@@ -197,6 +203,13 @@ struct NotificationListView: View {
                 .listRowBackground(
                     backgroundView(isPrivate: viewModel.usePrivateBackground, isUnread: isUnread)
                 )
+#if DEBUG && false
+                .overlay {
+                    Text(viewModel.identifier.id)
+                        .padding()
+                        .background(Color.secondary.opacity(0.5))
+                }
+#endif
         }
     }
     
@@ -286,6 +299,53 @@ struct NotificationListView: View {
                 .notificationRequests(viewModel: requestsViewModel), .show)  // TODO: should be .modal(animated) on large screens?
         } catch {
             viewModel.presentError?(error)
+        }
+    }
+}
+
+fileprivate extension NotificationListView {
+    func calculateStableScroll(newItems: [NotificationListItem], oldItems: [NotificationListItem]) -> ScrollManager.ScrollRequest? {
+        
+        let newestRead = oldItems.first(where: { item in
+            if let isUnread = viewModel.isUnread(item) {
+                return !isUnread
+            } else {
+                return false
+            }
+        })
+        guard let newestRead else {
+            return nil
+        }
+        
+        func newItemWithID(_ id: String) -> NotificationListItem? {
+            return newItems.first { item in
+                return item.id == id
+            }
+        }
+        
+        if let newestOfAllModel = newItems.first?.rowViewModel, let newestReadModel = newestRead.rowViewModel, let stableScroll = scrollManager.stableScroll(withNewestOfAll: newestOfAllModel, newestRead: newestReadModel) {
+            scrollManager.reset()
+            return stableScroll
+        } else {
+            return nil
+        }
+    }
+    
+    func doScrollRequest(_ stableScroll: ScrollManager.ScrollRequest, currentItems: [NotificationListItem], proxy: ScrollViewProxy) {
+        switch stableScroll {
+        case .middle(let id):
+            if let scrollItem = currentItems.first(where: { $0.id == id }) {
+                proxy.scrollTo(scrollItem, anchor: .center)
+            }
+        case .top(let id):
+            if let anchorItem = currentItems.first(where: { $0.id == id }), let anchorIndex = currentItems.firstIndex(of: anchorItem) {
+                if anchorIndex > 0 {
+                    let firstUnreadItem = currentItems[anchorIndex - 1]
+                    proxy.scrollTo(firstUnreadItem)
+                } else {
+                    proxy.scrollTo(anchorItem, anchor: .top)
+                }
+            }
         }
     }
 }
@@ -430,6 +490,7 @@ private class NotificationListViewModel: ObservableObject {
     }
 
     private func createNewFeedLoader() {
+        guard navigateToScene != nil && presentError != nil else { return }
         fetchFilteredNotificationsPolicy()
         feedLoader = GroupedNotificationFeedLoader(
             kind: displayedNotifications.feedKind,
@@ -486,7 +547,6 @@ fileprivate class ScrollManager {
     }
     
     public var isAppeared: Bool = false
-    public var pendingStableScroll: ScrollRequest? = nil
     
     private var visibleItems = Set<NotificationRowViewModel>()
     
@@ -505,6 +565,27 @@ fileprivate class ScrollManager {
             }
         }
         return newest
+    }
+    
+    
+    
+    func stableScroll(withNewestOfAll newestOfAll: NotificationRowViewModel, newestRead: NotificationRowViewModel?) -> ScrollRequest? {
+        guard let newestVisibleItem else {
+            if let newestRead {
+                return .middle(newestRead.identifier.id)
+            } else {
+                return nil
+            }
+        }
+       
+        if let newestRead, newestRead.matchesIdentifier(newestVisibleItem) {
+            // The most recent notification that has already been read is also the most recent visible item.
+            // We ask to scroll it down to the middle to reveal newer, unread items.
+            return .middle(newestRead.identifier.id)
+        } else {
+            let topID = newestVisibleItem.identifier.id
+            return .top(topID)
+        }
     }
     
     func reset() {
@@ -540,3 +621,9 @@ fileprivate class ScrollManager {
     }
 }
 
+extension NotificationRowViewModel {
+    func matchesIdentifier(_ other: NotificationRowViewModel?) -> Bool {
+        guard let other else { return false }
+        return identifier.id == other.identifier.id
+    }
+}
