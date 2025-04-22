@@ -50,6 +50,8 @@ extension ContentSplitViewController {
         
         navigationController?.setNavigationBarHidden(true, animated: false)
         
+        view.backgroundColor = .systemBackground
+        
         addChild(sidebarViewController)
         sidebarViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sidebarViewController.view)
@@ -61,15 +63,39 @@ extension ContentSplitViewController {
             sidebarViewController.view.widthAnchor.constraint(equalToConstant: ContentSplitViewController.sidebarWidth),
         ])
         
+        let leftSeparator = UIView()
+        leftSeparator.translatesAutoresizingMaskIntoConstraints = false
+        leftSeparator.backgroundColor = .separator
+        view.addSubview(leftSeparator)
+        NSLayoutConstraint.activate([
+            leftSeparator.widthAnchor.constraint(equalToConstant: UIView.separatorLineHeight(of: view)),
+            leftSeparator.leadingAnchor.constraint(greaterThanOrEqualTo: sidebarViewController.collectionView.trailingAnchor),
+            leftSeparator.topAnchor.constraint(equalTo: view.topAnchor),
+            leftSeparator.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
         addChild(mainTabBarController)
         mainTabBarController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(mainTabBarController.view)
         sidebarViewController.didMove(toParent: self)
         NSLayoutConstraint.activate([
+            mainTabBarController.view.widthAnchor.constraint(equalToConstant: 700).priority(.defaultHigh),
+            mainTabBarController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             mainTabBarController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            mainTabBarController.view.leadingAnchor.constraint(equalTo: sidebarViewController.view.trailingAnchor, constant: UIView.separatorLineHeight(of: view)),
-            mainTabBarController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             mainTabBarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            mainTabBarController.view.leadingAnchor.constraint(equalTo: leftSeparator.trailingAnchor)
+        ])
+        
+        let rightSeparator = UIView()
+        rightSeparator.translatesAutoresizingMaskIntoConstraints = false
+        rightSeparator.backgroundColor = .separator
+        view.addSubview(rightSeparator)
+        NSLayoutConstraint.activate([
+            rightSeparator.widthAnchor.constraint(equalToConstant: UIView.separatorLineHeight(of: view)),
+            rightSeparator.topAnchor.constraint(equalTo: view.topAnchor),
+            rightSeparator.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            rightSeparator.leadingAnchor.constraint(equalTo: mainTabBarController.view.trailingAnchor),
+            rightSeparator.leadingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor)
         ])
         
         // response keyboard command tab switch
