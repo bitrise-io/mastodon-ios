@@ -5,11 +5,13 @@ import MastodonSDK
 
 struct BetaTestSettingsViewModel {
     let useStagingForDonations: Bool
+    let testNewHomeTimeline: Bool
     let testUnreadMarkersForNotifications: Bool
     
     init() {
         useStagingForDonations = UserDefaults.standard.useStagingForDonations
         testUnreadMarkersForNotifications = UserDefaults.standard.testUnreadMarkersForNotifications
+        testNewHomeTimeline = UserDefaults.standard.testNewHomeTimeline
     }
     
     func byToggling(_ setting: BetaTestSetting) -> BetaTestSettingsViewModel {
@@ -18,6 +20,8 @@ struct BetaTestSettingsViewModel {
             UserDefaults.standard.toggleUseStagingForDonations()
         case .testUnreadMarkersForNotifications:
             UserDefaults.standard.toggleTestUnreadMarkersForNotifications()
+        case .testNewHomeTimeline:
+            UserDefaults.standard.toggleTestNewHomeTimeline()
         case .clearPreviousDonationCampaigns:
             assertionFailure("this is an action, not a setting")
             break
@@ -43,6 +47,7 @@ enum BetaTestSettingsSectionType: Hashable {
 enum BetaTestSetting: Hashable {
     case useStagingForDonations
     case clearPreviousDonationCampaigns
+    case testNewHomeTimeline
     case testUnreadMarkersForNotifications
   
     var labelText: String {
@@ -51,6 +56,8 @@ enum BetaTestSetting: Hashable {
             return "Donations use test endpoint"
         case .clearPreviousDonationCampaigns:
             return "Clear donation history"
+        case .testNewHomeTimeline:
+            return "Test new home timeline"
         case .testUnreadMarkersForNotifications:
             return "Test unread markers for notifications"
         }
@@ -99,9 +106,18 @@ class BetaTestSettingsViewController: UIViewController {
                 cell.textLabel?.text = itemIdentifier.labelText
                 cell.textLabel?.textColor = .red
                 return cell
+            case .testNewHomeTimeline:
+                guard let selectionCell = tableView.dequeueReusableCell(withIdentifier: ToggleTableViewCell.reuseIdentifier, for: indexPath) as? ToggleTableViewCell else { assertionFailure("unexpected cell type"); return nil }
+                selectionCell.label.text = itemIdentifier.labelText
+                selectionCell.subtitleLabel.text = "Requires relaunch to take effect"
+                selectionCell.toggle.isOn = self.viewModel.testNewHomeTimeline
+                selectionCell.toggle.removeTarget(self, action: nil, for: .valueChanged)
+                selectionCell.toggle.addTarget(self, action: #selector(didToggleTestNewHomeTimeline), for: .valueChanged)
+                return selectionCell
             case .testUnreadMarkersForNotifications:
                 guard let selectionCell = tableView.dequeueReusableCell(withIdentifier: ToggleTableViewCell.reuseIdentifier, for: indexPath) as? ToggleTableViewCell else { assertionFailure("unexpected cell type"); return nil }
                 selectionCell.label.text = itemIdentifier.labelText
+                selectionCell.label.numberOfLines = 0
                 selectionCell.toggle.isOn = self.viewModel.testUnreadMarkersForNotifications
                 selectionCell.toggle.removeTarget(self, action: nil, for: .valueChanged)
                 selectionCell.toggle.addTarget(self, action: #selector(didToggleTestUnreadMarkers), for: .valueChanged)
@@ -134,10 +150,14 @@ class BetaTestSettingsViewController: UIViewController {
         viewModel = viewModel.byToggling(.testUnreadMarkersForNotifications)
     }
     
+    @objc func didToggleTestNewHomeTimeline(_ sender: UISwitch) {
+        viewModel = viewModel.byToggling(.testNewHomeTimeline)
+    }
+    
     func loadFromViewModel(animated: Bool = true) {
         var snapshot = NSDiffableDataSourceSnapshot<BetaTestSettingsSectionType, BetaTestSetting>()
         snapshot.appendSections([.features])
-        snapshot.appendItems([.testUnreadMarkersForNotifications])
+        snapshot.appendItems([.testNewHomeTimeline, .testUnreadMarkersForNotifications])
         snapshot.appendSections([.donations])
         snapshot.appendItems([.useStagingForDonations], toSection: .donations)
         if viewModel.useStagingForDonations {
@@ -158,6 +178,8 @@ extension BetaTestSettingsViewController: UITableViewDelegate {
             DispatchQueue.main.async {
                 self.tableView.deselectRow(at: indexPath, animated: true)
             }
+        case .testNewHomeTimeline:
+            break
         case .testUnreadMarkersForNotifications:
             break
         }
