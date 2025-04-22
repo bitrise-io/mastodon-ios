@@ -335,6 +335,9 @@ extension MainTabBarController {
             tabBar.isHidden = false
         default:
             tabBar.isHidden = true
+            if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
+                self.isTabBarHidden = true
+            }
         }
     }
 
