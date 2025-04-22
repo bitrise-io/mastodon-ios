@@ -59,6 +59,9 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         } else {
             do {
                 switch feedKind {
+                case .home:
+                    assertionFailure("not implemented")
+                    break
                 case .notificationsAll, .notificationsMentionsOnly:
                     Task { [weak self] in
                         guard let self, self.staleMarkers == nil else { return }
@@ -68,6 +71,9 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
                     self.staleMarkers = nil
                 }
                 switch feedKind {
+                case .home:
+                    assertionFailure("not implemented")
+                    break
                 case .notificationsAll:
                     staleResults = try PersistenceManager.shared.cached(.notificationsAll(userIdentifier))
                 case .notificationsMentionsOnly:
@@ -138,6 +144,9 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
             case .notificationsAll:
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults, for: .notificationsAll(userIdentifier))
             case .notificationsMentionsOnly:
@@ -305,6 +314,9 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             return staleResults
         } else {
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
             case .notificationsAll, .notificationsMentionsOnly:
                 loadCachedMarkers()
             case .notificationsWithAccount:
@@ -316,6 +328,12 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             let partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
             let statuses: [Mastodon.Entity.Status]
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                notificationGroups = []
+                accounts = []
+                partialAccounts = []
+                statuses = []
             case .notificationsAll:
                 notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsAll(userIdentifier))) ?? []
                 accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllAccounts(userIdentifier))) ?? []
@@ -336,6 +354,9 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
     
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
         switch feedKind {
+        case .home:
+            assertionFailure("not implemented")
+            return nil
         case .notificationsAll, .notificationsMentionsOnly:
             return (mostRecentMarkers.value ?? staleMarkers.value)?.lastRead(forKind: feedKind)
         case .notificationsWithAccount:
@@ -366,6 +387,9 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
             case .notificationsAll:
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults.notificationGroups, for: .groupedNotificationsAll(userIdentifier))
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults.accounts, for: .groupedNotificationsAllAccounts(userIdentifier))

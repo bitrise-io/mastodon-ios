@@ -91,6 +91,9 @@ final public class GroupedNotificationFeedLoader {
         let useGrouped: Bool
        
         switch kind {
+        case .home:
+            assertionFailure("nonsensical")
+            useGrouped = false
         case .notificationsAll, .notificationsMentionsOnly:
             if let currentInstance = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.instanceConfiguration {
                 useGrouped = currentInstance.canGroupNotifications
@@ -248,6 +251,10 @@ final public class GroupedNotificationFeedLoader {
             }
             let results: NotificationsResultType
             switch kind {
+            case .home:
+                assertionFailure("NOT IMPLEMENTED")
+                results = try await loadNotifications(
+                    withScope: .everything, olderThan: olderThan, newerThan: newerThan)
             case .notificationsAll:
                 results = try await loadNotifications(
                     withScope: .everything, olderThan: olderThan, newerThan: newerThan)

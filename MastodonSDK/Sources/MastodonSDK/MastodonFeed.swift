@@ -131,6 +131,7 @@ public enum MastodonFeedItemIdentifier: Hashable, Identifiable, Equatable {
 }
 
 public enum MastodonFeedKind {
+    case home
     case notificationsAll
     case notificationsMentionsOnly
     case notificationsWithAccount(String)

@@ -213,7 +213,6 @@ extension ThreadViewModel {
 extension ThreadViewModel {
     struct Difference {
         let item: MastodonItemIdentifier
-        let sourceIndexPath: IndexPath
         let sourceDistanceToTableViewTopEdge: CGFloat
         let targetIndexPath: IndexPath
     }
@@ -267,7 +266,6 @@ extension ThreadViewModel {
 
         return Difference(
             item: item,
-            sourceIndexPath: sourceIndexPath,
             sourceDistanceToTableViewTopEdge: sourceDistanceToTableViewTopEdge,
             targetIndexPath: targetIndexPath
         )

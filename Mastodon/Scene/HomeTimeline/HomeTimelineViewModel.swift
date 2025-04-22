@@ -96,6 +96,7 @@ final class HomeTimelineViewModel: NSObject {
             MastodonFeed.fromStatus(MastodonStatus.fromEntity($0), kind: .home)
         }) ?? []
         Task {
+            let lastRead = await BodegaPersistence.LastRead.lastReadMarkers(for: authenticationBox)
             await self.dataController.setRecordsAfterFiltering(initialRecords)
         }
         
@@ -139,6 +140,25 @@ final class HomeTimelineViewModel: NSObject {
             networkErrorCount.value = networkErrorCount.value + 1
         case .finished:
             networkErrorCount.value = 0
+        }
+    }
+    
+    func saveLastRead(_ tableView: UITableView) {
+        guard timelineContext == .home else { return }
+        guard let topVisibleIndexPath = tableView.indexPathsForVisibleRows?.sorted().first, let topVisibleItem = diffableDataSource?.itemIdentifier(for: topVisibleIndexPath) else { return }
+        
+        let statusID: Mastodon.Entity.Status.ID
+        switch topVisibleItem {
+        case .status(let status):
+            statusID = status.id
+        case .feed(let feed):
+            statusID = feed.id
+        default:
+            return
+        }
+        Task {
+            let currentMarkers = await BodegaPersistence.LastRead.lastReadMarkers(for: authenticationBox) ?? LastReadMarkers(userGUID: authenticationBox.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+            try await BodegaPersistence.LastRead.saveLastReadMarkers(currentMarkers.bySettingPosition(.local(lastReadID: statusID), forKind: .home, enforceForwardProgress: false), for: authenticationBox)
         }
     }
 }

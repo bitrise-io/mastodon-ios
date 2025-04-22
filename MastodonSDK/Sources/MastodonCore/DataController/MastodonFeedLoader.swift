@@ -70,6 +70,9 @@ final public class MastodonFeedLoader {
     
     private func load(_ request: FeedLoadRequest) async throws -> [MastodonFeedItemIdentifier] {
         switch kind {
+        case .home:
+            assertionFailure("not implemented")
+            return []
         case .notificationsAll:
             return try await loadNotifications(withScope: .everything, olderThan: request.maxID)
         case .notificationsMentionsOnly:
@@ -336,6 +339,8 @@ extension MastodonFeedKind {
         switch self {
         case .notificationsAll, .notificationsMentionsOnly, .notificationsWithAccount:
             return .notifications
+        case .home:
+            return .home
         }
     }
 }

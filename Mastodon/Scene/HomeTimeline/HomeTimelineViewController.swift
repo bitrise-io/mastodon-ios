@@ -525,6 +525,10 @@ extension HomeTimelineViewController {
             self.viewModel?.homeTimelineNeedRefresh.send()
         }
     }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        viewModel?.saveLastRead(tableView)
+    }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
