@@ -75,10 +75,10 @@ struct LastReadMarkers: Identifiable, Codable {
 
 extension LastReadMarkers {
     static func id(_ thisId: String, isOlderThan otherId: String) -> Bool {
-        if let thisInt = Int(thisId), let otherInt = Int(otherId) {
-            return thisInt < otherInt
-        } else {
+        if thisId.count == otherId.count {
             return thisId < otherId
+        } else {
+            return thisId.count < otherId.count
         }
     }
 }
