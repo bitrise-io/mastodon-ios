@@ -3,20 +3,7 @@
 import MastodonSDK
 import MastodonCore
 
-@MainActor
-protocol NotificationsCacheManager<T> {
-    associatedtype T: NotificationsResultType
-    
-    func currentResults() -> T?
-    var currentLastReadMarker: LastReadMarkers.MarkerPosition? { get }
-    var mostRecentlyFetchedResults: T? { get }
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
-    func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker)
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool)
-    func commitToCache() async
-}
-
-protocol NotificationsResultType {
+protocol NotificationsResultType: CacheableFeed {
     var hasContents: Bool { get }
 }
 extension Mastodon.Entity.GroupedNotificationsResults: NotificationsResultType {
@@ -31,7 +18,7 @@ extension Array<Mastodon.Entity.Notification>: NotificationsResultType {
 }
 
 @MainActor
-class UngroupedNotificationCacheManager: NotificationsCacheManager {
+class UngroupedNotificationCacheManager: MastodonFeedCacheManager {
     typealias T = [Mastodon.Entity.Notification]
     private let userIdentifier: MastodonUserIdentifier
     private let feedKind: MastodonFeedKind
@@ -93,12 +80,7 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         return markers.lastRead(forKind: feedKind)
     }
     
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
-
-        guard let newlyFetched = newlyFetched as? [Mastodon.Entity.Notification] else {
-            assertionFailure("unexpected type cannot be processed")
-            return
-        }
+    func updateByInserting(newlyFetched: [Mastodon.Entity.Notification], at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         
         var updatedMostRecentChunk: [Mastodon.Entity.Notification]
 
@@ -174,18 +156,18 @@ enum Fetchable<T> {
 }
 
 @MainActor
-class GroupedNotificationCacheManager: NotificationsCacheManager {
-    typealias T = Mastodon.Entity.GroupedNotificationsResults
+class GroupedNotificationCacheManager: MastodonFeedCacheManager {
+    typealias CachedType = Mastodon.Entity.GroupedNotificationsResults
     
     private let maxNotificationsListLength = 1000
     
     private let userIdentifier: MastodonUserIdentifier
     private let feedKind: MastodonFeedKind
     
-    private var staleResults: T?
+    private var staleResults: CachedType?
     private var staleMarkers: Fetchable<LastReadMarkers> = .initial
     
-    internal var mostRecentlyFetchedResults: T?
+    internal var mostRecentlyFetchedResults: CachedType?
     private var mostRecentMarkers: Fetchable<LastReadMarkers> = .initial
     
     init(feedKind: MastodonFeedKind, userIdentifier: MastodonUserIdentifier) {
@@ -194,12 +176,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         self.userIdentifier = userIdentifier
     }
     
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
-        
-        guard let newlyFetched = newlyFetched as? Mastodon.Entity.GroupedNotificationsResults else {
-            assertionFailure("unexpected type cannot be processed")
-            return
-        }
+    func updateByInserting(newlyFetched: CachedType, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         
         let updatedNewerChunk: [Mastodon.Entity.NotificationGroup]
         let includePreviouslyFetched: Bool
@@ -307,7 +284,7 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         mostRecentMarkers = .known(updatable)
     }
     
-    func currentResults() -> T? {
+    func currentResults() -> CachedType? {
         if let mostRecentlyFetchedResults {
             return mostRecentlyFetchedResults
         } else if let staleResults {

@@ -624,7 +624,7 @@ struct NotificationRowView: View {
                     case .icon:
                         NotificationIconView(iconStyle)
                     case .avatar:
-                        if let author = viewModel.author {
+                        if let author = viewModel.notification.sourceAccounts.primaryAuthorAccount {
                             AvatarView(author: author, goToProfile: viewModel.navigateToProfile(_:))
                                 .frame(width: iconViewSize, height: iconViewSize)
                         }
@@ -647,7 +647,7 @@ struct NotificationRowView: View {
                     componentView($0)
                 }
                 
-                if !viewModel.contentComponents.isEmpty && !viewModel.type.wantsFullStatusLayout {
+                if !viewModel.contentComponents.isEmpty && !viewModel.notification.type.wantsFullStatusLayout {
                     Spacer().frame(height: 2)
                 }
                 
@@ -685,7 +685,7 @@ struct NotificationRowView: View {
         case .weightedText(let string, let weight):
             textComponent(string, fontWeight: weight)
         case .status(let statusViewModel):
-            InlinePostPreview(viewModel: statusViewModel, showAttributionHeader: !viewModel.type.wantsFullStatusLayout)
+            InlinePostPreview(viewModel: statusViewModel, showAttributionHeader: !viewModel.notification.type.wantsFullStatusLayout)
                 .onTapGesture {
                     statusViewModel.navigateToStatus()
                 }

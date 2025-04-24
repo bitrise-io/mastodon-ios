@@ -39,7 +39,7 @@ enum GroupedNotificationType {
     case _other(String)
 }
 
-struct GroupedNotificationInfo {
+struct GroupedNotificationInfo: Identifiable {
     func availableRelationshipElement() async -> RelationshipElement? {
         return relationshipElement
     }
@@ -76,7 +76,7 @@ struct GroupedNotificationInfo {
         }
     }
 
-    let statusViewModel: Mastodon.Entity.Status.ViewModel?
+    let status: Mastodon.Entity.Status?
 
     let primaryNavigation: NotificationRowViewModel.NotificationNavigation?
 }

@@ -358,19 +358,24 @@ private class NotificationListViewModel: ObservableObject {
         didSet {
             Task { [weak self] in
                 guard let self else { return }
-                await self.feedLoader.commitToCache()
+                await self.groupedFeedLoader?.commitToCache()
+                await self.ungroupedFeedLoader?.commitToCache()
+                self.groupedFeedLoader = nil
+                self.ungroupedFeedLoader = nil
                 self.createNewFeedLoader()
             }
         }
     }
-    @Published var notificationItems: [NotificationListItem] = []
+    @Published var notificationItems = [NotificationListItem]()
+    
+    private let timestampUpdater = TimestampUpdater(TimeInterval(30))
     
     private var firstUnreadItem: NotificationListItem? {
-        guard let marker =  feedLoader.lastReadMarker else { return nil }
-        let firstUnread = notificationItems.reversed().first { item in
+        guard let marker =  groupedFeedLoader?.lastReadMarker ?? ungroupedFeedLoader?.lastReadMarker else { return nil }
+        let firstUnread = notificationItems.reversed().first( where: { item in
             switch item {
             case .groupedNotification(let itemViewModel):
-                if let itemNewestID =  itemViewModel.newestID {
+                if let itemNewestID =  itemViewModel.notification.newestID {
                     return itemNewestID > marker.lastReadID
                 } else {
                     return false
@@ -378,7 +383,7 @@ private class NotificationListViewModel: ObservableObject {
             default:
                 return false
             }
-        }
+        })
         return firstUnread
     }
     
@@ -396,9 +401,17 @@ private class NotificationListViewModel: ObservableObject {
     }
 
     private var feedSubscription: AnyCancellable?
-    private var feedLoader = GroupedNotificationFeedLoader(kind: .notificationsAll, navigateToScene: { _, _ in },
-        presentError: { _ in })
-
+    private var errorSubscription: AnyCancellable?
+    
+    private var groupedFeedUnavailable = false {
+        didSet {
+            createNewFeedLoader()
+        }
+    }
+    
+    private var groupedFeedLoader: GroupedNotificationsFeedLoader?
+    private var ungroupedFeedLoader: UngroupedNotificationsFeedLoader?
+    
     fileprivate var navigateToScene:
         ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void)?
     {
@@ -447,7 +460,8 @@ private class NotificationListViewModel: ObservableObject {
             notificationPolicyBannerRow
             + withoutFilteredRow
         
-        feedLoader.requestLoad(.reload)
+        groupedFeedLoader?.requestLoad(MastodonFeedLoaderRequest.reload)
+        ungroupedFeedLoader?.requestLoad(MastodonFeedLoaderRequest.reload)
     }
     
     func isUnread(_ item: NotificationListItem) -> Bool? {
@@ -455,8 +469,8 @@ private class NotificationListViewModel: ObservableObject {
         case .bottomLoader, .filteredNotificationsInfo:
             return nil
         case .groupedNotification(let viewModel):
-            if let id = viewModel.newestID {
-                return feedLoader.isUnread(id)
+            if let id = viewModel.notification.newestID {
+                return groupedFeedLoader?.isUnread(id) ?? ungroupedFeedLoader?.isUnread(id) ?? false
             } else {
                 return false
             }
@@ -471,8 +485,9 @@ private class NotificationListViewModel: ObservableObject {
         case .bottomLoader, .filteredNotificationsInfo:
             break
         case .groupedNotification(let viewModel):
-            if let id = viewModel.newestID {
-                feedLoader.markAsRead(id)
+            if let id = viewModel.notification.newestID {
+                groupedFeedLoader?.markAsRead(id)
+                ungroupedFeedLoader?.markAsRead(id)
             }
         case .notification:
             assert(false)
@@ -485,45 +500,111 @@ private class NotificationListViewModel: ObservableObject {
             presentError?(APIService.APIError.implicit(.authenticationMissing))
             return
         }
-        if currentInstance.canGroupNotifications, !feedLoader.useGroupedNotificationsApi {
+        if currentInstance.canGroupNotifications, groupedFeedLoader == nil {
+            ungroupedFeedLoader = nil
             createNewFeedLoader()
         }
     }
 
     private func createNewFeedLoader() {
-        guard navigateToScene != nil && presentError != nil else { return }
+        guard let navigateToScene, let presentError else { return }
+        guard let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication else { return }
+        
         fetchFilteredNotificationsPolicy()
-        feedLoader = GroupedNotificationFeedLoader(
-            kind: displayedNotifications.feedKind,
-            navigateToScene: navigateToScene, presentError: presentError)
-        feedSubscription = feedLoader.$records
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] records in
-                guard let self else { return }
-                var updatedItems = records.allRecords.map {
-                    NotificationListItem.groupedNotification($0)
+        
+        let useGrouped = {
+            guard !groupedFeedUnavailable else { return false }
+            switch displayedNotifications.feedKind {
+            case .home:
+                assertionFailure("nonsensical")
+                groupedFeedUnavailable = true
+                return false
+            case .notificationsAll, .notificationsMentionsOnly:
+                if let currentInstance = authBox.instanceConfiguration {
+                    return currentInstance.canGroupNotifications
+                } else {
+                    assertionFailure("no instance configuration")
+                    return false
                 }
-                if !records.allRecords.isEmpty && records.canLoadOlder {
-                    updatedItems.append(.bottomLoader)
-                }
-                updatedItems = self.notificationPolicyBannerRow + updatedItems
-                self.notificationItems = updatedItems
+            case .notificationsWithAccount:
+                groupedFeedUnavailable = true
+                return false
             }
-        feedLoader.doFirstLoad()
+        }()
+        
+        func notificationListItem(fromInfo info: GroupedNotificationInfo) -> NotificationListItem {
+            let rowViewModel = NotificationRowViewModel(info, timestamper: self.timestampUpdater, myAccountID: authBox.userID, myAccountDomain: authBox.domain, navigateToScene: navigateToScene, presentError: presentError)
+            return NotificationListItem.groupedNotification(rowViewModel)
+        }
+        
+        if useGrouped {
+            guard groupedFeedLoader == nil else { return }
+            ungroupedFeedLoader = nil
+            groupedFeedLoader = GroupedNotificationsFeedLoader(displayedNotifications.feedKind, forUser: authBox.userIdentifier())
+            feedSubscription = groupedFeedLoader!.$records
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] records in
+                    guard let self else { return }
+                    var updatedItems = records.allRecords.map {
+                        notificationListItem(fromInfo: $0)
+                    }
+                    if !records.allRecords.isEmpty && records.canLoadOlder {
+                        updatedItems.append(.bottomLoader)
+                    }
+                    updatedItems = self.notificationPolicyBannerRow + updatedItems
+                    self.notificationItems = updatedItems
+                }
+            errorSubscription = groupedFeedLoader!.$currentError
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] error in
+                    if error?.isServiceNotAvailable == true {
+                        self?.groupedFeedUnavailable = true
+                    }
+                }
+            groupedFeedLoader!.doFirstLoad()
+        } else {
+            guard ungroupedFeedLoader == nil else { return }
+            groupedFeedLoader = nil
+            errorSubscription?.cancel()
+            errorSubscription = nil
+            ungroupedFeedLoader = UngroupedNotificationsFeedLoader(displayedNotifications.feedKind, forUser: authBox.userIdentifier())
+            feedSubscription = ungroupedFeedLoader!.$records
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] records in
+                    guard let self else { return }
+                    var updatedItems = records.allRecords.map {
+                        notificationListItem(fromInfo: $0)
+                    }
+                    if !records.allRecords.isEmpty && records.canLoadOlder {
+                        updatedItems.append(.bottomLoader)
+                    }
+                    updatedItems = self.notificationPolicyBannerRow + updatedItems
+                    self.notificationItems = updatedItems
+                }
+            ungroupedFeedLoader!.doFirstLoad()
+        }
     }
 
     public func refreshFeedFromTop() async {
-        if feedLoader.permissionToLoadImmediately {
-            await feedLoader.loadImmediately(.newer)
+        if let feedLoader = groupedFeedLoader {
+            if feedLoader.permissionToLoadImmediately {
+                await feedLoader.loadImmediately(.newer)
+            }
+        } else if let feedLoader = ungroupedFeedLoader {
+            if feedLoader.permissionToLoadImmediately {
+                await feedLoader.loadImmediately(.newer)
+            }
         }
     }
     
-    public func requestLoad(_ loadRequest: GroupedNotificationFeedLoader.FeedLoadRequest) {
-        feedLoader.requestLoad(loadRequest)
+    public func requestLoad(_ loadRequest: MastodonFeedLoaderRequest) {
+        groupedFeedLoader?.requestLoad(loadRequest)
+        ungroupedFeedLoader?.requestLoad(loadRequest)
     }
     
     public func commitToCache() async {
-        await feedLoader.commitToCache()
+        await groupedFeedLoader?.commitToCache()
+        await ungroupedFeedLoader?.commitToCache()
     }
 }
 
@@ -554,8 +635,8 @@ fileprivate class ScrollManager {
     private var newestVisibleItem: NotificationRowViewModel? {
         var newest: NotificationRowViewModel? = nil
         for item in visibleItems {
-            if let thisNewestID = item.newestID {
-                if let currentNewestID = newest?.newestID {
+            if let thisNewestID = item.notification.newestID {
+                if let currentNewestID = newest?.notification.newestID {
                     if currentNewestID < thisNewestID {
                         newest = item
                     }
@@ -573,7 +654,7 @@ fileprivate class ScrollManager {
     func stableScroll(withNewestOfAll newestOfAll: NotificationRowViewModel, newestRead: NotificationRowViewModel?) -> ScrollRequest? {
         guard let newestVisibleItem else {
             if let newestRead {
-                return .middle(newestRead.identifier.id)
+                return .middle(newestRead.id)
             } else {
                 return nil
             }
@@ -582,9 +663,9 @@ fileprivate class ScrollManager {
         if let newestRead, newestRead.matchesIdentifier(newestVisibleItem) {
             // The most recent notification that has already been read is also the most recent visible item.
             // We ask to scroll it down to the middle to reveal newer, unread items.
-            return .middle(newestRead.identifier.id)
+            return .middle(newestRead.id)
         } else {
-            let topID = newestVisibleItem.identifier.id
+            let topID = newestVisibleItem.id
             return .top(topID)
         }
     }
@@ -625,6 +706,36 @@ fileprivate class ScrollManager {
 extension NotificationRowViewModel {
     func matchesIdentifier(_ other: NotificationRowViewModel?) -> Bool {
         guard let other else { return false }
-        return identifier.id == other.identifier.id
+        return notification.identifier.id == other.notification.identifier.id
+    }
+}
+
+extension NotificationRowViewModel: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(notification.identifier)
+    }
+}
+
+extension Error {
+    var isServiceNotAvailable: Bool {
+        if let error = self as? Mastodon.API.Error {
+            if [.badRequest, .unauthorized, .forbidden, .notFound, .methodNotAllowed, .gone].contains(error.httpResponseStatus) {
+                return true
+            }
+        }
+        return false
+    }
+}
+
+class TimestampUpdater: ObservableObject {
+    @Published var timestamp: Date = .now
+    private var timer: Timer?
+    
+    init(_ interval: TimeInterval) {
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true, block: { [weak self] _ in
+            Task { @MainActor in
+                self?.timestamp = .now
+            }
+        })
     }
 }
