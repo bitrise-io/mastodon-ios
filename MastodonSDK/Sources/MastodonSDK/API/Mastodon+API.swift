@@ -212,7 +212,7 @@ extension Mastodon.API {
             debugPrint("URL: \(String(describing: response.url))\nData: \(String(data: data, encoding: .utf8) ?? "-")\nError:\(decodeError)\n----\n")
             #endif
             
-            guard let httpURLResponse = response as? HTTPURLResponse else {
+            guard let httpURLResponse = response as? HTTPURLResponse, httpURLResponse.statusCode != 200 else {
                 assertionFailure()
                 throw decodeError
             }

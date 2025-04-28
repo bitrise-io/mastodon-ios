@@ -136,8 +136,10 @@ final class HomeTimelineViewModel: NSObject {
 
     func receiveLoadingStateCompletion(_ completion: Subscribers.Completion<Error>) {
         switch completion {
-        case .failure:
-            networkErrorCount.value = networkErrorCount.value + 1
+        case .failure(let error):
+            if !(error is DecodingError) {
+                networkErrorCount.value = networkErrorCount.value + 1
+            }
         case .finished:
             networkErrorCount.value = 0
         }
