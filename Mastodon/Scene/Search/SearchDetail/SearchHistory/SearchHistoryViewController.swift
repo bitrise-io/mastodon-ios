@@ -66,7 +66,8 @@ extension SearchHistoryViewController {
         view.addSubview(noSearchResultLabel)
         NSLayoutConstraint.activate([
             noSearchResultLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            noSearchResultLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            noSearchResultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 200).priority(.defaultHigh),
+            noSearchResultLabel.centerYAnchor.constraint(lessThanOrEqualTo: view.centerYAnchor)
         ])
     }
 
