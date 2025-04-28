@@ -25,6 +25,8 @@ final class ContentSplitViewController: UIViewController {
     
     weak var delegate: ContentSplitViewControllerDelegate?
     
+    private let statusBarBlurView = UIVisualEffectView(effect: nil)
+    
     private(set) lazy var sidebarViewController: SidebarViewController = {
         let sidebarViewController = SidebarViewController()
         sidebarViewController.viewModel = SidebarViewModel(authenticationBox: authenticationBox)
@@ -72,6 +74,21 @@ extension ContentSplitViewController {
             mainTabBarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
         
+        // blur behind status bar
+        statusBarBlurView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(statusBarBlurView)
+        NSLayoutConstraint.activate([
+            statusBarBlurView.topAnchor.constraint(equalTo: view.topAnchor),
+            statusBarBlurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            statusBarBlurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            statusBarBlurView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        ])
+        // adapt blur to light/darkmode changes
+        updateBlurStyle()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            self.updateBlurStyle()
+        }
+        
         // response keyboard command tab switch
         mainTabBarController.$currentTab
             .sink { [weak self] tab in
@@ -91,6 +108,17 @@ extension ContentSplitViewController {
                 self.sidebarViewController.viewModel.currentTab = tab
             })
             .store(in: &disposeBag)
+    }
+    
+    private func updateBlurStyle() {
+        let blurStyle: UIBlurEffect.Style
+        if traitCollection.userInterfaceStyle == .dark {
+            blurStyle = .dark
+        } else {
+            blurStyle = .light
+        }
+        
+        statusBarBlurView.effect = UIBlurEffect(style: blurStyle)
     }
 }
 
