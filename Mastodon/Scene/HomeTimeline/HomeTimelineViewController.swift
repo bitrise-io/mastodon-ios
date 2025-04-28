@@ -368,6 +368,15 @@ extension HomeTimelineViewController {
             }
             .store(in: &disposeBag)
         
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if self.view.window != nil {
+                    self.viewModel?.saveLastRead(self.tableView)
+                }
+            }
+            .store(in: &disposeBag)
+        
         NotificationCenter.default
             .publisher(for: .statusBarTapped, object: nil)
             .throttle(for: 0.5, scheduler: DispatchQueue.main, latest: false)
