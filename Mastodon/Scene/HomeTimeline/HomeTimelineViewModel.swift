@@ -147,7 +147,16 @@ final class HomeTimelineViewModel: NSObject {
     
     func saveLastRead(_ tableView: UITableView) {
         guard timelineContext == .home else { return }
-        guard let topVisibleIndexPath = tableView.indexPathsForVisibleRows?.sorted().first, let topVisibleItem = diffableDataSource?.itemIdentifier(for: topVisibleIndexPath) else { return }
+        let topVisibleIndexPath = tableView.indexPathsForVisibleRows?.sorted().first(where: { indexPath in
+            switch diffableDataSource?.itemIdentifier(for: indexPath) {
+            case .feed, .status:
+                return true
+            default:
+                return false
+            }
+        })
+        
+        guard let topVisibleIndexPath, let topVisibleItem = diffableDataSource?.itemIdentifier(for: topVisibleIndexPath) else { return }
         
         let statusID: Mastodon.Entity.Status.ID
         switch topVisibleItem {
