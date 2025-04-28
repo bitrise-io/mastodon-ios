@@ -17,7 +17,8 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
 
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
-    
+    @Published var timelineItems = [MastodonPost]()
+    private var feedLoader = TimelineFeedLoader(nil)
 }
 
 struct HomeTimelineListView: View {

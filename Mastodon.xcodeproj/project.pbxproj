@@ -1284,6 +1284,7 @@
 				NotificationRowView.swift,
 				NotificationRowViewModel.swift,
 				NotificationsCacheManager.swift,
+				TimelineFeedLoader.swift,
 				TimelinePostCell/ActionButtons.swift,
 				TimelinePostCell/AuthorHeader.swift,
 				TimelinePostCell/BoostHeader.swift,
