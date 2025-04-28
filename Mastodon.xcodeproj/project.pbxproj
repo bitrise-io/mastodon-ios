@@ -1275,6 +1275,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				GroupedNotificationFeedLoader.swift,
+				HomeTimelineListViewController.swift,
 				InlinePostPreview.swift,
 				LastReadMarkers.swift,
 				MastodonPost.swift,

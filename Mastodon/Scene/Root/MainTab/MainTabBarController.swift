@@ -32,7 +32,7 @@ class MainTabBarController: UITabBarController {
     
     @Published var currentTab: Tab = .home
 
-    let homeTimelineViewController: HomeTimelineViewController
+    let homeTimelineViewController: UIViewController
     let searchViewController: SearchViewController
     let composeViewController: UIViewController // placeholder
     let notificationViewController: UIViewController
@@ -51,7 +51,11 @@ class MainTabBarController: UITabBarController {
     ) {
         self.authenticationBox = authenticationBox
 
-        homeTimelineViewController = HomeTimelineViewController()
+        if UserDefaults.standard.testNewHomeTimeline {
+            homeTimelineViewController = HomeTimelineListViewController()
+        } else {
+            homeTimelineViewController = HomeTimelineViewController()
+        }
         homeTimelineViewController.configureTabBarItem(with: .home)
 
         searchViewController = SearchViewController()
@@ -68,7 +72,9 @@ class MainTabBarController: UITabBarController {
         meProfileViewController.configureTabBarItem(with: .me)
 
         if let authenticationBox {
-            homeTimelineViewController.viewModel = HomeTimelineViewModel(authenticationBox: authenticationBox)
+            if let homeTimelineViewController = homeTimelineViewController as? HomeTimelineViewController {
+                homeTimelineViewController.viewModel = HomeTimelineViewModel(authenticationBox: authenticationBox)
+            }
             searchViewController.viewModel = SearchViewModel(authenticationBox: authenticationBox)
         }
 
