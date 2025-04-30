@@ -65,8 +65,7 @@ struct HomeTimelineListView: View {
                     case let .missingPosts(newerThan, olderThan, timeGapDescription):
                         Text(timeGapDescription)
                     case .post(let post):
-                        let authorInfo = post.metaData.author.displayInfo
-                        Text("Post from \(authorInfo.displayName) \(authorInfo.handle)")
+                        postRowView(post)
                     }
                 }
             }
@@ -82,6 +81,70 @@ struct HomeTimelineListView: View {
             Task {
                 try await viewModel.doInitialLoad()
             }
+        }
+    }
+    
+    @ViewBuilder func postRowView(_ post: GenericMastodonPost) -> some View {
+        let authorInfo = post.metaData.author.displayInfo
+        Text("Post from \(authorInfo.displayName) \(authorInfo.handle)")
+    }
+}
+
+@MainActor
+class MastodonPostViewModel: ObservableObject {
+    let post: GenericMastodonPost
+
+    
+    @Published var favorited: AsyncBool = .unknown
+    @Published var boosted: AsyncBool = .unknown
+    @Published var muted: AsyncBool = .unknown
+    @Published var bookmarked: AsyncBool = .unknown
+    @Published var pinned: AsyncBool = .unknown
+    
+    init(post: GenericMastodonPost) {
+        self.post = post
+        let actionablePost: MastodonContentPost?
+        if let contentPost = post as? MastodonContentPost {
+            actionablePost = contentPost
+        } else if let boost = post as? MastodonBoostPost {
+            actionablePost = boost.boostedPost
+        } else {
+            actionablePost = nil
+        }
+        
+        guard let actionablePost else {
+            assertionFailure("unexpected post type")
+            favorited = .unknown
+            boosted = .unknown
+            muted = .unknown
+            bookmarked = .unknown
+            pinned = .unknown
+            return
+        }
+        
+        let myActions = actionablePost.content.myActions
+        favorited = AsyncBool.fromBool(myActions.favorited)
+        boosted = AsyncBool.fromBool(myActions.boosted)
+        muted = AsyncBool.fromBool(myActions.muted)
+        bookmarked = AsyncBool.fromBool(myActions.bookmarked)
+        pinned = AsyncBool.fromBool(myActions.pinned)
+    }
+}
+
+enum AsyncBool {
+    case unknown
+    case fetching
+    case isTrue
+    case settingToTrue
+    case isFalse
+    case settingToFalse
+    
+    static func fromBool(_ value: Bool?) -> AsyncBool {
+        guard let value else { return .unknown }
+        if value {
+            return .isTrue
+        } else {
+            return .isFalse
         }
     }
 }
