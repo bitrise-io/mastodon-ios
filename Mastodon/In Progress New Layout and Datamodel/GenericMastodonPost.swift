@@ -3,30 +3,17 @@
 import Foundation
 import MastodonSDK
 
-enum AsyncBool {
-    case unknown
-    case fetching
-    case isTrue
-    case settingToTrue
-    case isFalse
-    case settingToFalse
-}
-
-class PostActionViewModel: ObservableObject {
-    @Published var favorited: AsyncBool = .unknown
-    @Published var boosted: AsyncBool = .unknown
-    @Published var muted: AsyncBool = .unknown
-    @Published var bookmarked: AsyncBool = .unknown
-    @Published var pinned: AsyncBool = .unknown
-}
-
-struct MastodonPost {
+class GenericMastodonPost {
     let id: Mastodon.Entity.Status.ID
     let metaData: PostMetadata
-    let postType: MastodonPostType
+    
+    init(id: Mastodon.Entity.Status.ID, metaData: PostMetadata) {
+        self.id = id
+        self.metaData = metaData
+    }
 }
 
-extension MastodonPost {
+extension GenericMastodonPost {
     struct PostMetrics: Codable {
         let boostCount: Int
         let favoriteCount: Int
@@ -34,7 +21,7 @@ extension MastodonPost {
     }
 }
 
-extension MastodonPost {
+extension GenericMastodonPost {
     struct PostActions: Codable {
         var favorited: Bool
         var boosted: Bool
@@ -44,7 +31,7 @@ extension MastodonPost {
     }
 }
 
-extension MastodonPost {
+extension GenericMastodonPost {
     struct PostContent: Codable {
         let editedAt: Date?
         let language: String?
@@ -52,7 +39,6 @@ extension MastodonPost {
         let plainText: String?
         let contentWarned: ContentWarned
         let filtered: [Mastodon.Entity.ServerFilterResult]?
-        let attachment: PostAttachment?
         let metrics: PostMetrics
         let myActions: PostActions
 
@@ -63,31 +49,23 @@ extension MastodonPost {
             let emojis: [Mastodon.Entity.Emoji]
         }
 
-        enum PostAttachment: Codable {
-            case media([Mastodon.Entity.Attachment])
-            case poll(Mastodon.Entity.Poll)
-            case linkPreviewCard(Mastodon.Entity.Card)
-        }
-
         enum ContentWarned: Codable {
             case nothingToWarn
             case warnAll(reason: String)
             case warnMediaAttachmentOnly
         }
     }
+    
+    enum PostAttachment: Codable {
+        case media([Mastodon.Entity.Attachment])
+        case poll(Mastodon.Entity.Poll)
+        case linkPreviewCard(Mastodon.Entity.Card)
+    }
 }
-
-enum MastodonPostType: Codable {
-    case originalPost(
-        content: MastodonPost.PostContent,
-        inReplyTo: MastodonPost.InReplyToDetails?)
-    case boost(boostedPostID: Mastodon.Entity.Status.ID)
-    //    case quotePost(quotedPostID: Mastodon.Entity.Status.ID)
-}
-
-extension MastodonPost {
+    
+extension GenericMastodonPost {
     struct PostMetadata: Codable {
-        let author: Mastodon.Entity.Account
+        let author: MastodonAccount
         let uriForFediverse: String
         let url: String?
         let privacyLevel: PrivacyLevel?
@@ -110,24 +88,15 @@ extension MastodonPost {
 
 // MARK: -
 
-protocol MastodonStatusDerived {
+protocol FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self
 }
 
-protocol MastodonStatusDerivedOptional {
+protocol FromStatusEntityDerivableOptional {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self?
 }
 
-extension MastodonPost: MastodonStatusDerived {
-    static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
-        return Self(
-            id: status.id,
-            metaData: MastodonPost.PostMetadata.fromStatus(status),
-            postType: MastodonPostType.fromStatus(status))
-    }
-}
-
-extension MastodonPost.PostMetrics: MastodonStatusDerived {
+extension GenericMastodonPost.PostMetrics: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         return Self(
             boostCount: status.reblogsCount,
@@ -136,7 +105,7 @@ extension MastodonPost.PostMetrics: MastodonStatusDerived {
     }
 }
 
-extension MastodonPost.PostActions: MastodonStatusDerived {
+extension GenericMastodonPost.PostActions: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         return Self(
             favorited: status.favourited ?? false,
@@ -145,21 +114,20 @@ extension MastodonPost.PostActions: MastodonStatusDerived {
     }
 }
 
-extension MastodonPost.PostContent: MastodonStatusDerived {
+extension GenericMastodonPost.PostContent: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         return Self(
             editedAt: status.editedAt, language: status.language,
-            htmlWithEntities: MastodonPost.PostContent.HtmlWithEntities
+            htmlWithEntities: GenericMastodonPost.PostContent.HtmlWithEntities
                 .fromStatus(status), plainText: status.text,
-            contentWarned: MastodonPost.PostContent.ContentWarned.fromStatus(
+            contentWarned: GenericMastodonPost.PostContent.ContentWarned.fromStatus(
                 status), filtered: status.filtered,
-            attachment: MastodonPost.PostContent.PostAttachment.fromStatus(
-                status), metrics: MastodonPost.PostMetrics.fromStatus(status),
-            myActions: MastodonPost.PostActions.fromStatus(status))
+            metrics: GenericMastodonPost.PostMetrics.fromStatus(status),
+            myActions: GenericMastodonPost.PostActions.fromStatus(status))
     }
 }
 
-extension MastodonPost.PostContent.HtmlWithEntities: MastodonStatusDerived {
+extension GenericMastodonPost.PostContent.HtmlWithEntities: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         return Self(
             html: status.content, mentions: status.mentions, tags: status.tags,
@@ -167,7 +135,7 @@ extension MastodonPost.PostContent.HtmlWithEntities: MastodonStatusDerived {
     }
 }
 
-extension MastodonPost.PostContent.PostAttachment: MastodonStatusDerivedOptional
+extension GenericMastodonPost.PostAttachment: FromStatusEntityDerivableOptional
 {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self? {
         if let attachedPoll = status.poll {
@@ -182,7 +150,7 @@ extension MastodonPost.PostContent.PostAttachment: MastodonStatusDerivedOptional
     }
 }
 
-extension MastodonPost.PostContent.ContentWarned: MastodonStatusDerived {
+extension GenericMastodonPost.PostContent.ContentWarned: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         switch (status.sensitive, status.spoilerText) {
         case (true, nil):
@@ -195,17 +163,17 @@ extension MastodonPost.PostContent.ContentWarned: MastodonStatusDerived {
     }
 }
 
-extension MastodonPost.PostMetadata: MastodonStatusDerived {
+extension GenericMastodonPost.PostMetadata: FromStatusEntityDerivable {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
         return Self(
-            author: status.account, uriForFediverse: status.uri,
+            author: MastodonAccount.fromEntity(status.account), uriForFediverse: status.uri,
             url: status.url,
-            privacyLevel: MastodonPost.PrivacyLevel.fromStatus(status),
+            privacyLevel: GenericMastodonPost.PrivacyLevel.fromStatus(status),
             createdAt: status.createdAt, application: status.application)
     }
 }
 
-extension MastodonPost.PrivacyLevel: MastodonStatusDerivedOptional {
+extension GenericMastodonPost.PrivacyLevel: FromStatusEntityDerivableOptional {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self? {
         switch status.visibility {
         case .public:
@@ -225,24 +193,11 @@ extension MastodonPost.PrivacyLevel: MastodonStatusDerivedOptional {
     }
 }
 
-extension MastodonPost.InReplyToDetails: MastodonStatusDerivedOptional {
+extension GenericMastodonPost.InReplyToDetails: FromStatusEntityDerivableOptional {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self? {
         guard let post = status.inReplyToID,
             let account = status.inReplyToAccountID
         else { return nil }
-        return MastodonPost.InReplyToDetails(postID: post, accountID: account)
-    }
-}
-
-extension MastodonPostType: MastodonStatusDerived {
-    static func fromStatus(_ status: Mastodon.Entity.Status) -> Self {
-        // TODO: add quote post option here
-        if let boost = status.reblog {
-            return .boost(boostedPostID: boost.id)
-        } else {
-            return .originalPost(
-                content: MastodonPost.PostContent.fromStatus(status),
-                inReplyTo: MastodonPost.InReplyToDetails.fromStatus(status))
-        }
+        return GenericMastodonPost.InReplyToDetails(postID: post, accountID: account)
     }
 }
