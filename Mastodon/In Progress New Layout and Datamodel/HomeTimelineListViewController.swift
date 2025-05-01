@@ -95,7 +95,7 @@ fileprivate struct HomeTimelinePostRowView: View {
         VStack(alignment: .gutterAlign) {
             viewModel.socialContextHeader
             componentView(.authorHeader(viewModel.post.metaData.author))
-            componentView(.content(viewModel.contentString))
+            viewModel.textContentView
             if let attachment = viewModel.attachmentComponent {
                 componentView(attachment)
             }
@@ -205,7 +205,6 @@ fileprivate enum PostViewComponent {
 class MastodonPostViewModel: ObservableObject {
     let post: GenericMastodonPost
 
-    
     @Published var favorited: AsyncBool = .unknown
     @Published var boosted: AsyncBool = .unknown
     @Published var muted: AsyncBool = .unknown
@@ -262,14 +261,20 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
     
-    var contentString: String {
+    var textContentView: HtmlContentView {
+        let text: String
+        let emojis: HtmlContentView.Emojis
         if let boost = post as? MastodonBoostPost {
-            return boost.boostedPost.content.plainText ?? "CONTENT"
+            text = boost.boostedPost.content.htmlWithEntities?.html ?? boost.boostedPost.content.plainText ?? ""
+            emojis = boost.boostedPost.content.htmlWithEntities?.emojis ?? HtmlContentView.Emojis()
         } else if let contentPost = post as? MastodonContentPost {
-            return contentPost.content.plainText ?? "CONTENT"
+            text = contentPost.content.htmlWithEntities?.html ?? contentPost.content.plainText ?? ""
+            emojis = contentPost.content.htmlWithEntities?.emojis ?? HtmlContentView.Emojis()
         } else {
-            return "no text content available"
+            text = ""
+            emojis = HtmlContentView.Emojis()
         }
+        return .timelinePost(html: text, emojis: emojis)
     }
     
     var attachmentComponent: PostViewComponent? {
