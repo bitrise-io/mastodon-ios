@@ -1274,6 +1274,9 @@
 		FBBEA04F2D3819080000A900 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Common Components/AlignmentGuides.swift",
+				"Common Components/AuthorHeaderView.swift",
+				"Common Components/SocialContextHeader.swift",
 				GenericMastodonPost.swift,
 				"GenericMastodonPost+Subclasses.swift",
 				GroupedNotificationFeedLoader.swift,

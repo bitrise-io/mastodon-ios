@@ -92,10 +92,8 @@ fileprivate struct HomeTimelinePostRowView: View {
     @ObservedObject var viewModel: MastodonPostViewModel
     
     var body: some View {
-        VStack {
-            if let superheader = viewModel.superheader {
-                componentView(superheader)
-            }
+        VStack(alignment: .gutterAlign) {
+            viewModel.socialContextHeader
             componentView(.authorHeader(viewModel.post.metaData.author))
             componentView(.content(viewModel.contentString))
             if let attachment = viewModel.attachmentComponent {
@@ -110,8 +108,6 @@ fileprivate struct HomeTimelinePostRowView: View {
     
     @ViewBuilder func componentView(_ component: PostViewComponent) -> some View {
         switch component {
-        case let .superHeader(iconName, text, color):
-            SuperheaderView(iconName: iconName, text: text, color: color)
         case .authorHeader(let author):
             AuthorHeaderView(author: author)
         case .content(let string):
@@ -133,67 +129,8 @@ fileprivate struct HomeTimelinePostRowView: View {
     }
 }
 
-struct SuperheaderView: View {
-    let iconName: String?
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        HStack {
-            Spacer()
-            if let iconName = iconName {
-                Image(systemName: iconName)
-                    .font(.subheadline)
-                    .bold()
-                    .foregroundStyle(color)
-                    .frame(height: actionSuperheaderHeight)
-            } else {
-                Spacer()
-                    .frame(height: actionSuperheaderHeight)
-            }
-            textComponent(text, fontWeight: .bold)
-                .font(.subheadline)
-                .fixedSize(horizontal: true, vertical: false)
-                .foregroundColor(color)
-                .frame(height: actionSuperheaderHeight)
-            Spacer()
-                .frame(height: actionSuperheaderHeight)
-        }
-    }
-    
-    @ViewBuilder
-    func textComponent(_ string: String, fontWeight: SwiftUICore.Font.Weight?)
-    -> some View
-    {
-        Text(string)
-            .fontWeight(fontWeight)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-let avatarSize: CGFloat = 50
-
-fileprivate struct AuthorHeaderView: View {
-    let author: MastodonAccount
-    
-    var body: some View {
-        HStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(.secondary)
-                .frame(width: avatarSize, height: avatarSize)
-            VStack(alignment: .leading) {
-                textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
-                    .fixedSize()
-                textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
-                    .fixedSize()
-            }
-            Spacer()
-                .frame(maxWidth: .infinity)
-        }
-    }
-}
-
 fileprivate struct PostContentView: View {
+    //    @ObservedObject var contentWarningViewModel
     let text: String
     
     var body: some View {
@@ -222,6 +159,7 @@ fileprivate struct MediaAttachmentView: View {
             }
         }()
         Text(description)
+            .lineLimit(nil)
     }
 }
 
@@ -256,7 +194,6 @@ fileprivate struct ActionBar: View {
 }
 
 fileprivate enum PostViewComponent {
-    case superHeader(iconName: String?, text: String, color: Color)
     case authorHeader(MastodonAccount)
     case content(String)
     case attachment(GenericMastodonPost.PostAttachment)
@@ -307,29 +244,22 @@ class MastodonPostViewModel: ObservableObject {
 
 fileprivate extension MastodonPostViewModel {
     
-    var superheader: PostViewComponent? {
+    var socialContextHeader: SocialContextHeader? {
 
         if post is MastodonBoostPost {
             // BOOSTED BY
-            return .superHeader(iconName: "arrow.2.squarepath", text: "\(post.metaData.author.displayInfo.displayName) boosted", color: .secondary)
+            return .boosted(by: post.metaData.author.displayInfo.displayName)
         } else if let basicPost = post as? MastodonBasicPost {
-            // IS REPLY and/or IS DIRECT MESSAGE
+            // REPLIED and/or PRIVATE MENTION
             let isReply = basicPost.inReplyTo != nil
             let isPrivate = basicPost.metaData.privacyLevel == .mentionedOnly
-            let color = isPrivate ? Asset.Colors.accent.swiftUIColor : .secondary
-            switch (isReply, isPrivate) {
-            case (true, false):
-                return .superHeader(iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.reply, color: color)
-            case (true, true):
-                return .superHeader(iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.privateReply, color: color)
-            case (false, false):
-                return nil
-            case (false, true):
-                return .superHeader(iconName: "at", text: L10n.Common.Controls.Status.privateMention, color: color)
+            if isReply {
+                return .reply(to: basicPost.inReplyTo?.accountID ?? "??", isPrivate: isPrivate, isNotification: false)
+            } else if isPrivate {
+                return .mention(isPrivate: true)
             }
-        } else {
-            return nil
         }
+        return nil
     }
     
     var contentString: String {
