@@ -15,9 +15,6 @@ extension HtmlContentView: View {
         switch self {
         case .timelinePost(let html, let emojis):
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis)))
-                .multilineTextAlignment(.leading)
-                .lineLimit(nil)
-                .frame(maxWidth: 200)
         }
     }
 }

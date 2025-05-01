@@ -55,28 +55,32 @@ private class HomeTimelineListViewModel: ObservableObject {
 struct HomeTimelineListView: View {
     @ObservedObject private var viewModel: HomeTimelineListViewModel
     
+    @ScaledMetric private var avatarSize = AvatarSize.large
+    
     fileprivate init(viewModel: HomeTimelineListViewModel) {
         self.viewModel = viewModel
     }
     
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
-                    switch item {
-                    case let .missingPosts(newerThan, olderThan, timeGapDescription):
-                        Text(timeGapDescription)
-                    case .post(let post):
-                        HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post))
+        GeometryReader { geo in
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
+                        switch item {
+                        case let .missingPosts(newerThan, olderThan, timeGapDescription):
+                            Text(timeGapDescription)
+                        case .post(let post):
+                            HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post), contentWidth: geo.size.width - spacingBetweenGutterAndContent - avatarSize)
+                        }
                     }
                 }
-            }
-            .listStyle(.plain)
-            .refreshable {
-                await viewModel.refreshFeedFromTop()
-            }
-            .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                viewModel.requestLoad(.newer)
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.refreshFeedFromTop()
+                }
+                .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
+                    viewModel.requestLoad(.newer)
+                }
             }
         }
         .onAppear() {
@@ -90,18 +94,20 @@ struct HomeTimelineListView: View {
 fileprivate struct HomeTimelinePostRowView: View {
     
     @ObservedObject var viewModel: MastodonPostViewModel
+    let contentWidth: CGFloat
     
     var body: some View {
         VStack(alignment: .gutterAlign) {
             viewModel.socialContextHeader
             componentView(.authorHeader(viewModel.post.metaData.author))
             viewModel.textContentView
+                .frame(width: contentWidth, alignment: .leading)
             if let attachment = viewModel.attachmentComponent {
                 componentView(attachment)
             }
-            if let hashtags = viewModel.hashtagComponent {
-                componentView(hashtags)
-            }
+//            if let hashtags = viewModel.hashtagComponent {
+//                componentView(hashtags)
+//            }
             componentView(.actionBar)
         }
     }
