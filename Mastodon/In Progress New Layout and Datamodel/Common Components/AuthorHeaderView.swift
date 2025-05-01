@@ -1,17 +1,14 @@
 // Copyright © 2025 Mastodon gGmbH. All rights reserved.
+
+import MastodonSDK
 import SwiftUI
 
 struct AuthorHeaderView: View {
-    
-    @ScaledMetric var avatarSize = AvatarSize.large
-    
     let author: MastodonAccount
     
     var body: some View {
         HStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(.secondary)
-                .frame(width: avatarSize, height: avatarSize)
+            AvatarView(size: .large, author: author, goToProfile: nil)
             VStack(alignment: .leading) {
                 textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
                     .alignmentGuide(.gutterAlign) { d in
@@ -20,5 +17,23 @@ struct AuthorHeaderView: View {
                 textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
             }
         }
+    }
+}
+
+extension MastodonAccount: AccountInfo {
+    var handle: String {
+        return displayInfo.handle
+    }
+    
+    var avatarURL: URL? {
+        return displayInfo.avatarUrl
+    }
+    
+    var locked: Bool {
+        return metadata.manuallyApprovesNewFollows
+    }
+    
+    var fullAccount: Mastodon.Entity.Account? {
+        return nil
     }
 }

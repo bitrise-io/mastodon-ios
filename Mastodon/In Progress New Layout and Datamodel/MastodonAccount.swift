@@ -6,6 +6,7 @@ import MastodonSDK
 
 struct MastodonAccount: Identifiable, Codable {
     let id: Mastodon.Entity.Account.ID
+    let metadata: MetaData
     let displayInfo: DisplayInfo
 }
 
@@ -46,6 +47,14 @@ struct ImageUrl: Codable {
 }
 
 extension MastodonAccount {
+    struct MetaData: Codable {
+        let profileUrl: URL?
+        let createdAt: Date
+        let manuallyApprovesNewFollows: Bool
+    }
+}
+
+extension MastodonAccount {
     struct DisplayInfo: Codable {
         let handle: String
         let displayName: String
@@ -75,8 +84,15 @@ extension MastodonAccount: FromAccountEntityDerivable {
     ) -> Self {
         return MastodonAccount(
             id: entity.id,
+            metadata: MetaData.fromEntity(entity),
             displayInfo: DisplayInfo.fromEntity(
                 entity))
+    }
+}
+
+extension MastodonAccount.MetaData: FromAccountEntityDerivable {
+    static func fromEntity(_ entity: Mastodon.Entity.Account) -> MastodonAccount.MetaData {
+        return MastodonAccount.MetaData(profileUrl: URL(string: entity.url), createdAt: entity.createdAt, manuallyApprovesNewFollows: entity.locked)
     }
 }
 
@@ -84,7 +100,7 @@ extension MastodonAccount.DisplayInfo: FromAccountEntityDerivable {
     static func fromEntity(
         _ entity: Mastodon.Entity.Account
     ) -> Self {
-        // TODO: GET THE ACTUAL USER DOMAIN!
+        // TODO: GET THE ACTUAL USER DOMAIN! or just get the image and keep it somewhere
         let currentUserDomain = "mastodon.social"
         let avatarImage = ImageUrl(
             potentiallyAnimated: entity.avatar,

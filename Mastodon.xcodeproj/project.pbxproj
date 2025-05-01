@@ -1276,6 +1276,7 @@
 			membershipExceptions = (
 				"Common Components/AlignmentGuides.swift",
 				"Common Components/AuthorHeaderView.swift",
+				"Common Components/AvatarView.swift",
 				"Common Components/SocialContextHeader.swift",
 				GenericMastodonPost.swift,
 				"GenericMastodonPost+Subclasses.swift",
