@@ -255,11 +255,26 @@ private let avatarShape = RoundedRectangle(cornerRadius: 8)
 
 
 struct AvatarView: View {
+    @ScaledMetric var sizeLarge = AvatarSize.large
+    @ScaledMetric var sizeSmall = AvatarSize.small
     
     @State var isNavigating: Bool = false
     
+    enum Size {
+        case large
+        case small
+    }
+    
+    let size: Size
     let author: AccountInfo
     let goToProfile: ((AccountInfo) async throws -> ())?
+    
+    private var viewDimension: CGFloat {
+        switch size {
+        case .large: sizeLarge
+        case .small: sizeSmall
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -286,6 +301,7 @@ struct AvatarView: View {
                     .frame(width: 30)
             }
         }
+        .frame(width: viewDimension, height: viewDimension)
         .onTapGesture {
             if let goToProfile, !isNavigating {
                 Task {
@@ -301,37 +317,23 @@ struct AvatarView: View {
     }
 }
 
-private let iconViewSize: CGFloat = 44
-
-@ViewBuilder
-func NotificationIconView(_ style: GroupedNotificationType.MainIconStyle) -> some View {
-    HStack {
-        switch style {
-        case .icon(let name, let color):
-            Image(systemName: name)
+struct NotificationIconView: View {
+    @ScaledMetric private var largeAvatarSize = AvatarSize.large
+    
+    let systemName: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            Image(systemName: systemName)
                 .foregroundStyle(color)
-        case .avatar:
-            Image(systemName: "xmark")
-                .foregroundStyle(.red)
         }
+        .font(.system(size: 25))
+        .frame(width: largeAvatarSize)
+        .fontWeight(.semibold)
     }
-    .font(.system(size: 25))
-    .frame(width: iconViewSize)
-    .fontWeight(.semibold)
 }
 
-@ViewBuilder
-func NotificationIconView(systemName: String) -> some View {
-    HStack {
-        Image(
-            systemName: systemName
-        )
-        .foregroundStyle(.secondary)
-    }
-    .font(.system(size: 25))
-    .frame(width: iconViewSize)
-    .fontWeight(.semibold)
-}
 
 enum RelationshipElement: Equatable {
     case noneNeeded
@@ -511,6 +513,9 @@ struct NotificationSourceAccounts {
 fileprivate let avatarSpacing: CGFloat = 8
 
 struct FilteredNotificationsRowView: View {
+    
+    @ScaledMetric var disclosureIndicatorSize = AvatarSize.large
+    
     class ViewModel: ObservableObject {
         var policy: Mastodon.Entity.NotificationPolicy? = nil {
             didSet {
@@ -554,7 +559,7 @@ struct FilteredNotificationsRowView: View {
             // LEFT GUTTER WITH TOP-ALIGNED ICON
             VStack {
                 Spacer()
-                NotificationIconView(systemName: "archivebox")
+                NotificationIconView(systemName: "archivebox", color: .secondary)
                 Spacer().frame(maxHeight: .infinity)
             }
 
@@ -583,7 +588,7 @@ struct FilteredNotificationsRowView: View {
                 }
                 Spacer().frame(maxHeight: .infinity)
             }
-            .frame(width: 44)
+            .frame(width: disclosureIndicatorSize)
         }
     }
 }
@@ -591,6 +596,9 @@ struct FilteredNotificationsRowView: View {
 let actionSuperheaderHeight: CGFloat = 20
 
 struct NotificationRowView: View {
+
+    @ScaledMetric private var smallAvatarSize = AvatarSize.small
+    
     @ObservedObject var viewModel: NotificationRowViewModel
     @ObservedObject var timestamper: TimestampUpdater
     
@@ -621,12 +629,11 @@ struct NotificationRowView: View {
                     }
                     
                     switch iconStyle {
-                    case .icon:
-                        NotificationIconView(iconStyle)
+                    case .icon(let name, let color):
+                        NotificationIconView(systemName: name, color: color)
                     case .avatar:
                         if let author = viewModel.notification.sourceAccounts.primaryAuthorAccount {
-                            AvatarView(author: author, goToProfile: viewModel.navigateToProfile(_:))
-                                .frame(width: iconViewSize, height: iconViewSize)
+                            AvatarView(size: .large, author: author, goToProfile: viewModel.navigateToProfile(_:))
                         }
                     }
                     Spacer().frame(maxHeight: .infinity)
@@ -721,8 +728,6 @@ struct NotificationRowView: View {
         }
     }
 
-    @ScaledMetric private var smallAvatarSize: CGFloat = 32
-
     @ViewBuilder
     func avatarRow(
         accountInfo: NotificationSourceAccounts,
@@ -738,8 +743,7 @@ struct NotificationRowView: View {
                     ForEach(
                         accountInfo.accounts.prefix(maxAvatarCount), id: \.self.id
                     ) { account in
-                        AvatarView(author: account, goToProfile: viewModel.navigateToProfile(_:))
-                            .frame(width: smallAvatarSize, height: smallAvatarSize)
+                        AvatarView(size: .small, author: account, goToProfile: viewModel.navigateToProfile(_:))
                             .onTapGesture {
                                 Task {
                                     try await viewModel.navigateToProfile(account)
@@ -754,7 +758,7 @@ struct NotificationRowView: View {
                         .foregroundStyle(.secondary)
                         .fontWeight(.light)
                     }
-                    .frame(width: 0.75 * smallAvatarSize)
+                    .frame(width: 0.75 * AvatarSize.small)
                 }
                 Spacer().frame(minWidth: 0, maxWidth: .infinity)
                 avatarRowTrailingElement(
@@ -762,7 +766,7 @@ struct NotificationRowView: View {
                 .accessibilityHidden(true)
             }
         }
-        .frame(height: smallAvatarSize)  // this keeps GeometryReader from causing inconsistent visual spacing in the VStack
+        .frame(height: AvatarSize.small)  // this keeps GeometryReader from causing inconsistent visual spacing in the VStack
     }
 
     @ViewBuilder
