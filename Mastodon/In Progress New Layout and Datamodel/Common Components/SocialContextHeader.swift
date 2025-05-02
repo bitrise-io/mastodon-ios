@@ -73,7 +73,7 @@ let socialContextHeaderHeight: CGFloat = 20
 
 extension SocialContextHeader: View {
     var body: some View {
-        HStack(alignment: .bottom, spacing: spacingBetweenGutterAndContent) {
+        HStack(alignment: .firstTextBaseline, spacing: spacingBetweenGutterAndContent) {
             Image(systemName: iconName)
                 .font(.subheadline)
                 .bold()
