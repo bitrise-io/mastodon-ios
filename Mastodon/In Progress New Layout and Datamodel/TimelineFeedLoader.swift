@@ -8,6 +8,7 @@ import MastodonSDK
 enum TimelineItem: Identifiable {
     case post(GenericMastodonPost)
     case missingPosts(newerThan: Mastodon.Entity.Status.ID, olderThan: Mastodon.Entity.Status.ID, timeGapDescription: String)
+    case loadingIndicator
     
     var id: String {
         switch self {
@@ -15,6 +16,8 @@ enum TimelineItem: Identifiable {
             return post.id
         case .missingPosts(let newerThan, let olderThan, let gapDescription):
             return "\(newerThan)-\(olderThan) (\(gapDescription))"
+        case .loadingIndicator:
+            return "loading..."
         }
     }
     
@@ -44,11 +47,9 @@ extension TimelineItem: Hashable {
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
     private let authenticatedUser: MastodonAuthenticationBox
     
-    private var currentCache: CacheableTimeline?
-    
     init(currentUser: MastodonAuthenticationBox) {
         authenticatedUser = currentUser
-        super.init(nil)
+        super.init(TimelineCacheManager(currentUser: currentUser))
     }
     
     override func fetchResults(for request: MastodonFeedLoaderRequest) async throws -> CacheableTimeline {
@@ -76,8 +77,11 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true) // TODO: legacy comments indicated this may not be the best place for this call
 
         let response = try await APIService.shared.homeTimeline(sinceID: newerThan, maxID: olderThan, authenticationBox: authenticatedUser)
-        let newCache = CacheableTimeline(older: currentCache?.items ?? [], statuses: response.value)
-        currentCache = newCache
+        let newBatch = response.value.map { status in
+            let post = GenericMastodonPost.fromStatus(status)
+            return TimelineItem.post(post)
+        }
+        let newCache = CacheableTimeline(older: [], newer: newBatch)
         return newCache
     }
     
@@ -93,7 +97,7 @@ struct CacheableTimeline: CacheableFeed {
     var filteredPosts: [TimelineItem] {
         return items.filter { item in
             switch item {
-            case .missingPosts:
+            case .missingPosts, .loadingIndicator:
                 return true
             case .post(let post):
                 if let contentPost = post as? MastodonContentPost {
@@ -112,17 +116,12 @@ struct CacheableTimeline: CacheableFeed {
         return !items.isEmpty
     }
  
-    init(older: [TimelineItem], statuses: [Mastodon.Entity.Status]) {
-        let newBatch = statuses.map { status in
-            let post = GenericMastodonPost.fromStatus(status)
-            return TimelineItem.post(post)
-        }
-        
+    init(older: [TimelineItem], newer: [TimelineItem]) {
         var combined: [TimelineItem]
         
-        let oldestIdInNewBatch = newBatch.last(where: { item in
+        let oldestIdInNewBatch = newer.last(where: { item in
             switch item {
-            case .missingPosts: return false
+            case .missingPosts, .loadingIndicator: return false
             case .post: return true
             }
         })?.id
@@ -132,7 +131,7 @@ struct CacheableTimeline: CacheableFeed {
                 switch item {
                 case .post:
                     return item.id == oldestIdInNewBatch
-                case .missingPosts:
+                case .missingPosts, .loadingIndicator:
                     return false
                 }
             })
@@ -140,18 +139,18 @@ struct CacheableTimeline: CacheableFeed {
                 let firstOlderIndexToRetain = overlapIndex + 1
                 if firstOlderIndexToRetain < older.count {
                     let olderTail = older.suffix(from: firstOlderIndexToRetain)
-                    combined = newBatch + olderTail
+                    combined = newer + olderTail
                 } else {
-                    combined = newBatch
+                    combined = newer
                 }
-            } else if let gapItem = TimelineItem.gapBetween(older.first, newerItem: newBatch.last) {
-                combined = newBatch + [gapItem] + older
+            } else if let gapItem = TimelineItem.gapBetween(older.first, newerItem: newer.last) {
+                combined = newer + [gapItem] + older
             } else {
                 assert(older.isEmpty, "How else did we get here?")
-                combined = newBatch + older
+                combined = newer + older
             }
         } else {
-            assert(newBatch.isEmpty, "How else did we get here?")
+            assert(newer.isEmpty, "How else did we get here?")
             combined = older
         }
         
@@ -163,31 +162,42 @@ struct CacheableTimeline: CacheableFeed {
 class TimelineCacheManager: MastodonFeedCacheManager {
     typealias CachedType = CacheableTimeline
     
+    private let currentUser: MastodonAuthenticationBox
+    
+    init(currentUser: MastodonAuthenticationBox) {
+        self.currentUser = currentUser
+    }
+    
     func currentResults() -> CacheableTimeline? {
-        fatalError("not implemented")
+        return mostRecentlyFetchedResults
     }
     
     var mostRecentlyFetchedResults: CacheableTimeline?
     
     func updateByInserting(newlyFetched: CacheableTimeline, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
-        fatalError("not implemented")
+        switch insertionPoint {
+        case .start:
+            mostRecentlyFetchedResults = CacheableTimeline(older: currentResults()?.items ?? [], newer: newlyFetched.items)
+        case .end:
+            mostRecentlyFetchedResults = CacheableTimeline(older: newlyFetched.items, newer: currentResults()?.items ?? [])
+        case .replace:
+            mostRecentlyFetchedResults = newlyFetched
+        }
     }
     
     var currentLastReadMarker: LastReadMarkers.MarkerPosition?
     
     func didFetchMarkers(_ updatedMarkers: MastodonSDK.Mastodon.Entity.Marker) {
-        fatalError("not implemented")
+        // TODO: implement
     }
     
     func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool) {
-        fatalError("not implemented")
+        // TODO: implement
     }
     
     func commitToCache() async {
-        fatalError("not implemented")
+        // TODO: implement
     }
-    
-    
 }
 
 extension GenericMastodonPost.PostContent {

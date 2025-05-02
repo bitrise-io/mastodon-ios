@@ -75,6 +75,17 @@ class UngroupedNotificationCacheManager: MastodonFeedCacheManager {
         }
     }
     
+    private var shouldSaveCacheToDisk: Bool {
+        switch feedKind {
+        case .home, .notificationsWithAccount:
+            return false
+        case .notificationsAll:
+            return true
+        case .notificationsMentionsOnly:
+            return true
+        }
+    }
+    
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
         guard let markers = mostRecentMarkers ?? staleMarkers else { return nil }
         return markers.lastRead(forKind: feedKind)
@@ -121,6 +132,7 @@ class UngroupedNotificationCacheManager: MastodonFeedCacheManager {
     }
     
     func commitToCache() async {
+        guard shouldSaveCacheToDisk else { return }
         if let mostRecentMarkers {
             try? await BodegaPersistence.LastRead.saveLastReadMarkers(mostRecentMarkers, for: userIdentifier)
         }
@@ -350,13 +362,14 @@ class GroupedNotificationCacheManager: MastodonFeedCacheManager {
         }
         staleMarkers = .fetching
         Task { [weak self] in
-            guard let self else { return }
+            guard let self, self.shouldSaveCacheToDisk else { return }
             let fromCache = await BodegaPersistence.LastRead.lastReadMarkers(for: self.userIdentifier)
             staleMarkers = .known(fromCache)
         }
     }
     
     func commitToCache() async {
+        guard shouldSaveCacheToDisk else { return }
         if let updatedMarkers = mostRecentMarkers.value {
             Task {
                 try await BodegaPersistence.LastRead.saveLastReadMarkers(updatedMarkers, for: userIdentifier)
@@ -380,6 +393,15 @@ class GroupedNotificationCacheManager: MastodonFeedCacheManager {
             case .notificationsWithAccount:
                 break
             }
+        }
+    }
+    
+    var shouldSaveCacheToDisk: Bool {
+        switch feedKind {
+        case .home, .notificationsWithAccount:
+            return false
+        case .notificationsAll, .notificationsMentionsOnly:
+            return true
         }
     }
 }

@@ -27,7 +27,7 @@ final class UngroupedNotificationsFeedLoader: MastodonFeedLoader<GroupedNotifica
         case .notificationsAll, .notificationsMentionsOnly:
             super.init(UngroupedNotificationCacheManager(feedKind: kind, userIdentifier: user))
         case .notificationsWithAccount:
-            super.init(nil)
+            super.init(UngroupedNotificationCacheManager(feedKind: kind, userIdentifier: user)) // TODO: make sure this works to keep the records updated but doesn't attempt to save any cache to disk
         }
     }
     

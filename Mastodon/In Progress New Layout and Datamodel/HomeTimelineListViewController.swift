@@ -26,6 +26,7 @@ private class HomeTimelineListViewModel: ObservableObject {
     private var feedLoader: TimelineFeedLoader?
     private var feedLoaderResultsSubscription: AnyCancellable?
     private var feedLoaderErrorSubscription: AnyCancellable?
+    private var tailItemIds = [String]()
     
     func doInitialLoad() async throws {
         guard feedLoader == nil else { return }
@@ -33,7 +34,8 @@ private class HomeTimelineListViewModel: ObservableObject {
         feedLoader = TimelineFeedLoader(currentUser: currentUser)
         feedLoaderResultsSubscription = feedLoader?.$records
             .sink{ [weak self] results in
-                self?.timelineItems = results.allRecords
+                self?.tailItemIds = results.allRecords.suffix(5).map { $0.id }
+                self?.timelineItems = results.allRecords + (results.canLoadOlder ? [.loadingIndicator] : [])
             }
         // TODO: add feedLoaderErrorSubscription
         feedLoader?.doFirstLoad()
@@ -48,6 +50,19 @@ private class HomeTimelineListViewModel: ObservableObject {
         guard let feedLoader else { assertionFailure(); return }
         if feedLoader.permissionToLoadImmediately {
             await feedLoader.loadImmediately(.newer)
+        }
+    }
+    
+    func didAppear(_ itemID: String) {
+        guard feedLoader?.records.canLoadOlder == true else {
+#if DEBUG
+            print("nothing left to load")
+#endif
+            return
+        }
+        if tailItemIds.contains(itemID) {
+            tailItemIds = []
+            requestLoad(.older)
         }
     }
 }
@@ -69,12 +84,22 @@ struct HomeTimelineListView: View {
                         switch item {
                         case let .missingPosts(newerThan, olderThan, timeGapDescription):
                             Text(timeGapDescription)
+                        case .loadingIndicator:
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                Spacer()
+                            }
                         case .post(let post):
                             let usableWidth = geo.size.width - geo.safeAreaInsets.leading - geo.safeAreaInsets.trailing
                             HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post), contentWidth: usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
                                 .padding(spacingBetweenGutterAndContent)
                                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                                 .frame(width: usableWidth)
+                                .onAppear() {
+                                    viewModel.didAppear(item.id)
+                                }
                         }
                     }
                 }

@@ -53,13 +53,13 @@ public enum MastodonFeedLoaderRequest {
 public class MastodonFeedLoader<PublishedType: Identifiable, CachedType: CacheableFeed> {
     private var activeFilterBoxSubscription: AnyCancellable?
     private var loadRequestQueue = [MastodonFeedLoaderRequest]()
-    let cacheManager: (any MastodonFeedCacheManager<CachedType>)?
+    let cacheManager: (any MastodonFeedCacheManager<CachedType>)
     
     @Published private(set) var records = MastodonFeedLoaderResult<PublishedType>(
         allRecords: [], canLoadOlder: true)
     @Published private(set) var currentError: Error? = nil
     
-    init(_ cacheManager: (any MastodonFeedCacheManager<CachedType>)?) {
+    init(_ cacheManager: (any MastodonFeedCacheManager<CachedType>)) {
         self.cacheManager = cacheManager
         
         activeFilterBoxSubscription = StatusFilterService.shared
@@ -92,6 +92,10 @@ public class MastodonFeedLoader<PublishedType: Identifiable, CachedType: Cacheab
         return nextRequest
     }
     
+    func setRecords(_ records: MastodonFeedLoaderResult<PublishedType>) {
+        self.records = records
+    }
+    
     // MARK: Subclasses Must Override
     func fetchResults(for request: MastodonFeedLoaderRequest) async throws -> CachedType {
         fatalError("Subclasses must override fetchResults(for:)")
@@ -109,7 +113,7 @@ extension MastodonFeedLoader {
             } catch {
             }
             do {
-                if let cacheManager, let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value {
+                if let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value {
                     let markers = try await APIService.shared.lastReadMarkers(authenticationBox: authBox)
                     cacheManager.didFetchMarkers(markers)
                 }
@@ -166,7 +170,7 @@ extension MastodonFeedLoader {
     func updateAfterInserting(newlyFetchedResults: CachedType, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         updateCacheByInserting(newlyFetchedResults: newlyFetchedResults, at: insertionPoint)
         
-        let currentResults = cacheManager?.currentResults() ?? newlyFetchedResults
+        let currentResults = cacheManager.currentResults() ?? newlyFetchedResults
         let filtered = filteredResults(fromCachedType: currentResults)
         
         let canLoadOlder: Bool? = {
@@ -185,7 +189,7 @@ extension MastodonFeedLoader {
     
     private func noMoreResultsToFetch() {
         if records.canLoadOlder {
-            records = MastodonFeedLoaderResult(allRecords: records.allRecords, canLoadOlder: false)
+            setRecords(MastodonFeedLoaderResult(allRecords: records.allRecords, canLoadOlder: false))
         }
     }
     
@@ -198,7 +202,7 @@ extension MastodonFeedLoader {
             }
         }()
         
-        records = MastodonFeedLoaderResult(allRecords: checkForDuplicates(filtered), canLoadOlder: actuallyCanLoadOlder)
+        setRecords(MastodonFeedLoaderResult(allRecords: checkForDuplicates(filtered), canLoadOlder: actuallyCanLoadOlder))
     }
     
     private func checkForDuplicates(_ items: [PublishedType]) -> [PublishedType] {
@@ -219,11 +223,11 @@ extension MastodonFeedLoader {
 
 extension MastodonFeedLoader {
     public func commitToCache() async {
-        await cacheManager?.commitToCache()
+        await cacheManager.commitToCache()
     }
     
     private func loadCached() throws {
-        guard !isFetching, let cacheManager else { return }
+        guard !isFetching else { return }
         isFetching = true
         defer {
             isFetching = false
@@ -246,22 +250,21 @@ extension MastodonFeedLoader {
                 return
             }
         }
-        guard let cacheManager else { return }
         cacheManager.updateByInserting(newlyFetched: newlyFetchedResults, at: insertionPoint)
     }
 }
 
 extension MastodonFeedLoader {
     var lastReadMarker: LastReadMarkers.MarkerPosition? {
-        return cacheManager?.currentLastReadMarker
+        return cacheManager.currentLastReadMarker
     }
     
     public func markAsRead(_ identifier: String) {
-        cacheManager?.updateToNewerMarker(.local(lastReadID: identifier), enforceForwardProgress: true)
+        cacheManager.updateToNewerMarker(.local(lastReadID: identifier), enforceForwardProgress: true)
     }
     
     public func isUnread(_ identifier: String) -> Bool {
-        if let lastRead = cacheManager?.currentLastReadMarker?.lastReadID {
+        if let lastRead = cacheManager.currentLastReadMarker?.lastReadID {
             return LastReadMarkers.id(lastRead, isOlderThan: identifier)
         } else {
             return false
@@ -269,6 +272,6 @@ extension MastodonFeedLoader {
     }
     
     public func lastRead() -> String? {
-        return cacheManager?.currentLastReadMarker?.lastReadID
+        return cacheManager.currentLastReadMarker?.lastReadID
     }
 }
