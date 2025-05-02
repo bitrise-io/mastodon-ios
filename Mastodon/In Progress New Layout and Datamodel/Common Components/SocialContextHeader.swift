@@ -15,9 +15,9 @@ enum SocialContextHeader {
         case .mention:
             return "at"
         case .reply:
-            return "arrow.turn.up.left"
+            return PostAction.reply.systemIconName(filled: false)
         case .boosted:
-            return "arrow.2.squarepath"
+            return PostAction.boost.systemIconName(filled: false)
         }
     }
     

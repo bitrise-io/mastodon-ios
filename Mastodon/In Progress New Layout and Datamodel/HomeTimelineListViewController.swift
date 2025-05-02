@@ -126,7 +126,7 @@ fileprivate struct HomeTimelinePostRowView: View {
     let contentWidth: CGFloat
     
     var body: some View {
-        VStack(alignment: .gutterAlign) {
+        VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
             viewModel.socialContextHeader
             componentView(.authorHeader(viewModel.post.metaData.author))
             viewModel.textContentView
@@ -137,7 +137,8 @@ fileprivate struct HomeTimelinePostRowView: View {
 //            if let hashtags = viewModel.hashtagComponent {
 //                componentView(hashtags)
 //            }
-            componentView(.actionBar)
+            viewModel.actionBar
+                .frame(width: contentWidth, alignment: .leading)
         }
     }
     
@@ -158,8 +159,6 @@ fileprivate struct HomeTimelinePostRowView: View {
             }
         case .hashtags(let tags):
             HashtagRowView(hashtags: tags)
-        case .actionBar:
-            ActionBar()
         }
     }
 }
@@ -223,8 +222,36 @@ fileprivate struct HashtagRowView: View {
 }
 
 fileprivate struct ActionBar: View {
+    
+    @ObservedObject var replyModel = StatefulCountedActionViewModel(.reply)
+    @ObservedObject var boostModel = StatefulCountedActionViewModel(.boost)
+    @ObservedObject var favouriteModel = StatefulCountedActionViewModel(.favourite)
+    @ObservedObject var bookmarkModel = StatefulCountedActionViewModel(.bookmark)
+    
+    init(reply: StatefulCountedActionViewModel, boost: StatefulCountedActionViewModel, favourite: StatefulCountedActionViewModel, bookmark: StatefulCountedActionViewModel) {
+        replyModel = reply
+        boostModel = boost
+        favouriteModel = favourite
+        bookmarkModel = bookmark
+    }
+    
     var body: some View {
-        Text("ACTION BAR")
+        HStack() {
+            StatefulCountedActionButton(viewModel: replyModel)
+            Spacer()
+            StatefulCountedActionButton(viewModel: boostModel)
+            Spacer()
+            StatefulCountedActionButton(viewModel: favouriteModel)
+            Spacer()
+            StatefulCountedActionButton(viewModel: bookmarkModel)
+            Spacer()
+            Button(action: {}) {
+                Image(systemName: "ellipsis")
+                    .fontWeight(.bold)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
     }
 }
 
@@ -233,18 +260,16 @@ fileprivate enum PostViewComponent {
     case content(String)
     case attachment(GenericMastodonPost.PostAttachment)
     case hashtags([String])
-    case actionBar
 }
 
 @MainActor
 class MastodonPostViewModel: ObservableObject {
     let post: GenericMastodonPost
-
-    @Published var favorited: AsyncBool = .unknown
-    @Published var boosted: AsyncBool = .unknown
-    @Published var muted: AsyncBool = .unknown
-    @Published var bookmarked: AsyncBool = .unknown
-    @Published var pinned: AsyncBool = .unknown
+    
+    private let replyModel = StatefulCountedActionViewModel(.reply)
+    private let boostModel = StatefulCountedActionViewModel(.boost)
+    private let favouriteModel = StatefulCountedActionViewModel(.favourite)
+    private let bookmarkModel = StatefulCountedActionViewModel(.bookmark)
     
     init(post: GenericMastodonPost) {
         self.post = post
@@ -259,20 +284,15 @@ class MastodonPostViewModel: ObservableObject {
         
         guard let actionablePost else {
             assertionFailure("unexpected post type")
-            favorited = .unknown
-            boosted = .unknown
-            muted = .unknown
-            bookmarked = .unknown
-            pinned = .unknown
             return
         }
         
         let myActions = actionablePost.content.myActions
-        favorited = AsyncBool.fromBool(myActions.favorited)
-        boosted = AsyncBool.fromBool(myActions.boosted)
-        muted = AsyncBool.fromBool(myActions.muted)
-        bookmarked = AsyncBool.fromBool(myActions.bookmarked)
-        pinned = AsyncBool.fromBool(myActions.pinned)
+        let metrics = actionablePost.content.metrics
+        replyModel.update(count: metrics.replyCount)
+        boostModel.update(count: metrics.boostCount, isSelected: AsyncBool.fromBool(myActions.boosted))
+        favouriteModel.update(count: metrics.favoriteCount, isSelected: AsyncBool.fromBool(myActions.favorited))
+        bookmarkModel.update(isSelected: AsyncBool.fromBool(myActions.bookmarked))
     }
 }
 
@@ -324,22 +344,8 @@ fileprivate extension MastodonPostViewModel {
     var hashtagComponent: PostViewComponent? {
         return .hashtags(["needs_implementation"])
     }
-}
-
-enum AsyncBool {
-    case unknown
-    case fetching
-    case isTrue
-    case settingToTrue
-    case isFalse
-    case settingToFalse
     
-    static func fromBool(_ value: Bool?) -> AsyncBool {
-        guard let value else { return .unknown }
-        if value {
-            return .isTrue
-        } else {
-            return .isFalse
-        }
+    var actionBar: ActionBar {
+        return ActionBar(reply: replyModel, boost: boostModel, favourite: favouriteModel, bookmark: bookmarkModel)
     }
 }

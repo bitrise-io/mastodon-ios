@@ -44,9 +44,9 @@ extension GroupedNotificationType {
     var iconSystemName: String? {
         switch self {
         case .favourite:
-            return "star.fill"
+            return PostAction.favourite.systemIconName(filled: true)
         case .reblog:
-            return "arrow.2.squarepath"
+            return PostAction.boost.systemIconName(filled: false)
         case .follow:
             return "person.fill.badge.plus"
         case .poll:

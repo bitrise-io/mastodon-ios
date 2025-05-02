@@ -313,9 +313,9 @@ class NotificationRowViewModel: ObservableObject {
         case .mention:
             switch (isReply, isPrivateStatus) {
             case (true, false):
-                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.reply, color: color)
+                return (iconName: PostAction.reply.systemIconName(filled: false), text: L10n.Common.Controls.Status.reply, color: color)
             case (true, true):
-                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.privateReply, color: color)
+                return (iconName: PostAction.reply.systemIconName(filled: false), text: L10n.Common.Controls.Status.privateReply, color: color)
             case (false, false):
                 return (iconName: "at", text: L10n.Common.Controls.Status.mention, color: color)
             case (false, true):

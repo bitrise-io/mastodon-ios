@@ -132,7 +132,7 @@ struct PostActionButton: View {
         case .boost:
             return "arrow.2.squarepath"
         case .favourite(_, let isSelected):
-            return isSelected ? "star.fill" : "star"
+            return PostAction.favourite.systemIconName(filled: isSelected)
         case .share:
             return "square.and.arrow.up"
         }
