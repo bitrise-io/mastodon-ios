@@ -6,8 +6,8 @@ import MastodonLocalization
 
 enum SocialContextHeader {
     case mention(isPrivate: Bool)
-    case reply(to: String, isPrivate: Bool, isNotification: Bool)
-    case boosted(by: String)
+    case reply(to: String, isPrivate: Bool, isNotification: Bool, emojis: TextViewWithCustomEmoji.Emojis)
+    case boosted(by: String, emojis: TextViewWithCustomEmoji.Emojis)
     //case pinned
     
     var iconName: String {
@@ -25,7 +25,7 @@ enum SocialContextHeader {
         switch self {
         case .mention(let isPrivate):
             return isPrivate ? L10n.Common.Controls.Status.privateMention : L10n.Common.Controls.Status.mention
-        case .reply(let originalPoster, let isPrivate, let isNotification):
+        case .reply(let originalPoster, let isPrivate, let isNotification, _):
             switch (isPrivate, isNotification) {
             case (true, _):
                 return L10n.Common.Controls.Status.privateReply
@@ -34,17 +34,37 @@ enum SocialContextHeader {
             case (false, false):
                 return L10n.Common.Controls.Status.userRepliedTo(originalPoster)
             }
-        case .boosted(let booster):
+        case .boosted(let booster, _):
             return L10n.Common.Controls.Status.userReblogged(booster)
+        }
+    }
+    
+    var emojis: TextViewWithCustomEmoji.Emojis {
+        switch self {
+        case .boosted(_, let emojis):
+            return emojis
+        case .mention:
+            return TextViewWithCustomEmoji.Emojis()
+        case .reply(_, _, _, let emojis):
+            return emojis
         }
     }
     
     var color: Color {
         switch self {
-        case .mention(true), .reply(_, true, _):  // isPrivate
+        case .mention(true), .reply(_, true, _, _):  // isPrivate
             return Asset.Colors.accent.swiftUIColor
         default:
             return .secondary
+        }
+    }
+    
+    var uiColor: UIColor {
+        switch self {
+        case .mention(true), .reply(_, true, _, _):  // isPrivate
+            return Asset.Colors.accent.color
+        default:
+            return .secondaryLabel
         }
     }
 }
@@ -60,10 +80,8 @@ extension SocialContextHeader: View {
                 .foregroundStyle(color)
                 .frame(height: socialContextHeaderHeight)
             
-            Text(text)
-                .font(.subheadline)
-                .fontWeight(.bold)
-                .foregroundColor(color)
+            
+            TextViewWithCustomEmoji.socialContextHeader(html: text, emojis: emojis)
                 .frame(height: socialContextHeaderHeight)
                 .alignmentGuide(.gutterAlign) { d in
                     return d[HorizontalAlignment.leading]

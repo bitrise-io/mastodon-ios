@@ -70,7 +70,11 @@ struct HomeTimelineListView: View {
                         case let .missingPosts(newerThan, olderThan, timeGapDescription):
                             Text(timeGapDescription)
                         case .post(let post):
-                            HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post), contentWidth: geo.size.width - spacingBetweenGutterAndContent - avatarSize)
+                            let usableWidth = geo.size.width - geo.safeAreaInsets.leading - geo.safeAreaInsets.trailing
+                            HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post), contentWidth: usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
+                                .padding(spacingBetweenGutterAndContent)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                .frame(width: usableWidth)
                         }
                     }
                 }
@@ -253,13 +257,13 @@ fileprivate extension MastodonPostViewModel {
 
         if post is MastodonBoostPost {
             // BOOSTED BY
-            return .boosted(by: post.metaData.author.displayInfo.displayName)
+            return .boosted(by: post.metaData.author.displayInfo.displayName, emojis: post.metaData.author.displayInfo.emojis)
         } else if let basicPost = post as? MastodonBasicPost {
             // REPLIED and/or PRIVATE MENTION
             let isReply = basicPost.inReplyTo != nil
             let isPrivate = basicPost.metaData.privacyLevel == .mentionedOnly
             if isReply {
-                return .reply(to: basicPost.inReplyTo?.accountID ?? "??", isPrivate: isPrivate, isNotification: false)
+                return .reply(to: basicPost.inReplyTo?.accountID ?? "??", isPrivate: isPrivate, isNotification: false, emojis: [])
             } else if isPrivate {
                 return .mention(isPrivate: true)
             }
@@ -267,18 +271,18 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
     
-    var textContentView: HtmlContentView {
+    var textContentView: TextViewWithCustomEmoji {
         let text: String
-        let emojis: HtmlContentView.Emojis
+        let emojis: TextViewWithCustomEmoji.Emojis
         if let boost = post as? MastodonBoostPost {
             text = boost.boostedPost.content.htmlWithEntities?.html ?? boost.boostedPost.content.plainText ?? ""
-            emojis = boost.boostedPost.content.htmlWithEntities?.emojis ?? HtmlContentView.Emojis()
+            emojis = boost.boostedPost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         } else if let contentPost = post as? MastodonContentPost {
             text = contentPost.content.htmlWithEntities?.html ?? contentPost.content.plainText ?? ""
-            emojis = contentPost.content.htmlWithEntities?.emojis ?? HtmlContentView.Emojis()
+            emojis = contentPost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         } else {
             text = ""
-            emojis = HtmlContentView.Emojis()
+            emojis = TextViewWithCustomEmoji.Emojis()
         }
         return .timelinePost(html: text, emojis: emojis)
     }
