@@ -124,3 +124,29 @@ func fallbackAvatarURL(fromCurrentUserDomain domain: String) -> URL {
     return URL(
         string: "https://\(domain)/avatars/original/\(missingImageName)")!
 }
+
+
+extension MastodonAccount {
+    enum Relationship: Codable {
+        case isMe
+        case isNotMe(RelationshipInfo?)
+    }
+    
+    struct RelationshipInfo: Codable {
+        let id: Mastodon.Entity.Account.ID  // id of the account
+        let fetchedAt: Date?
+        let iFollowThem: Bool
+        let iHaveRequestedToFollowThem: Bool
+        let iAmMutingThem: Bool
+        let iAmBlockingThem: Bool
+        
+        init(_ entity: Mastodon.Entity.Relationship, fetchedAt: Date?) {
+            id = entity.id
+            self.fetchedAt = fetchedAt
+            iFollowThem = entity.following
+            iHaveRequestedToFollowThem = entity.requested
+            iAmMutingThem = entity.muting
+            iAmBlockingThem = entity.blocking
+        }
+    }
+}

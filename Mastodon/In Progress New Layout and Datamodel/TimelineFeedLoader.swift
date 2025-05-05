@@ -43,13 +43,29 @@ extension TimelineItem: Hashable {
     }
 }
 
+fileprivate let relationshipStaleThreshold: TimeInterval = 20 /*min*/ * 60 /*sec*/
+
 @MainActor
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
     private let authenticatedUser: MastodonAuthenticationBox
+    private let authenticatedUserID: Mastodon.Entity.Account.ID?
+    private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
     
     init(currentUser: MastodonAuthenticationBox) {
         authenticatedUser = currentUser
+        authenticatedUserID = authenticatedUser.cachedAccount?.id
+        if let authenticatedUserID {
+            cachedRelationships[authenticatedUserID] = .isMe
+        }
         super.init(TimelineCacheManager(currentUser: currentUser))
+    }
+    
+    func myRelationship(to accountID: Mastodon.Entity.Account.ID) -> MastodonAccount.Relationship {
+        if accountID == authenticatedUserID {
+            return .isMe
+        } else {
+            return cachedRelationships[accountID] ?? .isNotMe(nil)
+        }
     }
     
     override func fetchResults(for request: MastodonFeedLoaderRequest) async throws -> CacheableTimeline {
@@ -82,11 +98,46 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
             return TimelineItem.post(post)
         }
         let newCache = CacheableTimeline(older: [], newer: newBatch)
+        
+        try await fetchRelationships(newCache)
+        
         return newCache
     }
     
     override func filteredResults(fromCachedType cached: CacheableTimeline) -> [TimelineItem] {
         cached.filteredPosts
+    }
+    
+    private func fetchRelationships(_ timeline: CacheableTimeline) async throws {
+        let needToFetch: [Mastodon.Entity.Account.ID] = timeline.filteredPosts.compactMap { item -> Mastodon.Entity.Account.ID? in
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                return nil
+            case .post(let post):
+                if let actionableRelationshipAccountID = post.actionablePost?.metaData.author.id {
+                    switch self.cachedRelationships[actionableRelationshipAccountID] {
+                    case .isMe:
+                        return nil
+                    case .isNotMe(let info):
+                        if let lastFetched = info?.fetchedAt {
+                            return (lastFetched.timeIntervalSinceNow < relationshipStaleThreshold) ? nil : actionableRelationshipAccountID
+                        } else {
+                            return actionableRelationshipAccountID
+                        }
+                    case .none:
+                        return actionableRelationshipAccountID
+                    }
+                } else {
+                    return nil
+                }
+            }
+        }
+        
+        let relationships = try await APIService.shared.relationship(forAccountIds: needToFetch, authenticationBox: authenticatedUser).value
+        let currentTimestamp = Date.now
+        for relationshipEntity in relationships {
+            cachedRelationships[relationshipEntity.id] = MastodonAccount.Relationship.isNotMe(MastodonAccount.RelationshipInfo(relationshipEntity, fetchedAt: currentTimestamp))
+        }
     }
 }
 

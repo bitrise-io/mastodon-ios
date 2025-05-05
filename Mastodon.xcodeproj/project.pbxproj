@@ -1278,6 +1278,7 @@
 				"Common Components/AuthorHeaderView.swift",
 				"Common Components/AvatarView.swift",
 				"Common Components/HtmlHelpers.swift",
+				"Common Components/MastodonPostMenuAction.swift",
 				"Common Components/PostActions.swift",
 				"Common Components/SocialContextHeader.swift",
 				"Common Components/StatefulActionButton.swift",

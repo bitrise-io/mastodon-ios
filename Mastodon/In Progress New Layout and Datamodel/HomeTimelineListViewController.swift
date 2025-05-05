@@ -65,6 +65,21 @@ private class HomeTimelineListViewModel: ObservableObject {
             requestLoad(.older)
         }
     }
+
+    func myRelationship(to account: MastodonAccount?)
+        -> MastodonAccount.Relationship
+    {
+        guard let account else { return .isNotMe(nil)}
+        return feedLoader?.myRelationship(to: account.id) ?? .isNotMe(nil)
+    }
+    
+    func rowViewModel(for post: GenericMastodonPost) -> MastodonPostViewModel {
+        let relationship = myRelationship(to: post.actionablePost?.metaData.author)
+        let rowViewModel = MastodonPostViewModel(post: post,
+                                                 myRelationshipToAuthor: relationship,
+                                                 actionHandler: self)
+        return rowViewModel
+    }
 }
 
 struct HomeTimelineListView: View {
@@ -92,14 +107,20 @@ struct HomeTimelineListView: View {
                                 Spacer()
                             }
                         case .post(let post):
-                            let usableWidth = geo.size.width - geo.safeAreaInsets.leading - geo.safeAreaInsets.trailing
-                            HomeTimelinePostRowView(viewModel: MastodonPostViewModel(post: post), contentWidth: usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
-                                .padding(spacingBetweenGutterAndContent)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                                .frame(width: usableWidth)
-                                .onAppear() {
-                                    viewModel.didAppear(item.id)
-                                }
+                            let usableWidth =
+                                geo.size.width - geo.safeAreaInsets.leading
+                                - geo.safeAreaInsets.trailing
+                            let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
+                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post), contentWidth: contentWidth)
+                            .padding(spacingBetweenGutterAndContent)
+                            .listRowInsets(
+                                EdgeInsets(
+                                    top: 0, leading: 0, bottom: 0, trailing: 0)
+                            )
+                            .frame(width: usableWidth)
+                            .onAppear {
+                                viewModel.didAppear(item.id)
+                            }
                         }
                     }
                 }
@@ -120,32 +141,40 @@ struct HomeTimelineListView: View {
     }
 }
 
-fileprivate struct HomeTimelinePostRowView: View {
-    
-    @ObservedObject var viewModel: MastodonPostViewModel
+private struct HomeTimelinePostRowView: View {
+
+    @StateObject var viewModel: MastodonPostViewModel
     let contentWidth: CGFloat
     
     var body: some View {
         VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
             viewModel.socialContextHeader
-            componentView(.authorHeader(viewModel.post.metaData.author))
+            AuthorHeaderView(author: viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author)
             viewModel.textContentView
                 .frame(width: contentWidth, alignment: .leading)
             if let attachment = viewModel.attachmentComponent {
                 componentView(attachment)
             }
-//            if let hashtags = viewModel.hashtagComponent {
-//                componentView(hashtags)
-//            }
-            viewModel.actionBar
+            if let actionablePost = viewModel.post.actionablePost {
+                ActionBar(
+                    post: actionablePost,
+                    actionHandler: viewModel.actionHandler,
+                    replyModel: viewModel.replyModel,
+                    boostModel: viewModel.boostModel,
+                    favouriteModel: viewModel.favouriteModel,
+                    bookmarkModel: viewModel.bookmarkModel,
+                    isShowingTranslation: $viewModel.isShowingTranslation,
+                    myRelationshipToAuthor: $viewModel.myRelationshipToAuthor
+                )
                 .frame(width: contentWidth, alignment: .leading)
+            }
         }
     }
     
     @ViewBuilder func componentView(_ component: PostViewComponent) -> some View {
         switch component {
         case .authorHeader(let author):
-            AuthorHeaderView(author: author)
+            Text("obsolete")
         case .content(let string):
             PostContentView(text: string)
         case .attachment(let attachment):
@@ -163,7 +192,7 @@ fileprivate struct HomeTimelinePostRowView: View {
     }
 }
 
-fileprivate struct PostContentView: View {
+private struct PostContentView: View {
     //    @ObservedObject var contentWarningViewModel
     let text: String
     
@@ -172,7 +201,7 @@ fileprivate struct PostContentView: View {
     }
 }
 
-fileprivate struct MediaAttachmentView: View {
+private struct MediaAttachmentView: View {
     let media: [Mastodon.Entity.Attachment]
     
     var body: some View {
@@ -197,7 +226,7 @@ fileprivate struct MediaAttachmentView: View {
     }
 }
 
-fileprivate struct LinkPreviewView: View {
+private struct LinkPreviewView: View {
     let linkPreview: Mastodon.Entity.Card
     
     var body: some View {
@@ -205,7 +234,7 @@ fileprivate struct LinkPreviewView: View {
     }
 }
 
-fileprivate struct PollView: View {
+private struct PollView: View {
     let poll: Mastodon.Entity.Poll
     
     var body: some View {
@@ -213,7 +242,7 @@ fileprivate struct PollView: View {
     }
 }
 
-fileprivate struct HashtagRowView: View {
+private struct HashtagRowView: View {
     let hashtags: [String]
     
     var body: some View {
@@ -221,20 +250,17 @@ fileprivate struct HashtagRowView: View {
     }
 }
 
-fileprivate struct ActionBar: View {
-    
-    @ObservedObject var replyModel = StatefulCountedActionViewModel(.reply)
-    @ObservedObject var boostModel = StatefulCountedActionViewModel(.boost)
-    @ObservedObject var favouriteModel = StatefulCountedActionViewModel(.favourite)
-    @ObservedObject var bookmarkModel = StatefulCountedActionViewModel(.bookmark)
-    
-    init(reply: StatefulCountedActionViewModel, boost: StatefulCountedActionViewModel, favourite: StatefulCountedActionViewModel, bookmark: StatefulCountedActionViewModel) {
-        replyModel = reply
-        boostModel = boost
-        favouriteModel = favourite
-        bookmarkModel = bookmark
-    }
-    
+private struct ActionBar: View {
+
+    var post: MastodonContentPost
+    var actionHandler: MastodonPostMenuActionDoer
+    @ObservedObject var replyModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.reply)
+    @ObservedObject var boostModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.boost)
+    @ObservedObject var favouriteModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.favourite)
+    @ObservedObject var bookmarkModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.bookmark)
+    @Binding var isShowingTranslation: Bool?
+    @Binding var myRelationshipToAuthor: MastodonAccount.Relationship
+
     var body: some View {
         HStack() {
             StatefulCountedActionButton(viewModel: replyModel)
@@ -252,17 +278,16 @@ fileprivate struct ActionBar: View {
     
     @ViewBuilder var menuButton: some View {
         Menu {
-            Button(action: {}) {
-                Label("options", systemImage: "star.fill")
-            }
-            Button(action: {}) {
-                Label("options", systemImage: "star.fill")
-            }
-            Button(action: {}) {
-                Label("options", systemImage: "star.fill")
-            }
-            Button(action: {}) {
-                Label("options", systemImage: "star.fill")
+            ForEach(submenus(), id: \.self.id) { submenu in
+                ForEach(submenu.items, id: \.self) { menuAction in
+                    Button(role: menuAction.isDestructive ? .destructive : nil) {
+                        actionHandler.doAction(menuAction, forPost: post)
+                    }
+                    label: {
+                        Label(menuAction.labelText(), systemImage: menuAction.iconSystemName)
+                    }
+                }
+                Divider()
             }
         } label: {
             Label("", systemImage: "ellipsis")
@@ -270,9 +295,13 @@ fileprivate struct ActionBar: View {
                 .foregroundStyle(.secondary)
         }
     }
+        
+    func submenus() -> [MastodonPostMenuAction.Submenu] {
+        return MastodonPostMenuAction.menuItems(forPostBy: myRelationshipToAuthor, isMyLanguage: isShowingTranslation == nil)
+    }
 }
 
-fileprivate enum PostViewComponent {
+private enum PostViewComponent {
     case authorHeader(MastodonAccount)
     case content(String)
     case attachment(GenericMastodonPost.PostAttachment)
@@ -281,35 +310,44 @@ fileprivate enum PostViewComponent {
 
 @MainActor
 class MastodonPostViewModel: ObservableObject {
+    
+    let actionHandler: MastodonPostMenuActionDoer
     let post: GenericMastodonPost
-    
-    private let replyModel = StatefulCountedActionViewModel(.reply)
-    private let boostModel = StatefulCountedActionViewModel(.boost)
-    private let favouriteModel = StatefulCountedActionViewModel(.favourite)
-    private let bookmarkModel = StatefulCountedActionViewModel(.bookmark)
-    
-    init(post: GenericMastodonPost) {
+
+    public let replyModel = StatefulCountedActionViewModel(.reply)
+    public let boostModel = StatefulCountedActionViewModel(.boost)
+    public let favouriteModel = StatefulCountedActionViewModel(.favourite)
+    public let bookmarkModel = StatefulCountedActionViewModel(.bookmark)
+
+    @Published var isShowingTranslation: Bool?
+    @Published var myRelationshipToAuthor: MastodonAccount.Relationship
+
+    init(
+        post: GenericMastodonPost,
+        myRelationshipToAuthor: MastodonAccount.Relationship,
+        actionHandler: MastodonPostMenuActionDoer
+    ) {
         self.post = post
-        let actionablePost: MastodonContentPost?
-        if let contentPost = post as? MastodonContentPost {
-            actionablePost = contentPost
-        } else if let boost = post as? MastodonBoostPost {
-            actionablePost = boost.boostedPost
-        } else {
-            actionablePost = nil
-        }
-        
+        isShowingTranslation = false
+        self.myRelationshipToAuthor = myRelationshipToAuthor
+        self.actionHandler = actionHandler
+
+        let actionablePost = post.actionablePost
         guard let actionablePost else {
             assertionFailure("unexpected post type")
             return
         }
-        
         let myActions = actionablePost.content.myActions
         let metrics = actionablePost.content.metrics
         replyModel.update(count: metrics.replyCount)
-        boostModel.update(count: metrics.boostCount, isSelected: AsyncBool.fromBool(myActions.boosted))
-        favouriteModel.update(count: metrics.favoriteCount, isSelected: AsyncBool.fromBool(myActions.favorited))
-        bookmarkModel.update(isSelected: AsyncBool.fromBool(myActions.bookmarked))
+        boostModel.update(
+            count: metrics.boostCount,
+            isSelected: AsyncBool.fromBool(myActions.boosted))
+        favouriteModel.update(
+            count: metrics.favoriteCount,
+            isSelected: AsyncBool.fromBool(myActions.favorited))
+        bookmarkModel.update(
+            isSelected: AsyncBool.fromBool(myActions.bookmarked))
     }
 }
 
@@ -332,8 +370,8 @@ fileprivate extension MastodonPostViewModel {
         }
         return nil
     }
-    
-    var textContentView: TextViewWithCustomEmoji {
+
+    fileprivate var textContentView: TextViewWithCustomEmoji {
         let text: String
         let emojis: TextViewWithCustomEmoji.Emojis
         if let boost = post as? MastodonBoostPost {
@@ -357,12 +395,37 @@ fileprivate extension MastodonPostViewModel {
         }
         return nil
     }
-    
-    var hashtagComponent: PostViewComponent? {
+
+    fileprivate var hashtagComponent: PostViewComponent? {
         return .hashtags(["needs_implementation"])
     }
-    
-    var actionBar: ActionBar {
-        return ActionBar(reply: replyModel, boost: boostModel, favourite: favouriteModel, bookmark: bookmarkModel)
+}
+
+extension HomeTimelineListViewModel: MastodonPostMenuActionDoer {
+    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost) {
+        print("should now do \(action)!")
+        let author = post.actionablePost?.metaData.author
+        let relationship = myRelationship(to: author)
+        switch action {
+        case .follow, .unfollow:
+            print("my current relationship to \(author?.handle) is:")
+            print("\(relationship)")
+        default:
+            break
+        }
+    }
+}
+
+extension GenericMastodonPost {
+    var actionablePost: MastodonContentPost? {
+        let actionablePost: MastodonContentPost?
+        if let contentPost = self as? MastodonContentPost {
+            actionablePost = contentPost
+        } else if let boost = self as? MastodonBoostPost {
+            actionablePost = boost.boostedPost
+        } else {
+            actionablePost = nil
+        }
+        return actionablePost
     }
 }
