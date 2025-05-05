@@ -216,11 +216,10 @@ struct NotificationListView: View {
     
     @ViewBuilder func backgroundView(isPrivate: Bool, isUnread: Bool) -> some View {
         HStack(spacing: 0) {
-            Spacer().frame(width: 3)
             if isUnread && UserDefaults.standard.testUnreadMarkersForNotifications {
                 Rectangle()
                     .fill(Asset.Colors.accent.swiftUIColor)
-                    .frame(width: 5)
+                    .frame(width: 8)
             }
             Rectangle()
                 .fill(isPrivate ?  Asset.Colors.accent.swiftUIColor : .clear)
