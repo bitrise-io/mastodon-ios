@@ -245,12 +245,29 @@ fileprivate struct ActionBar: View {
             Spacer()
             StatefulCountedActionButton(viewModel: bookmarkModel)
             Spacer()
-            Button(action: {}) {
-                Image(systemName: "ellipsis")
-                    .fontWeight(.bold)
-                    .foregroundStyle(.secondary)
-            }
+            menuButton
             Spacer()
+        }
+    }
+    
+    @ViewBuilder var menuButton: some View {
+        Menu {
+            Button(action: {}) {
+                Label("options", systemImage: "star.fill")
+            }
+            Button(action: {}) {
+                Label("options", systemImage: "star.fill")
+            }
+            Button(action: {}) {
+                Label("options", systemImage: "star.fill")
+            }
+            Button(action: {}) {
+                Label("options", systemImage: "star.fill")
+            }
+        } label: {
+            Label("", systemImage: "ellipsis")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 }
