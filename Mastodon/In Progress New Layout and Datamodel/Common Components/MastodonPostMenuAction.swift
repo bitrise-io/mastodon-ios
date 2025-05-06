@@ -6,6 +6,7 @@ import MastodonLocalization
 @MainActor
 protocol MastodonPostMenuActionDoer {
     func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost)
+    func canTranslate(post: MastodonContentPost) -> Bool
 }
 
 enum MastodonPostMenuAction {
@@ -34,7 +35,7 @@ enum MastodonPostMenuAction {
     
     // TRANSLATE
     case translatePost
-    case showOriginal
+    case showOriginalLanguage
     
     // POST ACTIONS
     case sharePost
@@ -57,7 +58,7 @@ enum MastodonPostMenuAction {
     
     var iconSystemName: String {
         switch self {
-        case .translatePost, .showOriginal:
+        case .translatePost, .showOriginalLanguage:
             "character.book.closed"
         case .reportUser:
             "flag"
@@ -86,27 +87,29 @@ enum MastodonPostMenuAction {
         }
     }
     
-    func labelText(_ text: String? = "") -> String {
+    func labelText(username: String?, postLanguage: String?) -> String {
+        let username = username ?? ""
+        let postLanguage = postLanguage ?? ""
         switch self {
         case .translatePost:
-            let language = Locale.current.localizedString(forIdentifier: text!) ?? L10n.Common.Controls.Actions.TranslatePost.unknownLanguage
+            let language = Locale.current.localizedString(forIdentifier: postLanguage) ?? L10n.Common.Controls.Actions.TranslatePost.unknownLanguage
             return L10n.Common.Controls.Actions.TranslatePost.title(language)
-        case .showOriginal:
+        case .showOriginalLanguage:
             return L10n.Common.Controls.Status.Translation.showOriginal
         case .reportUser:
-            return L10n.Common.Controls.Actions.reportUser(text!)
+            return L10n.Common.Controls.Actions.reportUser(username)
         case .follow:
-            return L10n.Common.Controls.Actions.follow(text!)
+            return L10n.Common.Controls.Actions.follow(username)
         case .unfollow:
-            return L10n.Common.Controls.Actions.unfollow(text!)
+            return L10n.Common.Controls.Actions.unfollow(username)
         case .mute:
-            return L10n.Common.Controls.Friendship.muteUser(text!)
+            return L10n.Common.Controls.Friendship.muteUser(username)
         case .unmute:
-            return L10n.Common.Controls.Friendship.unmuteUser(text!)
+            return L10n.Common.Controls.Friendship.unmuteUser(username)
         case .blockUser:
-            return L10n.Common.Controls.Friendship.blockUser(text!)
+            return L10n.Common.Controls.Friendship.blockUser(username)
         case .unblockUser:
-            return L10n.Common.Controls.Friendship.unblockUser(text!)
+            return L10n.Common.Controls.Friendship.unblockUser(username)
         case .sharePost:
             return L10n.Common.Controls.Actions.sharePost
         case .deletePost:
@@ -129,7 +132,7 @@ enum MastodonPostMenuAction {
         }
     }
     
-    static func menuItems(forPostBy relationship: MastodonAccount.Relationship, isMyLanguage: Bool) -> [MastodonPostMenuAction.Submenu] {
+    static func menuItems(forPostBy relationship: MastodonAccount.Relationship, isShowingTranslation: Bool?) -> [MastodonPostMenuAction.Submenu] {
         
         let editAction: [MastodonPostMenuAction]? =  {
             switch relationship {
@@ -140,7 +143,10 @@ enum MastodonPostMenuAction {
             }
         }()
         
-        let translateAction = isMyLanguage ? nil : [MastodonPostMenuAction.translatePost]
+        let translateAction: [MastodonPostMenuAction]? =  {
+            guard let isShowingTranslation else { return nil }
+            return  [isShowingTranslation ? .showOriginalLanguage : .translatePost]
+        }()
         
         let postActions = [MastodonPostMenuAction.sharePost, .copyLinkToPost, .openPostInBrowser]
         

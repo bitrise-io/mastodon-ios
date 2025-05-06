@@ -27,10 +27,12 @@ private class HomeTimelineListViewModel: ObservableObject {
     private var feedLoaderResultsSubscription: AnyCancellable?
     private var feedLoaderErrorSubscription: AnyCancellable?
     private var tailItemIds = [String]()
+    private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
     
     func doInitialLoad() async throws {
         guard feedLoader == nil else { return }
         guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { assertionFailure("no active authenticated user, cannot create feed loader"); return }
+        instanceConfiguration = currentUser.authentication.instanceConfiguration
         feedLoader = TimelineFeedLoader(currentUser: currentUser)
         feedLoaderResultsSubscription = feedLoader?.$records
             .sink{ [weak self] results in
@@ -284,7 +286,7 @@ private struct ActionBar: View {
                         actionHandler.doAction(menuAction, forPost: post)
                     }
                     label: {
-                        Label(menuAction.labelText(), systemImage: menuAction.iconSystemName)
+                        Label(menuAction.labelText(username: post.actionablePost?.metaData.author.displayInfo.displayName, postLanguage: post.actionablePost?.content.language), systemImage: menuAction.iconSystemName)
                     }
                 }
                 Divider()
@@ -297,7 +299,7 @@ private struct ActionBar: View {
     }
         
     func submenus() -> [MastodonPostMenuAction.Submenu] {
-        return MastodonPostMenuAction.menuItems(forPostBy: myRelationshipToAuthor, isMyLanguage: isShowingTranslation == nil)
+        return MastodonPostMenuAction.menuItems(forPostBy: myRelationshipToAuthor, isShowingTranslation: isShowingTranslation)
     }
 }
 
@@ -328,7 +330,10 @@ class MastodonPostViewModel: ObservableObject {
         actionHandler: MastodonPostMenuActionDoer
     ) {
         self.post = post
-        isShowingTranslation = false
+        isShowingTranslation = {
+            guard let actionablePost = post.actionablePost else { return nil }
+            return actionHandler.canTranslate(post: actionablePost) ? false : nil
+        }()
         self.myRelationshipToAuthor = myRelationshipToAuthor
         self.actionHandler = actionHandler
 
@@ -413,6 +418,17 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionDoer {
         default:
             break
         }
+    }
+    
+    func canTranslate(post: MastodonContentPost) -> Bool {
+        guard let postLanguage = post.actionablePost?.content.language else { return false }
+        guard let deviceLanguage = Bundle.main.preferredLocalizations.first else { return false }
+        guard deviceLanguage != postLanguage else { return false }
+    
+        return instanceConfiguration?.canTranslateFrom(
+            postLanguage,
+            to: deviceLanguage
+        ) ?? false
     }
 }
 
