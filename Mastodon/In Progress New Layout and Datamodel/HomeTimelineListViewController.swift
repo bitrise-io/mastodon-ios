@@ -175,8 +175,6 @@ private struct HomeTimelinePostRowView: View {
     
     @ViewBuilder func componentView(_ component: PostViewComponent) -> some View {
         switch component {
-        case .authorHeader(let author):
-            Text("obsolete")
         case .content(let string):
             PostContentView(text: string)
         case .attachment(let attachment):
@@ -304,7 +302,6 @@ private struct ActionBar: View {
 }
 
 private enum PostViewComponent {
-    case authorHeader(MastodonAccount)
     case content(String)
     case attachment(GenericMastodonPost.PostAttachment)
     case hashtags([String])
@@ -376,7 +373,7 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
 
-    fileprivate var textContentView: TextViewWithCustomEmoji {
+    var textContentView: TextViewWithCustomEmoji {
         let text: String
         let emojis: TextViewWithCustomEmoji.Emojis
         if let boost = post as? MastodonBoostPost {
@@ -401,7 +398,7 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
 
-    fileprivate var hashtagComponent: PostViewComponent? {
+    var hashtagComponent: PostViewComponent? {
         return .hashtags(["needs_implementation"])
     }
 }
