@@ -62,9 +62,9 @@ enum MastodonPostMenuAction {
         case .reportUser:
             "flag"
         case .follow:
-            "person.fill.badge.plus"
+            "person.badge.plus"
         case .unfollow:
-            "person.fill.badge.minus"
+            "person.badge.minus"
         case .mute:
             "speaker.slash"
         case .unmute:
