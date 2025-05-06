@@ -22,16 +22,23 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
 
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
+    private var authenticatedUser: MastodonAuthenticationBox?
+    private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
+    
     @Published var timelineItems = [TimelineItem]()
     private var feedLoader: TimelineFeedLoader?
     private var feedLoaderResultsSubscription: AnyCancellable?
     private var feedLoaderErrorSubscription: AnyCancellable?
     private var tailItemIds = [String]()
-    private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
+    
+    // Translations
+    private var translations = [ Mastodon.Entity.Status.ID : Mastodon.Entity.Translation]()
+    @Published var translationsShowing = Set<Mastodon.Entity.Status.ID>()
     
     func doInitialLoad() async throws {
         guard feedLoader == nil else { return }
         guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { assertionFailure("no active authenticated user, cannot create feed loader"); return }
+        authenticatedUser = currentUser
         instanceConfiguration = currentUser.authentication.instanceConfiguration
         feedLoader = TimelineFeedLoader(currentUser: currentUser)
         feedLoaderResultsSubscription = feedLoader?.$records
@@ -75,9 +82,10 @@ private class HomeTimelineListViewModel: ObservableObject {
         return feedLoader?.myRelationship(to: account.id) ?? .isNotMe(nil)
     }
     
-    func rowViewModel(for post: GenericMastodonPost) -> MastodonPostViewModel {
+    func rowViewModel(for post: GenericMastodonPost, isShowingTranslation: Bool?) -> MastodonPostViewModel {
         let relationship = myRelationship(to: post.actionablePost?.metaData.author)
         let rowViewModel = MastodonPostViewModel(post: post,
+                                                 isShowingTranslation: isShowingTranslation,
                                                  myRelationshipToAuthor: relationship,
                                                  actionHandler: self)
         return rowViewModel
@@ -113,7 +121,17 @@ struct HomeTimelineListView: View {
                                 geo.size.width - geo.safeAreaInsets.leading
                                 - geo.safeAreaInsets.trailing
                             let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
-                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post), contentWidth: contentWidth)
+                            
+                            let isShowingTranslation: Bool? = {
+                                guard let actionablePost = post.actionablePost else { return nil }
+                                if viewModel.canTranslate(post: actionablePost) {
+                                    return viewModel.translationsShowing.contains(actionablePost.id)
+                                } else {
+                                    return nil
+                                }
+                            }()
+                            
+                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, isShowingTranslation: isShowingTranslation), contentWidth: contentWidth)
                             .padding(spacingBetweenGutterAndContent)
                             .listRowInsets(
                                 EdgeInsets(
@@ -148,19 +166,34 @@ private struct HomeTimelinePostRowView: View {
     @StateObject var viewModel: MastodonPostViewModel
     let contentWidth: CGFloat
     
+    let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
+    
     var body: some View {
         VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
+            
             viewModel.socialContextHeader
             AuthorHeaderView(author: viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author)
+            
+            if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.translatedContents {
+                TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost, sender: viewModel) }
+                )
+                .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
+                .alignmentGuide(.gutterAlign) { d in
+                    return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
+                }
+            }
             viewModel.textContentView
                 .frame(width: contentWidth, alignment: .leading)
+                
             if let attachment = viewModel.attachmentComponent {
                 componentView(attachment)
             }
+            
             if let actionablePost = viewModel.post.actionablePost {
                 ActionBar(
                     post: actionablePost,
                     actionHandler: viewModel.actionHandler,
+                    actionSender: viewModel,
                     replyModel: viewModel.replyModel,
                     boostModel: viewModel.boostModel,
                     favouriteModel: viewModel.favouriteModel,
@@ -253,7 +286,9 @@ private struct HashtagRowView: View {
 private struct ActionBar: View {
 
     var post: MastodonContentPost
-    var actionHandler: MastodonPostMenuActionDoer
+    var actionHandler: MastodonPostMenuActionHandler
+    var actionSender: MastodonPostMenuActionSender
+    
     @ObservedObject var replyModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.reply)
     @ObservedObject var boostModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.boost)
     @ObservedObject var favouriteModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.favourite)
@@ -281,7 +316,7 @@ private struct ActionBar: View {
             ForEach(submenus(), id: \.self.id) { submenu in
                 ForEach(submenu.items, id: \.self) { menuAction in
                     Button(role: menuAction.isDestructive ? .destructive : nil) {
-                        actionHandler.doAction(menuAction, forPost: post)
+                        actionHandler.doAction(menuAction, forPost: post, sender: actionSender)
                     }
                     label: {
                         Label(menuAction.labelText(username: post.actionablePost?.metaData.author.displayInfo.displayName, postLanguage: post.actionablePost?.content.language), systemImage: menuAction.iconSystemName)
@@ -310,7 +345,7 @@ private enum PostViewComponent {
 @MainActor
 class MastodonPostViewModel: ObservableObject {
     
-    let actionHandler: MastodonPostMenuActionDoer
+    let actionHandler: MastodonPostMenuActionHandler
     let post: GenericMastodonPost
 
     public let replyModel = StatefulCountedActionViewModel(.reply)
@@ -320,17 +355,17 @@ class MastodonPostViewModel: ObservableObject {
 
     @Published var isShowingTranslation: Bool?
     @Published var myRelationshipToAuthor: MastodonAccount.Relationship
+    
+    var translatedContents: Mastodon.Entity.Translation?
 
     init(
         post: GenericMastodonPost,
+        isShowingTranslation: Bool?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
-        actionHandler: MastodonPostMenuActionDoer
+        actionHandler: MastodonPostMenuActionHandler
     ) {
         self.post = post
-        isShowingTranslation = {
-            guard let actionablePost = post.actionablePost else { return nil }
-            return actionHandler.canTranslate(post: actionablePost) ? false : nil
-        }()
+        self.isShowingTranslation = isShowingTranslation
         self.myRelationshipToAuthor = myRelationshipToAuthor
         self.actionHandler = actionHandler
 
@@ -374,19 +409,16 @@ fileprivate extension MastodonPostViewModel {
     }
 
     var textContentView: TextViewWithCustomEmoji {
-        let text: String
-        let emojis: TextViewWithCustomEmoji.Emojis
-        if let boost = post as? MastodonBoostPost {
-            text = boost.boostedPost.content.htmlWithEntities?.html ?? boost.boostedPost.content.plainText ?? ""
-            emojis = boost.boostedPost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
-        } else if let contentPost = post as? MastodonContentPost {
-            text = contentPost.content.htmlWithEntities?.html ?? contentPost.content.plainText ?? ""
-            emojis = contentPost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
+        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(html: "", emojis: TextViewWithCustomEmoji.Emojis())
+        
+        guard let actionablePost = post.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
+        let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
+        
+        if isShowingTranslation == true, let actionableId = post.actionablePost?.id, let translation = translatedContents?.content {
+            return .timelinePost(html: translation, emojis: emojis)
         } else {
-            text = ""
-            emojis = TextViewWithCustomEmoji.Emojis()
+            return .timelinePost(html: untranslatedContent, emojis: emojis)
         }
-        return .timelinePost(html: text, emojis: emojis)
     }
     
     var attachmentComponent: PostViewComponent? {
@@ -403,17 +435,45 @@ fileprivate extension MastodonPostViewModel {
     }
 }
 
-extension HomeTimelineListViewModel: MastodonPostMenuActionDoer {
-    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost) {
-        print("should now do \(action)!")
-        let author = post.actionablePost?.metaData.author
-        let relationship = myRelationship(to: author)
+extension MastodonPostViewModel: MastodonPostMenuActionSender {
+    func actionDone(_ action: MastodonPostMenuAction, error: (any Error)?) {
+        guard error == nil else { return }  // TODO: maybe need some view clean up
         switch action {
-        case .follow, .unfollow:
-            print("my current relationship to \(author?.handle) is:")
-            print("\(relationship)")
+        case .translatePost:
+            guard let actionableID = post.actionablePost?.id, let translation = actionHandler.translation(forContentPostId: actionableID) else { return }
+            translatedContents = translation
+            isShowingTranslation = true
+        case .showOriginalLanguage:
+            isShowingTranslation = false
         default:
             break
+        }
+    }
+}
+
+extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
+    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost, sender: MastodonPostMenuActionSender?) {
+        Task {
+            do {
+                let author = post.actionablePost?.metaData.author
+                let relationship = myRelationship(to: author)
+                switch action {
+                case .translatePost:
+                    try await showTranslation(forPost: post)
+                case .showOriginalLanguage:
+                    translationsShowing.remove(post.id)
+                case .follow, .unfollow:
+                    print("my current relationship to \(author?.handle) is:")
+                    print("\(relationship)")
+                default:
+                    break
+                }
+                sender?.actionDone(action, error: nil)
+            } catch {
+                // TODO: handle error in a way the user can see it
+                sender?.actionDone(action, error: error)
+                assertionFailure()
+            }
         }
     }
     
@@ -427,6 +487,33 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionDoer {
             to: deviceLanguage
         ) ?? false
     }
+    
+    func translation(forContentPostId postId: MastodonSDK.Mastodon.Entity.Status.ID) -> MastodonSDK.Mastodon.Entity.Translation? {
+        return translations[postId]
+    }
+    
+    
+    private func showTranslation(forPost post: MastodonContentPost) async throws {
+        
+        if let availableTranslation = translations[post.id] {
+            translationsShowing.insert(post.id)
+            return
+        } else {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            
+            let translation = try await APIService.shared
+                .translateStatus(
+                    statusID: post.id,
+                    authenticationBox: authenticatedUser
+                ).value
+            
+            guard let translationContent = translation.content, translationContent.isNotEmpty else { throw PostActionFailure.translationEmptyOrInvalid }
+            
+            translations[post.id] = translation
+            translationsShowing.insert(post.id)
+        }
+    }
+    
 }
 
 extension GenericMastodonPost {
@@ -440,5 +527,35 @@ extension GenericMastodonPost {
             actionablePost = nil
         }
         return actionablePost
+    }
+}
+
+struct TranslationInfoView: View {
+    let translationInfo: Mastodon.Entity.Translation
+    let showOriginal: ()->()
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            Text(translatedFromLanguageByProvider)
+                .lineLimit(1)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button {
+                showOriginal()
+            } label: {
+                Text(L10n.Common.Controls.Status.Translation.showOriginal)
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Asset.Colors.Brand.blurple.swiftUIColor)
+            }
+            .fixedSize()
+        }
+    }
+    
+    var translatedFromLanguageByProvider: String {
+        let languageName = languageName(translationInfo.sourceLanguage) ?? L10n.Common.Controls.Status.Translation.unknownLanguage
+        return L10n.Common.Controls.Status.Translation.translatedFrom(languageName, translationInfo.provider ?? L10n.Common.Controls.Status.Translation.unknownProvider)
     }
 }

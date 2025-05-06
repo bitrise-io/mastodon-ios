@@ -2,11 +2,32 @@
 
 import SwiftUI
 import MastodonLocalization
+import MastodonSDK
+
+public func languageName(_ identifier: String?) -> String? {
+    guard let identifier else { return nil }
+    return Locale.current.localizedString(forIdentifier: identifier)
+}
+
+enum PostActionFailure: Error {
+    case translationEmptyOrInvalid
+}
 
 @MainActor
-protocol MastodonPostMenuActionDoer {
-    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost)
+protocol MastodonPostMenuActionHandler {
+    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost, sender: MastodonPostMenuActionSender?)
     func canTranslate(post: MastodonContentPost) -> Bool
+    func translation(forContentPostId postId: Mastodon.Entity.Status.ID) -> Mastodon.Entity.Translation?
+}
+
+@MainActor
+protocol MastodonPostMenuActionSender {
+    func actionDone(_ action: MastodonPostMenuAction, error: Error?)
+}
+extension MastodonPostMenuActionSender {
+    func actionDone(_ action: MastodonPostMenuAction, error: Error?) {
+        // optional
+    }
 }
 
 enum MastodonPostMenuAction {
@@ -92,7 +113,7 @@ enum MastodonPostMenuAction {
         let postLanguage = postLanguage ?? ""
         switch self {
         case .translatePost:
-            let language = Locale.current.localizedString(forIdentifier: postLanguage) ?? L10n.Common.Controls.Actions.TranslatePost.unknownLanguage
+            let language = languageName(postLanguage) ?? L10n.Common.Controls.Actions.TranslatePost.unknownLanguage
             return L10n.Common.Controls.Actions.TranslatePost.title(language)
         case .showOriginalLanguage:
             return L10n.Common.Controls.Status.Translation.showOriginal
