@@ -7,7 +7,7 @@ struct AuthorHeaderView: View {
     let author: MastodonAccount
     
     var body: some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .top) {
             AvatarView(size: .large, author: author, goToProfile: nil)
             VStack(alignment: .leading) {
                 textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
