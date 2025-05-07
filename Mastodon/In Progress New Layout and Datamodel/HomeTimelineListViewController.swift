@@ -773,7 +773,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     presentScene(.safari(url: url), transition: .safariPresent(animated: true))
                     
                 case .sharePost:
-                    break
+                    sharePost(actionablePost)
 
             // MARK: RELATIONSHIP ACTIONS
                     
@@ -1017,6 +1017,29 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
             self.clearPendingActions()
             // TODO: make visible to user
         }
+    }
+    
+    func sharePost(_ actionablePost: MastodonContentPost) {
+        var activityItems: [Any] = {
+            guard let url = URL(string: actionablePost.metaData.url ?? actionablePost.metaData.uriForFediverse) else { return [] }
+            return [
+                URLActivityItem(url: url)
+            ]
+        }()
+
+        let activityViewController = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: nil
+        )
+        
+        presentScene(
+            .activityViewController(
+                activityViewController: activityViewController,
+                sourceView: nil,
+                barButtonItem: nil
+            ),
+            transition: .activityViewControllerPresent(animated: true, completion: nil)
+        )
     }
     
 }

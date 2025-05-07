@@ -13,10 +13,13 @@ import MastodonLocalization
 final class SafariActivity: UIActivity {
     
     weak var sceneCoordinator: SceneCoordinator?
+    var presentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) async ->())?
     var url: NSURL?
     
-    init(sceneCoordinator: SceneCoordinator?) {
+    init(sceneCoordinator: SceneCoordinator? = nil, presentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition)->())? = nil) {
+        guard (sceneCoordinator != nil) || (presentScene != nil) else { assertionFailure("no method to show a scene"); return }
         self.sceneCoordinator = sceneCoordinator
+        self.presentScene = presentScene
     }
     
     override var activityType: UIActivity.ActivityType? {
@@ -58,7 +61,13 @@ final class SafariActivity: UIActivity {
         }
         
         Task {
-            _ = await sceneCoordinator?.present(scene: .safari(url: url as URL), from: nil, transition: .safariPresent(animated: true, completion: nil))
+            let scene: SceneCoordinator.Scene = .safari(url: url as URL)
+            let transition: SceneCoordinator.Transition = .safariPresent(animated: true, completion: nil)
+            if let sceneCoordinator = await activityViewController?.sceneCoordinator {
+                _ = await sceneCoordinator.present(scene: scene, transition: transition)
+            } else if let presentScene {
+                await presentScene(scene, transition)
+            }
             activityDidFinish(true)
         }
     }
