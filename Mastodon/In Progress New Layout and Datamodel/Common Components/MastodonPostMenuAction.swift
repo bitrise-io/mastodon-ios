@@ -11,24 +11,20 @@ public func languageName(_ identifier: String?) -> String? {
 
 enum PostActionFailure: Error {
     case translationEmptyOrInvalid
+    case noTargetAccountInfo
+    case noActionablePostId
+    case noRelationshipInfo
+    case postIdMismatch
 }
 
 @MainActor
 protocol MastodonPostMenuActionHandler {
-    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost, sender: MastodonPostMenuActionSender?)
+    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost)
     func canTranslate(post: MastodonContentPost) -> Bool
     func translation(forContentPostId postId: Mastodon.Entity.Status.ID) -> Mastodon.Entity.Translation?
+    func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition)
 }
 
-@MainActor
-protocol MastodonPostMenuActionSender {
-    func actionDone(_ action: MastodonPostMenuAction, error: Error?)
-}
-extension MastodonPostMenuActionSender {
-    func actionDone(_ action: MastodonPostMenuAction, error: Error?) {
-        // optional
-    }
-}
 
 enum MastodonPostMenuAction {
     enum SubmenuType: String {
@@ -50,6 +46,15 @@ enum MastodonPostMenuAction {
             self.items = items
         }
     }
+    
+    // ACTION BAR ITEMS
+    case reply
+    case boost
+    case unboost
+    case favourite
+    case unfavourite
+    case bookmark
+    case unbookmark
     
     // EDIT
     case editPost
@@ -77,8 +82,84 @@ enum MastodonPostMenuAction {
     // DELETE
     case deletePost
     
+    var updatesMyRelationshipToAuthor: Bool {
+        switch self {
+        case .reply:
+            false
+            
+        case .boost, .unboost, .favourite, .unfavourite, .bookmark, .unbookmark:
+            false
+            
+        case .editPost:
+            false
+            
+        case .translatePost, .showOriginalLanguage:
+            false
+            
+        case .follow, .unfollow, .mute, .unmute:
+            true
+            
+        case .sharePost, .openPostInBrowser, .copyLinkToPost:
+            false
+            
+        case .blockUser, .unblockUser:
+            true
+            
+        case .reportUser:
+            false
+            
+        case .deletePost:
+            false
+        }
+    }
+    
+    var updatesMyActionsOnPost: Bool {
+        switch self {
+        case .reply:
+            true
+            
+        case .boost, .unboost, .favourite, .unfavourite, .bookmark, .unbookmark:
+            true
+            
+        case .editPost:
+            true
+            
+        case .translatePost, .showOriginalLanguage:
+            false
+            
+        case .follow, .unfollow, .mute, .unmute:
+            false
+            
+        case .sharePost, .openPostInBrowser, .copyLinkToPost:
+            false
+            
+        case .blockUser, .unblockUser:
+            false
+            
+        case .reportUser:
+            false
+            
+        case .deletePost:
+            true
+        }
+    }
+    
     var iconSystemName: String {
         switch self {
+        case .reply:
+            PostAction.reply.systemIconName(filled: false)
+        case .boost:
+            PostAction.boost.systemIconName(filled: false)
+        case .unboost:
+            PostAction.boost.systemIconName(filled: true)
+        case .favourite:
+            PostAction.favourite.systemIconName(filled: false)
+        case .unfavourite:
+            PostAction.favourite.systemIconName(filled: true)
+        case .bookmark:
+            PostAction.bookmark.systemIconName(filled: false)
+        case .unbookmark:
+            PostAction.bookmark.systemIconName(filled: true)
         case .translatePost, .showOriginalLanguage:
             "character.book.closed"
         case .reportUser:
@@ -112,6 +193,20 @@ enum MastodonPostMenuAction {
         let username = username ?? ""
         let postLanguage = postLanguage ?? ""
         switch self {
+        case .reply:
+            return L10n.Common.Controls.Actions.reply
+        case .boost:
+            return L10n.Common.Controls.Status.Actions.reblog
+        case .unboost:
+            return L10n.Common.Controls.Status.Actions.unreblog
+        case .favourite:
+            return L10n.Common.Controls.Status.Actions.favorite
+        case .unfavourite:
+            return L10n.Common.Controls.Status.Actions.unfavorite
+        case .bookmark:
+            return L10n.Common.Controls.Actions.bookmark
+        case .unbookmark:
+            return L10n.Common.Controls.Actions.removeBookmark
         case .translatePost:
             let language = languageName(postLanguage) ?? L10n.Common.Controls.Actions.TranslatePost.unknownLanguage
             return L10n.Common.Controls.Actions.TranslatePost.title(language)

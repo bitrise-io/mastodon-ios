@@ -68,6 +68,32 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         }
     }
     
+    func refetchAllRelationships() async throws {
+        cachedRelationships.removeAll()
+        if let authenticatedUserID {
+            cachedRelationships[authenticatedUserID] = .isMe
+        }
+        if let currentTimeline = cacheManager.currentResults() {
+            try await fetchRelationships(currentTimeline)
+        }
+    }
+    
+    func updateMyRelationship(_ relationship: MastodonAccount.Relationship, to accountID: Mastodon.Entity.Account.ID) {
+        cachedRelationships[accountID] = relationship
+    }
+    
+    func updatePost(post: GenericMastodonPost) {
+        updateCachedResults { cached in
+            return cached.byUpdating(post: post)
+        }
+    }
+    
+    func didDeletePost(_ postID: Mastodon.Entity.Status.ID) {
+        updateCachedResults { cached in
+            return cached.byDeleting(postId: postID)
+        }
+    }
+    
     override func fetchResults(for request: MastodonFeedLoaderRequest) async throws -> CacheableTimeline {
         let olderThan: String?
         let newerThan: String?
@@ -206,6 +232,44 @@ struct CacheableTimeline: CacheableFeed {
         }
         
         items = combined
+    }
+    
+    func byUpdating(post updated: GenericMastodonPost) -> CacheableTimeline {
+        guard let actionableUpdatedId = updated.actionablePost?.id else { return self }
+        let newItems = items.map { item in
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                return item
+            case .post(let existing):
+                if existing.id == actionableUpdatedId {
+                    return .post(updated)
+                } else if existing.actionablePost?.id == actionableUpdatedId {
+                    do {
+                        let updated = try existing.byReplacingActionablePost(with: updated)
+                        return .post(updated)
+                    } catch {
+                        assertionFailure("Trying to update a boost post?  byReplacingActionablePost(with:) will need to handle that")
+                        return item
+                    }
+                } else {
+                    return item
+                }
+            }
+        }
+        
+        return CacheableTimeline(older: [], newer: newItems)
+    }
+    
+    func byDeleting(postId: Mastodon.Entity.Status.ID) -> CacheableTimeline {
+        let newItems = items.filter { item in
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                return true
+            case .post(let post):
+                return post.actionablePost?.id != postId
+            }
+        }
+        return CacheableTimeline(older: [], newer: newItems)
     }
 }
 

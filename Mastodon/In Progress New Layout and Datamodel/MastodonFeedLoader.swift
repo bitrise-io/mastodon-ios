@@ -159,7 +159,6 @@ extension MastodonFeedLoader {
         }
     }
     
-    
     func load(_ request: MastodonFeedLoaderRequest) async throws
     {
         defer { isFetching = false }
@@ -224,6 +223,12 @@ extension MastodonFeedLoader {
 extension MastodonFeedLoader {
     public func commitToCache() async {
         await cacheManager.commitToCache()
+    }
+    
+    public func updateCachedResults(_ updater: (CachedType)->(CachedType)) {
+        guard let cached = cacheManager.currentResults() else { return }
+        let updatedCache = updater(cached)
+        updateAfterInserting(newlyFetchedResults: updatedCache, at: .replace)
     }
     
     private func loadCached() throws {

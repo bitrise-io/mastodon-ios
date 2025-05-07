@@ -20,13 +20,14 @@ enum AsyncBool {
     }
 }
 
-class StatefulCountedActionViewModel: ObservableObject {
+struct StatefulCountedActionViewModel {
     struct UpdatableDisplayDetails {
-        var count: Int?
-        var isSelected: AsyncBool
+        let count: Int?
+        let isSelected: AsyncBool
     }
     
-    @Published var displayDetails: UpdatableDisplayDetails
+    let type: PostAction
+    var displayDetails: UpdatableDisplayDetails
     var doAction: (()->())?
     var iconName: String {
         return type.systemIconName(filled: displayDetails.isSelected == .isTrue)
@@ -47,31 +48,26 @@ class StatefulCountedActionViewModel: ObservableObject {
             return .secondary
         }
     }
-    
-    private let type: PostAction
-    
-    init(_ type: PostAction) {
-        self.type = type
-        displayDetails = UpdatableDisplayDetails(count: nil, isSelected: .unknown)
-    }
-    
-    func update(count: Int? = nil, isSelected: AsyncBool? = .unknown) {
-        displayDetails = UpdatableDisplayDetails(count: count ?? displayDetails.count, isSelected: isSelected ?? displayDetails.isSelected)
-    }
 }
 
 struct StatefulCountedActionButton: View {
-    @ObservedObject var viewModel: StatefulCountedActionViewModel
-    
-    init(viewModel: StatefulCountedActionViewModel) {
-        self.viewModel = viewModel
-    }
+    let viewModel: StatefulCountedActionViewModel
     
     var body: some View {
         Button(action: { viewModel.doAction?() }) {
             HStack(spacing: 4) {
-                Image(systemName: viewModel.iconName)
-                    .font(.subheadline)
+                switch viewModel.displayDetails.isSelected {
+                case .isFalse, .isTrue:
+                    Image(systemName: viewModel.iconName)
+                        .font(.subheadline)
+                case .fetching, .settingToFalse, .settingToTrue:
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .font(.subheadline)
+                case .unknown:
+                    Image(systemName: "questionmark")
+                        .font(.subheadline)
+                }
                 ZStack(alignment: .leading) {
                     Text("0000")         // to keep the required space
                         .fontWeight(.semibold)
@@ -84,6 +80,7 @@ struct StatefulCountedActionButton: View {
             .fontWeight(viewModel.displayDetails.isSelected == .isTrue ? .semibold : .regular)
             .foregroundStyle(viewModel.color)
         }
+        .buttonStyle(.borderless) // Without this, all the buttons in the row activate when one is tapped.  What a remarkably unexpected result with no documentation.
     }
 }
 

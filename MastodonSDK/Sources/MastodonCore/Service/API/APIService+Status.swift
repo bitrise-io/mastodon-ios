@@ -56,4 +56,26 @@ extension APIService {
         return response
     }
     
+    public func deleteContentPost(
+        _ postID: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let authorization = authenticationBox.userAuthorization
+        
+        let managedObjectContext = backgroundManagedObjectContext
+        let _query: Mastodon.API.Statuses.DeleteStatusQuery? = Mastodon.API.Statuses.DeleteStatusQuery(id: postID)
+        guard let query = _query else {
+            throw APIError.implicit(.badRequest)
+        }
+        
+        let response = try await Mastodon.API.Statuses.deleteStatus(
+            session: session,
+            domain: authenticationBox.domain,
+            query: query,
+            authorization: authorization
+        ).singleOutput()
+        
+        return response.value
+    }
+    
 }

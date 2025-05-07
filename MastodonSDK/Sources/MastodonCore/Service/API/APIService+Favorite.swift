@@ -54,6 +54,50 @@ extension APIService {
         return response
     }
     
+    public func favourite(
+        actionableStatusID: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let response = try await Mastodon.API.Favorites.favorites(
+                domain: authenticationBox.domain,
+                statusID: actionableStatusID,
+                session: session,
+                authorization: authenticationBox.userAuthorization,
+                favoriteKind: .create
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
+    
+    public func unfavourite(
+        actionableStatusId: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let response = try await Mastodon.API.Favorites.favorites(
+                domain: authenticationBox.domain,
+                statusID: actionableStatusId,
+                session: session,
+                authorization: authenticationBox.userAuthorization,
+                favoriteKind: .destroy
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
 }
 
 extension APIService {

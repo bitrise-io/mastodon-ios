@@ -10,8 +10,12 @@ import Combine
 class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
 {
     init() {
-        let root = HomeTimelineListView(viewModel: HomeTimelineListViewModel())
+        let viewModel = HomeTimelineListViewModel()
+        let root = HomeTimelineListView(viewModel: viewModel)
         super.init(rootView: root)
+        viewModel.parentVcPresentScene = { (scene, transition) in
+            self.sceneCoordinator?.present(scene: scene, transition: transition)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -20,11 +24,90 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
     }
 }
 
+extension MastodonPostMenuAction {
+    enum AlertType {
+        case noAlert
+        case confirmBoostOfPost(didConfirm: ()->())
+        case confirmDeleteOfPost(didConfirm: ()->())
+        case confirmUnfollow(username: String, didConfirm: ()->())
+        case confirmMute(username: String, didConfirm: ()->())
+        case confirmUnmute(username: String, didConfirm: ()->())
+        case confirmBlock(username: String, didConfirm: ()->())
+        case confirmUnblock(username: String, didConfirm: ()->())
+        
+        var title: String {
+            switch self {
+            case .noAlert:
+                ""
+                
+            case .confirmBoostOfPost:
+                L10n.Common.Alerts.BoostAPost.titleBoost
+                
+            case .confirmDeleteOfPost:
+                L10n.Common.Alerts.DeletePost.title
+                
+            case .confirmUnfollow(let username, _):
+                L10n.Common.Alerts.UnfollowUser.title("\(username)")
+                
+            case .confirmMute:
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmMuteUser.title
+            case .confirmUnmute:
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnmuteUser.title
+                
+            case .confirmBlock:
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmBlockUser.title
+            case .confirmUnblock:
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnblockUser.title
+            }
+        }
+        
+        var messageText: String? {
+            switch self {
+            case .noAlert, .confirmUnfollow, .confirmBoostOfPost:
+                nil
+                
+            case .confirmMute(let username, _):
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmMuteUser.message(username)
+            case .confirmUnmute(let username, _):
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnmuteUser.message(username)
+                
+            case .confirmBlock(let username, _):
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmBlockUser.message(username)
+            case .confirmUnblock(let username, _):
+                L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnblockUser.message(username)
+                
+            case .confirmDeleteOfPost:
+                L10n.Common.Alerts.DeletePost.message
+            }
+        }
+        
+        var shouldBePresented: Bool {
+            switch self {
+            case .noAlert:
+                return false
+            default:
+                return true
+            }
+        }
+    }
+}
+
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
+    public var parentVcPresentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> ())?
     private var authenticatedUser: MastodonAuthenticationBox?
     private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
     
+    var activeAlert: MastodonPostMenuAction.AlertType = .noAlert {
+        didSet {
+            if !isPresentingAlert && activeAlert.shouldBePresented {
+                isPresentingAlert = true
+            }
+        }
+    }
+    @Published var isPresentingAlert: Bool = false
+    @Published var isPerformingPostAction: (action: MastodonPostMenuAction, post: MastodonContentPost)? = nil
+    @Published var isPerformingAccountAction: (action: MastodonPostMenuAction, account: MastodonAccount)? = nil
     @Published var timelineItems = [TimelineItem]()
     private var feedLoader: TimelineFeedLoader?
     private var feedLoaderResultsSubscription: AnyCancellable?
@@ -34,6 +117,15 @@ private class HomeTimelineListViewModel: ObservableObject {
     // Translations
     private var translations = [ Mastodon.Entity.Status.ID : Mastodon.Entity.Translation]()
     @Published var translationsShowing = Set<Mastodon.Entity.Status.ID>()
+    
+    func clearPendingActions() {
+        if isPerformingPostAction != nil {
+            isPerformingPostAction = nil
+        }
+        if isPerformingAccountAction != nil {
+            isPerformingAccountAction = nil
+        }
+    }
     
     func doInitialLoad() async throws {
         guard feedLoader == nil else { return }
@@ -82,10 +174,33 @@ private class HomeTimelineListViewModel: ObservableObject {
         return feedLoader?.myRelationship(to: account.id) ?? .isNotMe(nil)
     }
     
-    func rowViewModel(for post: GenericMastodonPost, isShowingTranslation: Bool?) -> MastodonPostViewModel {
-        let relationship = myRelationship(to: post.actionablePost?.metaData.author)
+//    func isActing(onPost: MastodonContentPost, account: MastodonAccount?) -> MastodonPostMenuAction? {
+//        
+//    }
+    
+    func rowViewModel(for post: GenericMastodonPost, translationsToShow: Set<Mastodon.Entity.Status.ID>, isPerformingAction: MastodonPostMenuAction?) -> MastodonPostViewModel {
+        let actionablePost = post.actionablePost
+        let actionableAuthor = actionablePost?.metaData.author
+        let relationship = myRelationship(to: actionableAuthor)
+        let isDoingAction: MastodonPostMenuAction? = {
+            if let isPerformingPostAction {
+                guard actionablePost?.id == isPerformingPostAction.post.id else { return nil }
+                return isPerformingPostAction.action
+            } else if let isPerformingAccountAction {
+                guard actionableAuthor?.id == isPerformingAccountAction.account.id else { return nil }
+                return isPerformingAccountAction.action
+            } else {
+                return nil
+            }
+        }()
+        let isShowingTranslation: Bool? = { () -> Bool? in
+            guard let actionablePost else { return nil }
+            guard canTranslate(post: actionablePost) else { return nil }
+            return translationsToShow.contains(actionablePost.id)
+        }()
         let rowViewModel = MastodonPostViewModel(post: post,
                                                  isShowingTranslation: isShowingTranslation,
+                                                 isDoingAction: isDoingAction,
                                                  myRelationshipToAuthor: relationship,
                                                  actionHandler: self)
         return rowViewModel
@@ -122,16 +237,8 @@ struct HomeTimelineListView: View {
                                 - geo.safeAreaInsets.trailing
                             let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
                             
-                            let isShowingTranslation: Bool? = {
-                                guard let actionablePost = post.actionablePost else { return nil }
-                                if viewModel.canTranslate(post: actionablePost) {
-                                    return viewModel.translationsShowing.contains(actionablePost.id)
-                                } else {
-                                    return nil
-                                }
-                            }()
-                            
-                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, isShowingTranslation: isShowingTranslation), contentWidth: contentWidth)
+                            let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
+                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction), contentWidth: contentWidth)
                             .padding(spacingBetweenGutterAndContent)
                             .listRowInsets(
                                 EdgeInsets(
@@ -155,15 +262,93 @@ struct HomeTimelineListView: View {
         }
         .onAppear() {
             Task {
+                viewModel.clearPendingActions()
                 try await viewModel.doInitialLoad()
             }
+        }
+        .alert(viewModel.activeAlert.title, isPresented: $viewModel.isPresentingAlert, presenting: viewModel.activeAlert) { alert in
+            alertContents(alert)
+        } message: { alert in
+            if let messageText = alert.messageText {
+                Text(messageText)
+            }
+        }
+    }
+    
+    @ViewBuilder func alertContents(_ alert: MastodonPostMenuAction.AlertType) -> some View {
+        switch alert {
+        case .noAlert:
+            Text("no alert")
+        case .confirmBoostOfPost(let didConfirm):
+            cancelButton()
+            Button {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Alerts.BoostAPost.boost)
+            }
+            
+        case .confirmDeleteOfPost(let didConfirm):
+            cancelButton()
+            Button(role: .destructive) {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Controls.Actions.delete)
+            }
+            
+        case .confirmUnfollow(_, let didConfirm):
+            cancelButton()
+            Button(role: .destructive) {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Alerts.UnfollowUser.unfollow)
+            }
+            
+        case .confirmMute(username: let username, didConfirm: let didConfirm):
+            cancelButton()
+            Button(role: .destructive) {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Controls.Friendship.muteUser(username))
+            }
+        case .confirmUnmute(username: let username, didConfirm: let didConfirm):
+            cancelButton()
+            Button {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Controls.Friendship.unmuteUser(username))
+            }
+            
+        case .confirmBlock(username: let username, didConfirm: let didConfirm):
+            cancelButton()
+            Button(role: .destructive) {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Controls.Friendship.blockUser(username))
+            }
+        case .confirmUnblock(username: let username, didConfirm: let didConfirm):
+            cancelButton()
+            Button {
+                didConfirm()
+            } label: {
+                Text(L10n.Common.Controls.Friendship.unblockUser(username))
+            }
+        }
+    }
+    
+    @ViewBuilder func cancelButton() -> some View {
+        Button(role: .cancel) {
+            print("cancelling")
+            viewModel.clearPendingActions()
+        }
+        label: {
+            Text(L10n.Common.Controls.Actions.cancel)
         }
     }
 }
 
 private struct HomeTimelinePostRowView: View {
 
-    @StateObject var viewModel: MastodonPostViewModel
+    let viewModel: MastodonPostViewModel
     let contentWidth: CGFloat
     
     let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
@@ -174,8 +359,8 @@ private struct HomeTimelinePostRowView: View {
             viewModel.socialContextHeader
             AuthorHeaderView(author: viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author)
             
-            if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.translatedContents {
-                TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost, sender: viewModel) }
+            if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
+                TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
                 )
                 .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
                 .alignmentGuide(.gutterAlign) { d in
@@ -190,19 +375,88 @@ private struct HomeTimelinePostRowView: View {
             }
             
             if let actionablePost = viewModel.post.actionablePost {
-                ActionBar(
-                    post: actionablePost,
-                    actionHandler: viewModel.actionHandler,
-                    actionSender: viewModel,
-                    replyModel: viewModel.replyModel,
-                    boostModel: viewModel.boostModel,
-                    favouriteModel: viewModel.favouriteModel,
-                    bookmarkModel: viewModel.bookmarkModel,
-                    isShowingTranslation: $viewModel.isShowingTranslation,
-                    myRelationshipToAuthor: $viewModel.myRelationshipToAuthor
-                )
+                ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
                 .frame(width: contentWidth, alignment: .leading)
             }
+        }
+    }
+    
+    func actionBarViewModel(forActionablePost actionablePost: MastodonContentPost) -> ActionBar.ViewModel {
+        return .init(post: actionablePost,
+                     actionHandler: viewModel.actionHandler,
+                     replies: actionButtonViewModel(forPost: actionablePost, action: .reply),
+                     boosts: actionButtonViewModel(forPost: actionablePost, action: .boost),
+                     favourites: actionButtonViewModel(forPost: actionablePost, action: .favourite),
+                     bookmark: actionButtonViewModel(forPost: actionablePost, action: .bookmark),
+                     isShowingTranslation: viewModel.isShowingTranslation,
+                     isDoingAction: viewModel.isDoingAction,
+                     myRelationshipToAuthor: viewModel.myRelationshipToAuthor)
+    }
+    
+    func overrideState(for postAction: PostAction, of actionablePost: MastodonContentPost) -> AsyncBool? {
+        switch (viewModel.isDoingAction, postAction) {
+        case (nil, _):
+             return nil
+        case (.boost, .boost), (.favourite, .favourite), (.bookmark, .bookmark):
+            return .settingToTrue
+        case (.unboost, .boost), (.unfavourite, .favourite), (.unbookmark, .bookmark):
+            return .settingToFalse
+        default:
+            return nil
+        }
+    }
+    
+    func actionButtonViewModel(forPost actionablePost: MastodonContentPost, action: PostAction) -> StatefulCountedActionViewModel {
+        let metrics = actionablePost.content.metrics
+        let myActions = actionablePost.content.myActions
+        let overrideState = overrideState(for: .reply, of: actionablePost)
+        switch action {
+        case .reply:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
+            return StatefulCountedActionViewModel(type: .reply, displayDetails: .init(count: metrics.replyCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler.doAction(.reply, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .boost:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
+            return StatefulCountedActionViewModel(type: .boost, displayDetails: .init(count: metrics.boostCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler.doAction(.boost, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler.doAction(.unboost, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .favourite:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.favorited)
+            return StatefulCountedActionViewModel(type: .favourite, displayDetails: .init(count: metrics.favoriteCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler.doAction(.favourite, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler.doAction(.unfavourite, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .bookmark:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.bookmarked)
+            return StatefulCountedActionViewModel(type: .bookmark, displayDetails: .init(count: nil, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler.doAction(.bookmark, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler.doAction(.unbookmark, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
         }
     }
     
@@ -284,55 +538,62 @@ private struct HashtagRowView: View {
 }
 
 private struct ActionBar: View {
-
-    var post: MastodonContentPost
-    var actionHandler: MastodonPostMenuActionHandler
-    var actionSender: MastodonPostMenuActionSender
     
-    @ObservedObject var replyModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.reply)
-    @ObservedObject var boostModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.boost)
-    @ObservedObject var favouriteModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.favourite)
-    @ObservedObject var bookmarkModel: StatefulCountedActionViewModel  //= StatefulCountedActionViewModel(.bookmark)
-    @Binding var isShowingTranslation: Bool?
-    @Binding var myRelationshipToAuthor: MastodonAccount.Relationship
+    struct ViewModel {
+        let post: MastodonContentPost
+        let actionHandler: MastodonPostMenuActionHandler
+        let replies: StatefulCountedActionViewModel
+        let boosts: StatefulCountedActionViewModel
+        let favourites: StatefulCountedActionViewModel
+        let bookmark: StatefulCountedActionViewModel
+        let isShowingTranslation: Bool?
+        let isDoingAction: MastodonPostMenuAction?
+        let myRelationshipToAuthor: MastodonAccount.Relationship
+    }
+    
+    let viewModel: ActionBar.ViewModel
 
     var body: some View {
         HStack() {
-            StatefulCountedActionButton(viewModel: replyModel)
+            StatefulCountedActionButton(viewModel: viewModel.replies)
             Spacer()
-            StatefulCountedActionButton(viewModel: boostModel)
+            StatefulCountedActionButton(viewModel: viewModel.boosts)
             Spacer()
-            StatefulCountedActionButton(viewModel: favouriteModel)
+            StatefulCountedActionButton(viewModel: viewModel.favourites)
             Spacer()
-            StatefulCountedActionButton(viewModel: bookmarkModel)
+            StatefulCountedActionButton(viewModel: viewModel.bookmark)
             Spacer()
-            menuButton
+            ActionBarMenuButton(viewModel: viewModel)
             Spacer()
         }
     }
     
-    @ViewBuilder var menuButton: some View {
-        Menu {
-            ForEach(submenus(), id: \.self.id) { submenu in
-                ForEach(submenu.items, id: \.self) { menuAction in
-                    Button(role: menuAction.isDestructive ? .destructive : nil) {
-                        actionHandler.doAction(menuAction, forPost: post, sender: actionSender)
-                    }
-                    label: {
-                        Label(menuAction.labelText(username: post.actionablePost?.metaData.author.displayInfo.displayName, postLanguage: post.actionablePost?.content.language), systemImage: menuAction.iconSystemName)
-                    }
-                }
-                Divider()
-            }
-        } label: {
-            Label("", systemImage: "ellipsis")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
+    struct ActionBarMenuButton: View {
+        let viewModel: ActionBar.ViewModel
         
-    func submenus() -> [MastodonPostMenuAction.Submenu] {
-        return MastodonPostMenuAction.menuItems(forPostBy: myRelationshipToAuthor, isShowingTranslation: isShowingTranslation)
+        var body: some View {
+            Menu {
+                ForEach(submenus(), id: \.self.id) { submenu in
+                    ForEach(submenu.items, id: \.self) { menuAction in
+                        Button(role: menuAction.isDestructive ? .destructive : nil) {
+                            viewModel.actionHandler.doAction(menuAction, forPost: viewModel.post)
+                        }
+                        label: {
+                            Label(menuAction.labelText(username: viewModel.post.actionablePost?.metaData.author.displayInfo.displayName, postLanguage: viewModel.post.actionablePost?.content.language), systemImage: menuAction.iconSystemName)
+                        }
+                    }
+                    Divider()
+                }
+            } label: {
+                Label("", systemImage: "ellipsis")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        
+        func submenus() -> [MastodonPostMenuAction.Submenu] {
+            return MastodonPostMenuAction.menuItems(forPostBy: viewModel.myRelationshipToAuthor, isShowingTranslation: viewModel.isShowingTranslation)
+        }
     }
 }
 
@@ -343,29 +604,24 @@ private enum PostViewComponent {
 }
 
 @MainActor
-class MastodonPostViewModel: ObservableObject {
+struct MastodonPostViewModel {
     
     let actionHandler: MastodonPostMenuActionHandler
     let post: GenericMastodonPost
-
-    public let replyModel = StatefulCountedActionViewModel(.reply)
-    public let boostModel = StatefulCountedActionViewModel(.boost)
-    public let favouriteModel = StatefulCountedActionViewModel(.favourite)
-    public let bookmarkModel = StatefulCountedActionViewModel(.bookmark)
-
-    @Published var isShowingTranslation: Bool?
-    @Published var myRelationshipToAuthor: MastodonAccount.Relationship
-    
-    var translatedContents: Mastodon.Entity.Translation?
+    let isShowingTranslation: Bool?
+    let isDoingAction: MastodonPostMenuAction?
+    let myRelationshipToAuthor: MastodonAccount.Relationship
 
     init(
         post: GenericMastodonPost,
         isShowingTranslation: Bool?,
+        isDoingAction: MastodonPostMenuAction?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
         actionHandler: MastodonPostMenuActionHandler
     ) {
         self.post = post
         self.isShowingTranslation = isShowingTranslation
+        self.isDoingAction = isDoingAction
         self.myRelationshipToAuthor = myRelationshipToAuthor
         self.actionHandler = actionHandler
 
@@ -374,17 +630,6 @@ class MastodonPostViewModel: ObservableObject {
             assertionFailure("unexpected post type")
             return
         }
-        let myActions = actionablePost.content.myActions
-        let metrics = actionablePost.content.metrics
-        replyModel.update(count: metrics.replyCount)
-        boostModel.update(
-            count: metrics.boostCount,
-            isSelected: AsyncBool.fromBool(myActions.boosted))
-        favouriteModel.update(
-            count: metrics.favoriteCount,
-            isSelected: AsyncBool.fromBool(myActions.favorited))
-        bookmarkModel.update(
-            isSelected: AsyncBool.fromBool(myActions.bookmarked))
     }
 }
 
@@ -414,7 +659,7 @@ fileprivate extension MastodonPostViewModel {
         guard let actionablePost = post.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
         let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         
-        if isShowingTranslation == true, let actionableId = post.actionablePost?.id, let translation = translatedContents?.content {
+        if isShowingTranslation == true, let translation = actionHandler.translation(forContentPostId: actionablePost.id)?.content {
             return .timelinePost(html: translation, emojis: emojis)
         } else {
             return .timelinePost(html: untranslatedContent, emojis: emojis)
@@ -435,50 +680,177 @@ fileprivate extension MastodonPostViewModel {
     }
 }
 
-extension MastodonPostViewModel: MastodonPostMenuActionSender {
-    func actionDone(_ action: MastodonPostMenuAction, error: (any Error)?) {
-        guard error == nil else { return }  // TODO: maybe need some view clean up
-        switch action {
-        case .translatePost:
-            guard let actionableID = post.actionablePost?.id, let translation = actionHandler.translation(forContentPostId: actionableID) else { return }
-            translatedContents = translation
-            isShowingTranslation = true
-        case .showOriginalLanguage:
-            isShowingTranslation = false
-        default:
-            break
-        }
-    }
-}
-
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
-    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost, sender: MastodonPostMenuActionSender?) {
+    func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition) {
+        parentVcPresentScene?(scene, transition)
+    }
+    
+    func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost) {
+        
+        // Check not currently performing an action.
+        guard isPerformingPostAction == nil && isPerformingAccountAction == nil else { return }
+        
+        guard let authenticatedUser, let actionablePost = post.actionablePost else { return }
+
+        let author = actionablePost.metaData.author
+        let relationshipInfo = myRelationship(to: author).info
+        
+        // Inform of what action is being done. These are cleared upon success or error, and in onAppear() of the view.
+        if action.updatesMyActionsOnPost {
+            self.isPerformingPostAction = (action, actionablePost)
+        } else if action.updatesMyRelationshipToAuthor {
+            self.isPerformingAccountAction = (action, author)
+        }
+        
         Task {
             do {
-                let author = post.actionablePost?.metaData.author
-                let relationship = myRelationship(to: author)
                 switch action {
+            
+            // MARK: ACTION BAR
+                case .reply:
+                    guard let actionablePost = post.actionablePost else { throw PostActionFailure.noActionablePostId }
+                    let statusEntityToReplyTo = try await APIService.shared.status(statusID: actionablePost.id, authenticationBox: authenticatedUser).value
+                    let composeViewModel = ComposeViewModel(
+                        authenticationBox: authenticatedUser,
+                        composeContext: .composeStatus,
+                        destination: .reply(parent: MastodonStatus(entity: statusEntityToReplyTo, showDespiteContentWarning: true))
+                    )
+                    presentScene(.compose(viewModel: composeViewModel), transition: .modal(animated: true, completion: nil))
+                case .boost:
+                    Task {
+                        await boost(actionablePost.id, askFirst: UserDefaults.standard.askBeforeBoostingAPost)
+                    }
+                case .unboost, .favourite, .unfavourite, .bookmark, .unbookmark:
+                    let updated: Mastodon.Entity.Status?
+                    switch action {
+                    case .unboost:
+                        updated = try await APIService.shared.unboost(boostableStatusId: actionablePost.id, authenticationBox: authenticatedUser)
+                    case .favourite:
+                        updated = try await APIService.shared.favourite(actionableStatusID: actionablePost.id, authenticationBox: authenticatedUser)
+                    case .unfavourite:
+                        updated = try await APIService.shared.unfavourite(actionableStatusId: actionablePost.id, authenticationBox: authenticatedUser)
+                    case .bookmark:
+                        updated = try await APIService.shared.bookmark(actionableStatusId: actionablePost.id, authenticationBox: authenticatedUser)
+                    case .unbookmark:
+                        updated = try await APIService.shared.unbookmark(actionableStatusId: actionablePost.id, authenticationBox: authenticatedUser)
+                    default:
+                        assertionFailure("not implemented")
+                        updated = nil
+                    }
+                    if let updated {
+                        feedLoader?.updatePost(post: GenericMastodonPost.fromStatus(updated))
+                    }
+                    clearPendingActions()
+                    
+            // MARK: TRANSLATE
                 case .translatePost:
-                    try await showTranslation(forPost: post)
+                    try await showTranslation(forPost: actionablePost)
                 case .showOriginalLanguage:
-                    translationsShowing.remove(post.id)
-                case .follow, .unfollow:
-                    print("my current relationship to \(author?.handle) is:")
-                    print("\(relationship)")
-                default:
+                    translationsShowing.remove(actionablePost.id)
+                    
+            // MARK: EDIT
+                case .editPost:
+                    guard let actionablePost = post.actionablePost else { throw PostActionFailure.noActionablePostId }
+                    let statusEntityToEdit = try await APIService.shared.status(statusID: actionablePost.id, authenticationBox: authenticatedUser).value
+                    let statusSourceToEdit = try await APIService.shared.getStatusSource(
+                        forStatusID: actionablePost.id,
+                        authenticationBox: authenticatedUser
+                    ).value
+                    
+                    let editStatusViewModel = ComposeViewModel(
+                        authenticationBox: authenticatedUser,
+                        composeContext: .editStatus(status: MastodonStatus(entity: statusEntityToEdit, showDespiteContentWarning: true), statusSource: statusSourceToEdit),
+                        destination: .topLevel)
+                    presentScene(.editStatus(viewModel: editStatusViewModel), transition: .modal(animated: true))
+                    
+            // MARK: POST ACTIONS
+                case .copyLinkToPost:
+                    guard let urlString = post.actionablePost?.metaData.url else { throw PostActionFailure.noActionablePostId }
+                    UIPasteboard.general.string = urlString
+                    
+                case .openPostInBrowser:
+                    guard let urlString = post.actionablePost?.metaData.url, let url = URL(string: urlString) else { throw PostActionFailure.noActionablePostId }
+                    presentScene(.safari(url: url), transition: .safariPresent(animated: true))
+                    
+                case .sharePost:
                     break
+
+            // MARK: RELATIONSHIP ACTIONS
+                    
+                case .follow:
+                    guard relationshipInfo?.canFollow == true else { throw PostActionFailure.noRelationshipInfo }
+                    Task {
+                        await commitFollow(author.id)
+                    }
+                    
+                case .unfollow:
+                    await doUnfollow(author, askFirst: UserDefaults.standard.askBeforeUnfollowingSomeone)
+
+                case .mute:
+                    activeAlert = .confirmMute(username: author.displayInfo.displayName, didConfirm: { [weak self] in
+                        Task {
+                            await self?.commitMute(author.id)
+                        }
+                    })
+                    
+                case .unmute:
+                    activeAlert = .confirmUnmute(username: author.displayInfo.displayName, didConfirm: { [weak self] in
+                        Task {
+                            await self?.commitUnmute(author.id)
+                        }
+                    })
+                    
+            // MARK: DEFENSIVE ACTIONS
+                case .blockUser:
+                    activeAlert = .confirmBlock(username: author.displayInfo.displayName, didConfirm: { [weak self] in
+                        Task {
+                            await self?.commitBlock(author.id)
+                        }
+                    })
+                    
+                case .unblockUser:
+                    activeAlert = .confirmUnblock(username: author.displayInfo.displayName, didConfirm: { [weak self] in
+                        Task {
+                            await self?.commitUnblock(author.id)
+                        }
+                    })
+                    
+                case .reportUser:
+                    guard let relationship = try await APIService.shared.relationship(forAccountIds: [author.id], authenticationBox: authenticatedUser).value.first else { throw PostActionFailure.noRelationshipInfo }
+                    let accountToReport = try await APIService.shared.accountInfo(domain: authenticatedUser.domain, userID: author.id, authorization: authenticatedUser.userAuthorization)
+                    
+                    let statusEntity: Mastodon.Entity.Status?
+                    if let postIdToReport = post.actionablePost?.id {
+                        statusEntity = try? await APIService.shared.status(statusID: postIdToReport, authenticationBox: authenticatedUser).value
+                    } else {
+                        statusEntity = nil
+                    }
+                    
+                    let reportViewModel = ReportViewModel(
+                        context: AppContext.shared,
+                        authenticationBox: authenticatedUser,
+                        account: accountToReport,
+                        relationship: relationship,
+                        status: statusEntity == nil ? nil : MastodonStatus(entity: statusEntity!, showDespiteContentWarning: true),
+                        contentDisplayMode: .neverConceal
+                    )
+                    presentScene(.report(viewModel: reportViewModel), transition: .modal(animated: true, completion: nil))
+                    
+            // MARK: DELETE
+                case .deletePost:
+                    guard let postID = post.actionablePost?.id else { throw PostActionFailure.noActionablePostId }
+                    try await deletePost(postID, askFirst: UserDefaults.shared.askBeforeDeletingAPost)
                 }
-                sender?.actionDone(action, error: nil)
             } catch {
                 // TODO: handle error in a way the user can see it
-                sender?.actionDone(action, error: error)
                 assertionFailure()
+                clearPendingActions()
             }
         }
     }
-    
+
     func canTranslate(post: MastodonContentPost) -> Bool {
-        guard let postLanguage = post.actionablePost?.content.language else { return false }
+        guard let postLanguage = post.content.language else { return false }
         guard let deviceLanguage = Bundle.main.preferredLocalizations.first else { return false }
         guard deviceLanguage != postLanguage else { return false }
     
@@ -492,7 +864,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
         return translations[postId]
     }
     
-    
+    // TRANSLATION
     private func showTranslation(forPost post: MastodonContentPost) async throws {
         
         if let availableTranslation = translations[post.id] {
@@ -514,6 +886,139 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
         }
     }
     
+    // BOOST with optional confirmation dialog
+    func boost(_ actionablePostId: Mastodon.Entity.Status.ID, askFirst: Bool) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            
+            if askFirst {
+                activeAlert = .confirmBoostOfPost(didConfirm: {
+                    Task {
+                        await self.boost(actionablePostId, askFirst: false)
+                    }
+                })
+            } else {
+                let updated = try await APIService.shared.boost(boostableStatusId: actionablePostId, authenticationBox: authenticatedUser)
+                feedLoader?.updatePost(post: GenericMastodonPost.fromStatus(updated))
+                clearPendingActions()
+            }
+        } catch {
+            // TODO: make visible to user
+            clearPendingActions()
+        }
+    }
+    
+    // RELATIONSHIP ACTIONS
+    
+    func doUnfollow(_ author: MastodonAccount, askFirst: Bool) async {
+        do {
+            if askFirst {
+                activeAlert = .confirmUnfollow(username: author.displayInfo.displayName, didConfirm: { [weak self] in
+                    Task {
+                        await self?.doUnfollow(author, askFirst: false)
+                    }
+                })
+            } else {
+                guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+                let response = try await APIService.shared.unfollow(author.id, authenticationBox: authenticatedUser)
+                let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+                feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: author.id)
+                AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+            }
+        } catch {
+            // TODO: make visible to user
+            assert(false)
+        }
+        isPerformingAccountAction = nil
+    }
+    
+    func commitFollow(_ accountID: Mastodon.Entity.Account.ID) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            let response = try await APIService.shared.follow(accountID, authenticationBox: authenticatedUser)
+            let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+            feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: accountID)
+            AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+        } catch {
+            // TODO: make visible to user
+        }
+        isPerformingAccountAction = nil
+    }
+    
+    func commitMute(_ accountID: Mastodon.Entity.Account.ID) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            let response = try await APIService.shared.mute(accountID, authenticationBox: authenticatedUser)
+            let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+            feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: accountID)
+            AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+        } catch {
+            // TODO: make visible to user
+        }
+        isPerformingAccountAction = nil
+    }
+    
+    func commitUnmute(_ accountID: Mastodon.Entity.Account.ID) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            let response = try await APIService.shared.unmute(accountID, authenticationBox: authenticatedUser)
+            let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+            feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: accountID)
+            AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+        } catch {
+            // TODO: make visible to user
+        }
+        isPerformingAccountAction = nil
+    }
+     
+    // DEFENSIVE ACTIONS
+    
+    func commitBlock(_ accountID: Mastodon.Entity.Account.ID) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            let response = try await APIService.shared.block(accountID, authenticationBox: authenticatedUser)
+            let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+            feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: accountID)
+            AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+        } catch {
+            // TODO: make visible to user
+        }
+        isPerformingAccountAction = nil
+    }
+    
+    func commitUnblock(_ accountID: Mastodon.Entity.Account.ID) async {
+        do {
+            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+            let response = try await APIService.shared.unblock(accountID, authenticationBox: authenticatedUser)
+            let newRelationshipInfo = MastodonAccount.RelationshipInfo(response, fetchedAt: .now)
+            feedLoader?.updateMyRelationship(.isNotMe(newRelationshipInfo), to: accountID)
+            AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+        } catch {
+            // TODO: make visible to user
+        }
+        isPerformingAccountAction = nil
+    }
+    
+    func deletePost(_ postID: Mastodon.Entity.Status.ID, askFirst: Bool) async {
+        do {
+            if askFirst {
+                activeAlert = .confirmDeleteOfPost(didConfirm: {
+                    Task {
+                        await self.deletePost(postID, askFirst: false)
+                    }
+                })
+            } else {
+                guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+                let deletedStatus = try await APIService.shared.deleteContentPost(postID, authenticationBox: authenticatedUser)
+                feedLoader?.didDeletePost(deletedStatus.id)
+                self.clearPendingActions()
+            }
+        } catch {
+            self.clearPendingActions()
+            // TODO: make visible to user
+        }
+    }
+    
 }
 
 extension GenericMastodonPost {
@@ -524,6 +1029,7 @@ extension GenericMastodonPost {
         } else if let boost = self as? MastodonBoostPost {
             actionablePost = boost.boostedPost
         } else {
+            assertionFailure("not implemented")
             actionablePost = nil
         }
         return actionablePost

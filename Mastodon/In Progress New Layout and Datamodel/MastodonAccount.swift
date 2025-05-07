@@ -130,6 +130,15 @@ extension MastodonAccount {
     enum Relationship: Codable {
         case isMe
         case isNotMe(RelationshipInfo?)
+        
+        var info: RelationshipInfo? {
+            switch self {
+            case .isMe:
+                return nil
+            case .isNotMe(let info):
+                return info
+            }
+        }
     }
     
     struct RelationshipInfo: Codable {
@@ -147,6 +156,14 @@ extension MastodonAccount {
             iHaveRequestedToFollowThem = entity.requested
             iAmMutingThem = entity.muting
             iAmBlockingThem = entity.blocking
+        }
+        
+        var canFollow: Bool {
+            return !iFollowThem && !iHaveRequestedToFollowThem
+        }
+        
+        var canUnfollow: Bool {
+            return iFollowThem || iHaveRequestedToFollowThem
         }
     }
 }

@@ -17,6 +17,21 @@ extension GenericMastodonPost {
     
 }
 
+extension GenericMastodonPost {
+    func byReplacingActionablePost(with updatedPost: GenericMastodonPost) throws -> GenericMastodonPost {
+        if let basicPost = self as? MastodonBasicPost {
+            guard basicPost.id == updatedPost.id else { throw PostActionFailure.postIdMismatch }
+            return updatedPost
+        } else if let boostPost = self as? MastodonBoostPost {
+            guard boostPost.boostedPost.id == updatedPost.id, let updatedPost = updatedPost as? MastodonContentPost else { throw PostActionFailure.postIdMismatch }
+            return MastodonBoostPost(id: boostPost.id, metaData: boostPost.metaData, boostedPost: updatedPost)
+        } else {
+            assertionFailure("not implemented")
+            return self
+        }
+    }
+}
+
 class MastodonContentPost: GenericMastodonPost {
     let content: GenericMastodonPost.PostContent
     

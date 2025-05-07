@@ -75,4 +75,49 @@ extension APIService {
 
         return response
     }   // end func
+    
+    public func bookmark(
+        actionableStatusId: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let response = try await Mastodon.API.Bookmarks.bookmarks(
+                domain: authenticationBox.domain,
+                statusID: actionableStatusId,
+                session: session,
+                authorization: authenticationBox.userAuthorization,
+                bookmarkKind: .create
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
+    
+    public func unbookmark(
+        actionableStatusId: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let response = try await Mastodon.API.Bookmarks.bookmarks(
+                domain: authenticationBox.domain,
+                statusID: actionableStatusId,
+                session: session,
+                authorization: authenticationBox.userAuthorization,
+                bookmarkKind: .destroy
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
+    
 }

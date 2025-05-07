@@ -38,6 +38,28 @@ extension APIService {
         return response
     }
     
+    public func block(_ account: Mastodon.Entity.Account.ID, authenticationBox: MastodonAuthenticationBox) async throws -> Mastodon.Entity.Relationship {
+        let response = try await Mastodon.API.Account.block(
+            session: session,
+            domain: authenticationBox.domain,
+            accountID: account,
+            authorization: authenticationBox.userAuthorization
+        ).singleOutput()
+        
+        return response.value
+    }
+    
+    public func unblock(_ account: Mastodon.Entity.Account.ID, authenticationBox: MastodonAuthenticationBox) async throws -> Mastodon.Entity.Relationship {
+        let response = try await Mastodon.API.Account.unblock(
+            session: session,
+            domain: authenticationBox.domain,
+            accountID: account,
+            authorization: authenticationBox.userAuthorization
+        ).singleOutput()
+        
+        return response.value
+    }
+    
     public func toggleBlock(
         account: Mastodon.Entity.Account,
         authenticationBox: MastodonAuthenticationBox
