@@ -174,10 +174,6 @@ private class HomeTimelineListViewModel: ObservableObject {
         return feedLoader?.myRelationship(to: account.id) ?? .isNotMe(nil)
     }
     
-//    func isActing(onPost: MastodonContentPost, account: MastodonAccount?) -> MastodonPostMenuAction? {
-//        
-//    }
-    
     func rowViewModel(for post: GenericMastodonPost, translationsToShow: Set<Mastodon.Entity.Status.ID>, isPerformingAction: MastodonPostMenuAction?) -> MastodonPostViewModel {
         let actionablePost = post.actionablePost
         let actionableAuthor = actionablePost?.metaData.author
