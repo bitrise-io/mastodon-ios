@@ -54,18 +54,20 @@ extension APIService {
         return response
     }
     
+    /// If visibility is nil, will use the account's default visibility
     public func boost(
         boostableStatusId: Mastodon.Entity.Status.ID,
+        withVisibility visibility: Mastodon.Entity.Source.Privacy? = nil,
         authenticationBox: MastodonAuthenticationBox
     ) async throws -> Mastodon.Entity.Status {
         let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
         do {
-            let defaultVisibility = Mastodon.Entity.Source.Privacy.public
+            let defaultVisibility = authenticationBox.authentication.cachedAccount()?.source?.privacy ?? .public
             let response = try await Mastodon.API.Reblog.reblog(
                 session: session,
                 domain: authenticationBox.domain,
                 statusID: boostableStatusId,
-                reblogKind: .reblog(query: Mastodon.API.Reblog.ReblogQuery(visibility: defaultVisibility)),
+                reblogKind: .reblog(query: Mastodon.API.Reblog.ReblogQuery(visibility: visibility ?? defaultVisibility)),
                 authorization: authenticationBox.userAuthorization
             ).singleOutput()
             result = .success(response)
