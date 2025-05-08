@@ -1297,11 +1297,6 @@
 				NotificationRowViewModel.swift,
 				NotificationsCacheManager.swift,
 				TimelineFeedLoader.swift,
-				TimelinePostCell/ActionButtons.swift,
-				TimelinePostCell/AuthorHeader.swift,
-				TimelinePostCell/BoostHeader.swift,
-				TimelinePostCell/MediaGrid.swift,
-				TimelinePostCell/TimelinePostCell.swift,
 			);
 			target = DB427DD125BAA00100D1B89D /* Mastodon */;
 		};
