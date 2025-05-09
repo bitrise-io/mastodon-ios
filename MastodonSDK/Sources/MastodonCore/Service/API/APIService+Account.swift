@@ -31,6 +31,15 @@ extension APIService {
         return account
     }
     
+    public func accountsInfo(userIDs: [String], authenticationBox: MastodonAuthenticationBox) async throws -> [Mastodon.Entity.Account] {
+        let accounts = try await Mastodon.API.Account.accountsInfo(
+            session: session,
+            domain: authenticationBox.domain,
+            userIDs: userIDs,
+            authorization: authenticationBox.userAuthorization
+        ).singleOutput().value
+        return accounts
+    }
 }
 
 extension APIService {

@@ -97,7 +97,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         
         createContentConcealViewModels(newCache)
         try await fetchRelationships(newCache)
-        try await fetchReplyTos(newCache)
+        try? await fetchReplyTos(newCache)
         
         return newCache
     }
@@ -370,6 +370,12 @@ extension TimelineFeedLoader {
                 }
             }
         }
+        
+        let accounts = try await APIService.shared.accountsInfo(userIDs: needToFetch, authenticationBox: authenticatedUser)
+        for account in accounts {
+            accountsCache[account.id] = MastodonAccount.fromEntity(account)
+        }
+        // TODO: handle servers < 4.3.0 by looking up each account individually?
     }
 }
 

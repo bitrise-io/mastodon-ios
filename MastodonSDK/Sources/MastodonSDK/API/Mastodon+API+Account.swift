@@ -52,6 +52,56 @@ extension Mastodon.API.Account {
             .eraseToAnyPublisher()
     }
     
+    /// Retrieve information
+    ///
+    /// Get information about multiple profiles.
+    ///
+    /// - Since: 4.3.0
+    /// - Version: 4.3.0
+    /// # Reference
+    ///   [Document](https://docs.joinmastodon.org/methods/accounts/)
+    /// - Parameters:
+    ///   - session: `URLSession`
+    ///   - domain: Mastodon instance domain. e.g. "example.com"
+    ///   - query: `MultipleAccountsQuery` with array of account ids,
+    ///   - authorization: user token
+    /// - Returns: `AnyPublisher` contains array of `Account` nested in the response
+    public static func accountsInfo(
+        session: URLSession,
+        domain: String,
+        userIDs: [Mastodon.Entity.Account.ID],
+        authorization: Mastodon.API.OAuth.Authorization?
+    ) -> AnyPublisher<Mastodon.Response.Content<[Mastodon.Entity.Account]>, Error> {
+        let request = Mastodon.API.get(
+            url: Mastodon.API.endpointURL(domain: domain)
+                .appendingPathComponent("accounts"),
+            query: MultipleAccountsQuery(ids: userIDs),
+            authorization: authorization
+        )
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response in
+                let value = try Mastodon.API.decode(type: Array<Mastodon.Entity.Account>.self, from: data, response: response)
+                return Mastodon.Response.Content(value: value, response: response)
+            }
+            .eraseToAnyPublisher()
+    }
+    
+    public struct MultipleAccountsQuery: GetQuery {
+        public let ids: [Mastodon.Entity.Account.ID]
+        
+        public init(ids: [Mastodon.Entity.Account.ID]) {
+            self.ids = ids
+        }
+        
+        var queryItems: [URLQueryItem]? {
+            var items: [URLQueryItem] = []
+            for id in ids {
+                items.append(URLQueryItem(name: "id[]", value: id))
+            }
+            guard !items.isEmpty else { return nil }
+            return items
+        }
+    }
 }
 
 extension Mastodon.API.Account {
