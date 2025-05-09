@@ -52,6 +52,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     private let authenticatedUser: MastodonAuthenticationBox
     private let authenticatedUserID: Mastodon.Entity.Account.ID?
     private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
+    private var accountsCache = [Mastodon.Entity.Account.ID : MastodonAccount]()
     private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
     
     init(currentUser: MastodonAuthenticationBox) {
@@ -96,6 +97,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         
         createContentConcealViewModels(newCache)
         try await fetchRelationships(newCache)
+        try await fetchReplyTos(newCache)
         
         return newCache
     }
@@ -333,6 +335,40 @@ extension TimelineFeedLoader {
         let currentTimestamp = Date.now
         for relationshipEntity in relationships {
             cachedRelationships[relationshipEntity.id] = MastodonAccount.Relationship.isNotMe(MastodonAccount.RelationshipInfo(relationshipEntity, fetchedAt: currentTimestamp))
+        }
+    }
+}
+
+// MARK: Accounts Cache
+extension TimelineFeedLoader {
+    func account(_ id: Mastodon.Entity.Account.ID) -> MastodonAccount? {
+        return accountsCache[id]
+    }
+    
+    private func fetchReplyTos(_ timeline: CacheableTimeline) async throws {
+        for item in timeline.items {
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                break
+            case .post(let post):
+                accountsCache[post.metaData.author.id] = post.metaData.author
+                if let contentPost = post.actionablePost, contentPost.id != post.id {
+                    accountsCache[post.metaData.author.id] = post.metaData.author
+                }
+            }
+        }
+        let needToFetch: [Mastodon.Entity.Account.ID] = timeline.filteredPosts.compactMap { item -> Mastodon.Entity.Account.ID? in
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                return nil
+            case .post(let post):
+                guard let basicPost = post as? MastodonBasicPost, let inReplyTo = basicPost.inReplyTo?.accountID else { return nil }
+                if let alreadyCached = accountsCache[inReplyTo] {
+                    return nil
+                } else {
+                    return inReplyTo
+                }
+            }
         }
     }
 }

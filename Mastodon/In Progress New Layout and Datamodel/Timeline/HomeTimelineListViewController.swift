@@ -652,10 +652,11 @@ fileprivate extension MastodonPostViewModel {
             return .boosted(by: post.metaData.author.displayInfo.displayName, emojis: post.metaData.author.displayInfo.emojis)
         } else if let basicPost = post as? MastodonBasicPost {
             // REPLIED and/or PRIVATE MENTION
-            let isReply = basicPost.inReplyTo != nil
             let isPrivate = basicPost.metaData.privacyLevel == .mentionedOnly
-            if isReply {
-                return .reply(to: basicPost.inReplyTo?.accountID ?? "??", isPrivate: isPrivate, isNotification: false, emojis: [])
+            let replyInfo = basicPost.inReplyTo
+            if let replyInfo {
+                let replyToAccount = actionHandler.account(replyInfo.accountID)
+                return .reply(to: replyToAccount?.displayInfo.displayName ?? "unknown", isPrivate: isPrivate, isNotification: false, emojis: replyToAccount?.displayInfo.emojis ?? [])
             } else if isPrivate {
                 return .mention(isPrivate: true)
             }
@@ -684,6 +685,10 @@ fileprivate extension MastodonPostViewModel {
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition) {
         parentVcPresentScene?(scene, transition)
+    }
+    
+    func account(_ id: Mastodon.Entity.Account.ID) -> MastodonAccount? {
+        return feedLoader?.account(id)
     }
     
     func doAction(_ action: MastodonPostMenuAction, forPost post: MastodonContentPost) {
