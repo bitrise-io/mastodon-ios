@@ -1100,11 +1100,11 @@ extension ContentConcealViewModel {
         switch currentMode {
         case .neverConceal, .concealMediaOnly:
             return nil
-        case .concealAll(reasons: let reasons, _):
+        case .concealAll:
             if currentModeIsFilter {
-                return whenHiding ? "Show anyway" : "Hide"
+                return whenHiding ? L10n.Common.Controls.Status.showAnyway : L10n.Common.Controls.Status.Actions.hide
             } else {
-                return whenHiding ? "Show more" : "Hide"
+                return whenHiding ? L10n.Common.Controls.Status.showMore : L10n.Common.Controls.Status.Actions.hide
             }
         }
     }

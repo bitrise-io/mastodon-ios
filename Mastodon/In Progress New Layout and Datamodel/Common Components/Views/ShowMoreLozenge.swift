@@ -45,7 +45,7 @@ class ShowMoreViewModel: ObservableObject {
     init(isShowing: Bool, isFilter: Bool, reasons: [String],  showMore: @escaping (Bool) -> Void) {
         if isFilter {
             self.reasons = reasons.map({ filterTitle in
-                var attributed = AttributedString("Matches filter: \"\(filterTitle)\"")
+                var attributed = AttributedString(L10n.Common.Controls.Status.matchesFilter(filterTitle))
                 attributed.font = .subheadline
                 attributed.foregroundColor = .secondaryLabel
                 

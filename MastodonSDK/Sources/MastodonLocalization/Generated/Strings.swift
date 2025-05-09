@@ -347,6 +347,10 @@ public enum L10n {
         }
         /// Load Embed
         public static let loadEmbed = L10n.tr("Localizable", "Common.Controls.Status.LoadEmbed", fallback: "Load Embed")
+        /// Matches filter: "%@"
+        public static func matchesFilter(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Common.Controls.Status.MatchesFilter", String(describing: p1), fallback: "Matches filter: \"%@\"")
+        }
         /// Tap anywhere to reveal
         public static let mediaContentWarning = L10n.tr("Localizable", "Common.Controls.Status.MediaContentWarning", fallback: "Tap anywhere to reveal")
         /// Mention
@@ -363,6 +367,10 @@ public enum L10n {
         public static let reply = L10n.tr("Localizable", "Common.Controls.Status.Reply", fallback: "Reply")
         /// Sensitive Content
         public static let sensitiveContent = L10n.tr("Localizable", "Common.Controls.Status.SensitiveContent", fallback: "Sensitive Content")
+        /// Show anyway
+        public static let showAnyway = L10n.tr("Localizable", "Common.Controls.Status.ShowAnyway", fallback: "Show anyway")
+        /// Show more
+        public static let showMore = L10n.tr("Localizable", "Common.Controls.Status.ShowMore", fallback: "Show more")
         /// Show Post
         public static let showPost = L10n.tr("Localizable", "Common.Controls.Status.ShowPost", fallback: "Show Post")
         /// Show user profile
