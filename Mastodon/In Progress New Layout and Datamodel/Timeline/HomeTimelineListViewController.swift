@@ -196,10 +196,21 @@ private class HomeTimelineListViewModel: ObservableObject {
         }()
         let rowViewModel = MastodonPostViewModel(post: post,
                                                  isShowingTranslation: isShowingTranslation,
-                                                 isDoingAction: isDoingAction,
                                                  myRelationshipToAuthor: relationship,
+                                                 isDoingAction: isDoingAction,
                                                  actionHandler: self)
         return rowViewModel
+    }
+    
+    func contentConcelModel(forPost post: GenericMastodonPost) -> ContentConcealViewModel {
+        
+        func dummyModel() -> ContentConcealViewModel {
+            return ContentConcealViewModel(contentPost: nil, context: nil)
+        }
+        
+        guard let actionablePost = post.actionablePost else { return dummyModel() }
+        return feedLoader?.contentConcealViewModel(forContentPost: actionablePost)
+        ?? dummyModel()
     }
 }
 
@@ -234,7 +245,9 @@ struct HomeTimelineListView: View {
                             let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
                             
                             let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
-                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction), contentWidth: contentWidth)
+                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
+                                contentConcealModel: viewModel.contentConcelModel(forPost: post),
+                                contentWidth: contentWidth)
                             .padding(spacingBetweenGutterAndContent)
                             .listRowInsets(
                                 EdgeInsets(
@@ -345,6 +358,7 @@ struct HomeTimelineListView: View {
 private struct HomeTimelinePostRowView: View {
 
     let viewModel: MastodonPostViewModel
+    @ObservedObject var contentConcealModel: ContentConcealViewModel
     let contentWidth: CGFloat
     
     let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
@@ -355,24 +369,48 @@ private struct HomeTimelinePostRowView: View {
             viewModel.socialContextHeader
             AuthorHeaderView(author: viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author)
             
-            if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
-                TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
-                )
-                .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
-                .alignmentGuide(.gutterAlign) { d in
-                    return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
+            contentConcealLozenge
+                .frame(width: contentWidth)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            if contentConcealModel.currentMode.isShowingContent {
+                if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
+                    TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
+                    )
+                    .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
+                    .alignmentGuide(.gutterAlign) { d in
+                        return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
+                    }
                 }
-            }
-            viewModel.textContentView
-                .frame(width: contentWidth, alignment: .leading)
+                viewModel.textContentView
+                    .frame(width: contentWidth, alignment: .leading)
                 
-            if let attachment = viewModel.attachmentComponent {
-                componentView(attachment)
+                if let attachment = viewModel.post.actionablePost?.content.attachment {
+                    switch attachment {
+                    case .media(let array):
+                        if contentConcealModel.currentMode.isShowingContent {
+                            MediaAttachmentView(array).view(withContentConcealModel: contentConcealModel)
+                                .frame(width: contentWidth)
+                        }
+                    case .poll(let poll):
+                        HStack {
+                            Image(systemName: "checklist")
+                            Text("a poll")
+                        }
+                        .frame(width: contentWidth)
+                    case .linkPreviewCard(let card):
+                        HStack {
+                            Image(systemName: "text.below.photo")
+                            Text("a link preview")
+                        }
+                        .frame(width: contentWidth)
+                    }
+                }
             }
             
             if let actionablePost = viewModel.post.actionablePost {
                 ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
-                .frame(width: contentWidth, alignment: .leading)
+                    .frame(width: contentWidth, alignment: .leading)
             }
         }
     }
@@ -460,17 +498,23 @@ private struct HomeTimelinePostRowView: View {
         switch component {
         case .content(let string):
             PostContentView(text: string)
-        case .attachment(let attachment):
-            switch attachment {
-            case .linkPreviewCard(let card):
-                LinkPreviewView(linkPreview: card)
-            case .media(let media):
-                MediaAttachmentView(media: media)
-            case .poll(let poll):
-                PollView(poll: poll)
-            }
         case .hashtags(let tags):
             HashtagRowView(hashtags: tags)
+        }
+    }
+}
+
+extension HomeTimelinePostRowView {
+    @ViewBuilder var contentConcealLozenge: some View {
+        if let whenHiding = contentConcealModel.buttonText(whenHiding: true), let whenShowing = contentConcealModel.buttonText(whenHiding: false) {
+            ShowMoreLozenge(buttonTextWhenHiding: whenHiding, buttonTextWhenShowing: whenShowing, viewModel: ShowMoreViewModel(isShowing: contentConcealModel.currentMode.isShowingContent, isFilter: contentConcealModel.currentModeIsFilter, reasons: contentConcealModel.currentMode.reasons ?? [], showMore: {
+                show in
+                if show {
+                    contentConcealModel.showMore()
+                } else {
+                    contentConcealModel.hide()
+                }
+            }))
         }
     }
 }
@@ -481,31 +525,6 @@ private struct PostContentView: View {
     
     var body: some View {
         Text(text)
-    }
-}
-
-private struct MediaAttachmentView: View {
-    let media: [Mastodon.Entity.Attachment]
-    
-    var body: some View {
-        let description = {
-            switch media.first?.type {
-            case nil:
-                return "no attachment!"
-            case .image:
-                return "\(media.count) images"
-            case .gifv:
-                return "a GIFV"
-            case .video:
-                return "a video"
-            case .audio:
-                return "an audio"
-            default:
-                return "unknown attachment"
-            }
-        }()
-        Text(description)
-            .lineLimit(nil)
     }
 }
 
@@ -595,7 +614,6 @@ private struct ActionBar: View {
 
 private enum PostViewComponent {
     case content(String)
-    case attachment(GenericMastodonPost.PostAttachment)
     case hashtags([String])
 }
 
@@ -611,21 +629,17 @@ struct MastodonPostViewModel {
     init(
         post: GenericMastodonPost,
         isShowingTranslation: Bool?,
-        isDoingAction: MastodonPostMenuAction?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
+        isDoingAction: MastodonPostMenuAction?,
         actionHandler: MastodonPostMenuActionHandler
     ) {
         self.post = post
         self.isShowingTranslation = isShowingTranslation
-        self.isDoingAction = isDoingAction
         self.myRelationshipToAuthor = myRelationshipToAuthor
+        self.isDoingAction = isDoingAction
         self.actionHandler = actionHandler
-
-        let actionablePost = post.actionablePost
-        guard let actionablePost else {
-            assertionFailure("unexpected post type")
-            return
-        }
+        
+        assert(post.actionablePost != nil, "unexpected post type")
     }
 }
 
@@ -660,15 +674,6 @@ fileprivate extension MastodonPostViewModel {
         } else {
             return .timelinePost(html: untranslatedContent, emojis: emojis)
         }
-    }
-    
-    var attachmentComponent: PostViewComponent? {
-        if let boost = post as? MastodonBoostPost, let basicPost = boost.boostedPost as? MastodonBasicPost, let attachment = basicPost.attachment {
-            return .attachment(attachment)
-        } else if let basicPost = post as? MastodonBasicPost, let attachment = basicPost.attachment {
-            return .attachment(attachment)
-        }
-        return nil
     }
 
     var hashtagComponent: PostViewComponent? {
@@ -1082,5 +1087,20 @@ struct TranslationInfoView: View {
     var translatedFromLanguageByProvider: String {
         let languageName = languageName(translationInfo.sourceLanguage) ?? L10n.Common.Controls.Status.Translation.unknownLanguage
         return L10n.Common.Controls.Status.Translation.translatedFrom(languageName, translationInfo.provider ?? L10n.Common.Controls.Status.Translation.unknownProvider)
+    }
+}
+
+extension ContentConcealViewModel {
+    func buttonText(whenHiding: Bool) -> String? {
+        switch currentMode {
+        case .neverConceal, .concealMediaOnly:
+            return nil
+        case .concealAll(reasons: let reasons, _):
+            if currentModeIsFilter {
+                return whenHiding ? "Show anyway" : "Hide"
+            } else {
+                return whenHiding ? "Show more" : "Hide"
+            }
+        }
     }
 }

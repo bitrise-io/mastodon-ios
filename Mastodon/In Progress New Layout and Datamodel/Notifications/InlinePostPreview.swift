@@ -44,9 +44,7 @@ struct InlinePostPreview: View {
         .frame(maxWidth: .infinity)
         .background {
             if showAttributionHeader {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(colorScheme == .dark ? AnyShapeStyle(Color(UIColor.secondarySystemBackground)) : AnyShapeStyle(.clear))
-                    .stroke(.separator)
+                MastodonSecondaryBackground(fillInDarkModeOnly: true)
             }
         }
     }

@@ -1275,11 +1275,16 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Common Components/AlignmentGuides.swift",
+				"Common Components/Common Actions on Statuses and Accounts/ContentConcealViewModel.swift",
 				"Common Components/Common Actions on Statuses and Accounts/MastodonPostMenuAction.swift",
 				"Common Components/Common Actions on Statuses and Accounts/PostActions.swift",
 				"Common Components/HtmlHelpers.swift",
+				"Common Components/ProportionalImageGridLayout.swift",
 				"Common Components/Views/AuthorHeaderView.swift",
 				"Common Components/Views/AvatarView.swift",
+				"Common Components/Views/MediaAttachmentView.swift",
+				"Common Components/Views/SecondaryBackground.swift",
+				"Common Components/Views/ShowMoreLozenge.swift",
 				"Common Components/Views/SocialContextHeader.swift",
 				"Common Components/Views/StatefulActionButton.swift",
 				"Common Components/Views/TextViewWithCustomEmoji.swift",

@@ -47,9 +47,12 @@ fileprivate let relationshipStaleThreshold: TimeInterval = 20 /*min*/ * 60 /*sec
 
 @MainActor
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
+    private let filterContext = Mastodon.Entity.FilterContext.home
+    
     private let authenticatedUser: MastodonAuthenticationBox
     private let authenticatedUserID: Mastodon.Entity.Account.ID?
     private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
+    private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
     
     init(currentUser: MastodonAuthenticationBox) {
         authenticatedUser = currentUser
@@ -125,6 +128,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         }
         let newCache = CacheableTimeline(older: [], newer: newBatch)
         
+        createContentConcealViewModels(newCache)
         try await fetchRelationships(newCache)
         
         return newCache
@@ -324,5 +328,26 @@ extension GenericMastodonPost.PostContent {
             }
         }
         return false
+    }
+}
+
+// MARK: Filters and Content Warnings
+extension TimelineFeedLoader {
+    private func createContentConcealViewModels(_ cache: CacheableTimeline) {
+        for item in cache.items {
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                break
+            case .post(let post):
+                if let contentPost = post.actionablePost, contentConcealViewModels[contentPost.id] == nil {
+                    contentConcealViewModels[contentPost.id] = ContentConcealViewModel(contentPost: contentPost, context: filterContext)
+                }
+            }
+        }
+    }
+    
+    public func contentConcealViewModel(forContentPost contentPost: MastodonContentPost?) -> ContentConcealViewModel? {
+        guard let contentPost else { return nil }
+        return contentConcealViewModels[contentPost.id]
     }
 }

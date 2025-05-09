@@ -37,6 +37,7 @@ extension GenericMastodonPost {
         let language: String?
         let htmlWithEntities: HtmlWithEntities?
         let plainText: String?
+        let attachment: PostAttachment?
         let contentWarned: ContentWarned
         let filtered: [Mastodon.Entity.ServerFilterResult]?
         let metrics: PostMetrics
@@ -51,7 +52,7 @@ extension GenericMastodonPost {
 
         enum ContentWarned: Codable {
             case nothingToWarn
-            case warnAll(reason: String)
+            case warnAll(reasons: [String])
             case warnMediaAttachmentOnly
         }
     }
@@ -120,6 +121,7 @@ extension GenericMastodonPost.PostContent: FromStatusEntityDerivable {
             editedAt: status.editedAt, language: status.language,
             htmlWithEntities: GenericMastodonPost.PostContent.HtmlWithEntities
                 .fromStatus(status), plainText: status.text,
+            attachment: GenericMastodonPost.PostAttachment.fromStatus(status),
             contentWarned: GenericMastodonPost.PostContent.ContentWarned.fromStatus(
                 status), filtered: status.filtered,
             metrics: GenericMastodonPost.PostMetrics.fromStatus(status),
@@ -156,7 +158,8 @@ extension GenericMastodonPost.PostContent.ContentWarned: FromStatusEntityDerivab
         case (true, nil):
             return .warnMediaAttachmentOnly
         case (true, _):
-            return .warnAll(reason: status.spoilerText!)
+            guard let reason = status.spoilerText, !reason.isEmpty else { return .warnMediaAttachmentOnly }
+            return .warnAll(reasons: [reason])
         default:
             return .nothingToWarn
         }
