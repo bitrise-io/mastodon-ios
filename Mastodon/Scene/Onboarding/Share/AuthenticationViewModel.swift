@@ -358,7 +358,7 @@ extension AuthenticationViewModel {
                     let authBox = try await AuthenticationViewModel.verifyAndActivateAuthentication(
                         info: info,
                         userToken: token
-                    )
+                    ) // See Github issue #1432, would be better to pass along the instance configuration here rather than losing it
                     AuthenticationServiceProvider.shared.activateAuthentication(authBox)
                     self.stateStreamContinuation.yield(.authenticatedUser(authBox))
                     self.stateStreamContinuation.finish()

@@ -522,7 +522,7 @@ private class NotificationListViewModel: ObservableObject {
                 if let currentInstance = authBox.instanceConfiguration {
                     return currentInstance.canGroupNotifications
                 } else {
-                    assertionFailure("no instance configuration")
+                    //assertionFailure("no instance configuration") // This situation resolves quickly, but it would be nice to avoid it altogether. See Github issue #1432
                     return false
                 }
             case .notificationsWithAccount:
