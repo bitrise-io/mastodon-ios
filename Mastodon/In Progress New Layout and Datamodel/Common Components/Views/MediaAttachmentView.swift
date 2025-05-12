@@ -6,7 +6,7 @@ import MastodonCore
 import MastodonLocalization
 
 let buttonBackgroundColor = Color.black.opacity(0.6)
-let maxHeightForHiddenMedia: CGFloat = 60
+let maxHeightForHiddenMedia: CGFloat = 100
 
 struct MastodonImageAttachment: Identifiable {
     let id: Mastodon.Entity.Attachment.ID
@@ -138,72 +138,63 @@ struct ImageGridView: View {
     @ObservedObject var viewModel: ImageGridViewModel
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) { // places the Hide/Show button, if there is one
+            
             // The images
-            VStack {
-                ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
-                    ForEach(viewModel.imageAttachments) { img in
+            ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
+                ForEach(viewModel.imageAttachments) { img in
+                    ZStack(alignment: .bottomLeading) { // places the ALT text button
                         BlurhashImageView(imageAttachment: img, viewModel: viewModel)
                             .clipped()
-                    }
-                }
-                .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
-                .cornerRadius(CornerRadius.standard)
-                .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
-            }
-            
-            // The buttons
-            HStack {
-                // ALT at bottom left
-                VStack {
-                    Spacer()
-                        .frame(maxHeight: .infinity)
-                    
-                    Button {
-                        print("show ALT text")
-                    } label: {
-                        Text("ALT")
-                            .foregroundStyle(.white)
-                            .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.horizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.horizontal))
-                            .background() {
-                                RoundedRectangle(cornerRadius: CornerRadius.small)
-                                    .fill(buttonBackgroundColor)
-                            }
-                    }
-                    .buttonStyle(.borderless)
-                }
-                
-                Spacer()
-                
-                // Hide/Show at top right
-                switch viewModel.contentConcealViewModel.currentMode {
-                case .neverConceal, .concealAll:
-                    EmptyView()
-                case .concealMediaOnly(let showAnyway):
-                    VStack {
-                        Button {
-                            if showAnyway {
-                                viewModel.contentConcealViewModel.hide()
-                            } else {
-                                viewModel.contentConcealViewModel.showMore()
-                            }
-                        } label: {
-                            Text(showAnyway ? L10n.Common.Controls.Status.Actions.hide : L10n.Common.Controls.Status.Actions.show)
-                                .foregroundStyle(.white)
-                                .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.capsuleHorizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.capsuleHorizontal))
-                                .background() {
-                                    Capsule()
-                                        .fill(buttonBackgroundColor)
-                                }
-                        }
-                        .buttonStyle(.borderless)
                         
-                        Spacer()
-                            .frame(maxHeight: .infinity)
+                        if let altText = img.basicData.altText, altText.isNotEmpty {
+                            Button {
+                                print("show ALT text: \(altText)")
+                            } label: {
+                                Text("ALT")
+                                    .foregroundStyle(.white)
+                                    .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.horizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.horizontal))
+                                    .background() {
+                                        RoundedRectangle(cornerRadius: CornerRadius.small)
+                                            .fill(buttonBackgroundColor)
+                                    }
+                            }
+                            .fixedSize()
+                            .padding(standardPadding)
+                            .buttonStyle(.borderless)
+                        }
                     }
+                    .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
                 }
             }
-            .padding(standardPadding)
+            .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
+            .cornerRadius(CornerRadius.standard)
+            .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
+            
+            // Hide/Show button
+            switch viewModel.contentConcealViewModel.currentMode {
+            case .neverConceal, .concealAll:
+                EmptyView()
+            case .concealMediaOnly(let showAnyway):
+                Button {
+                    if showAnyway {
+                        viewModel.contentConcealViewModel.hide()
+                    } else {
+                        viewModel.contentConcealViewModel.showMore()
+                    }
+                } label: {
+                    Text(showAnyway ? L10n.Common.Controls.Status.Actions.hide : L10n.Common.Controls.Status.Actions.show)
+                        .foregroundStyle(.white)
+                        .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.capsuleHorizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.capsuleHorizontal))
+                        .background() {
+                            Capsule()
+                                .fill(buttonBackgroundColor)
+                        }
+                }
+                .fixedSize()
+                .buttonStyle(.borderless)
+                .padding(standardPadding)
+            }
         }
     }
 }
@@ -211,7 +202,7 @@ struct ImageGridView: View {
 struct BlurhashImageView: View {
     let imageAttachment: MastodonImageAttachment
     @ObservedObject var viewModel: ImageGridViewModel
-        
+    
     var body: some View {
         ZStack {
             if let blurhash = viewModel.blurhashes[imageAttachment.id] {
