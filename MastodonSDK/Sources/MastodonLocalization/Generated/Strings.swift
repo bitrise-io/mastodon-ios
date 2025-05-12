@@ -400,6 +400,8 @@ public enum L10n {
           public static let reply = L10n.tr("Localizable", "Common.Controls.Status.Actions.Reply", fallback: "Reply")
           /// Share Link in Post
           public static let shareLinkInPost = L10n.tr("Localizable", "Common.Controls.Status.Actions.ShareLinkInPost", fallback: "Share Link in Post")
+          /// Show
+          public static let show = L10n.tr("Localizable", "Common.Controls.Status.Actions.Show", fallback: "Show")
           /// Show GIF
           public static let showGif = L10n.tr("Localizable", "Common.Controls.Status.Actions.ShowGif", fallback: "Show GIF")
           /// Show image

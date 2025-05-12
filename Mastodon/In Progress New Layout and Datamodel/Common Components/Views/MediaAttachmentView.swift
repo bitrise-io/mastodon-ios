@@ -3,6 +3,9 @@
 import SwiftUI
 import MastodonSDK
 import MastodonCore
+import MastodonLocalization
+
+let buttonBackgroundColor = Color.black.opacity(0.6)
 
 struct MastodonImageAttachment: Identifiable {
     let id: Mastodon.Entity.Attachment.ID
@@ -134,13 +137,70 @@ struct ImageGridView: View {
     @ObservedObject var viewModel: ImageGridViewModel
     
     var body: some View {
-        VStack {
-            ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: viewModel.contentConcealViewModel.currentMode.isShowingMedia) {
-                ForEach(viewModel.imageAttachments) { img in
-                    BlurhashImageView(imageAttachment: img, viewModel: viewModel)
+        ZStack {
+            // The images
+            VStack {
+                ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
+                    ForEach(viewModel.imageAttachments) { img in
+                        BlurhashImageView(imageAttachment: img, viewModel: viewModel)
+                    }
+                }
+                .cornerRadius(CornerRadius.standard)
+                .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
+            }
+            
+            // The buttons
+            HStack {
+                // ALT at bottom left
+                VStack {
+                    Spacer()
+                        .frame(maxHeight: .infinity)
+                    
+                    Button {
+                        print("show ALT text")
+                    } label: {
+                        Text("ALT")
+                            .foregroundStyle(.white)
+                            .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.horizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.horizontal))
+                            .background() {
+                                RoundedRectangle(cornerRadius: CornerRadius.small)
+                                    .fill(buttonBackgroundColor)
+                            }
+                    }
+                    .buttonStyle(.borderless)
+                }
+                
+                Spacer()
+                
+                // Hide/Show at top right
+                switch viewModel.contentConcealViewModel.currentMode {
+                case .neverConceal, .concealAll:
+                    EmptyView()
+                case .concealMediaOnly(let showAnyway):
+                    VStack {
+                        Button {
+                            if showAnyway {
+                                viewModel.contentConcealViewModel.hide()
+                            } else {
+                                viewModel.contentConcealViewModel.showMore()
+                            }
+                        } label: {
+                            Text(showAnyway ? L10n.Common.Controls.Status.Actions.hide : L10n.Common.Controls.Status.Actions.show)
+                                .foregroundStyle(.white)
+                                .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.capsuleHorizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.capsuleHorizontal))
+                                .background() {
+                                    Capsule()
+                                        .fill(buttonBackgroundColor)
+                                }
+                        }
+                        .buttonStyle(.borderless)
+                        
+                        Spacer()
+                            .frame(maxHeight: .infinity)
+                    }
                 }
             }
-            .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
+            .padding(standardPadding)
         }
     }
 }
@@ -212,6 +272,15 @@ class ImageGridViewModel: ObservableObject {
                     ).singleOutput()
                 }
             }
+        }
+    }
+    
+    var useRestrictedHeight: Bool {
+        switch contentConcealViewModel.currentMode {
+        case .neverConceal:
+            return false
+        case .concealAll(_, let showAnyway), .concealMediaOnly(let showAnyway):
+            return !showAnyway
         }
     }
 }
