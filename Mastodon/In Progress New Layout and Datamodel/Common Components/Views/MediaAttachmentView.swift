@@ -146,6 +146,7 @@ struct ImageGridView: View {
                     ZStack(alignment: .bottomLeading) { // places the ALT text button
                         BlurhashImageView(imageAttachment: img, viewModel: viewModel)
                             .clipped()
+                            .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
                         
                         if let altText = img.basicData.altText, altText.isNotEmpty {
                             Button {
@@ -166,6 +167,7 @@ struct ImageGridView: View {
                             .fixedSize()
                             .padding(standardPadding)
                             .buttonStyle(.borderless)
+                            .accessibilityHidden(true)
                         }
                     }
                     .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
