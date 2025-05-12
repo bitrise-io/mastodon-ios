@@ -6,6 +6,7 @@ import MastodonCore
 import MastodonLocalization
 
 let buttonBackgroundColor = Color.black.opacity(0.6)
+let maxHeightForHiddenMedia: CGFloat = 60
 
 struct MastodonImageAttachment: Identifiable {
     let id: Mastodon.Entity.Attachment.ID
@@ -143,8 +144,10 @@ struct ImageGridView: View {
                 ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
                     ForEach(viewModel.imageAttachments) { img in
                         BlurhashImageView(imageAttachment: img, viewModel: viewModel)
+                            .clipped()
                     }
                 }
+                .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
                 .cornerRadius(CornerRadius.standard)
                 .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
             }
@@ -214,7 +217,7 @@ struct BlurhashImageView: View {
             if let blurhash = viewModel.blurhashes[imageAttachment.id] {
                 Image(uiImage: blurhash)
                     .resizable()
-                    .scaledToFit()
+                    .scaledToFill()
             }
             
             if let url = imageAttachment.basicData.fullsizeUrl {
@@ -227,7 +230,7 @@ struct BlurhashImageView: View {
                         case .neverConceal, .concealMediaOnly(showAnyway: true), .concealAll(_, showAnyway: true):
                             image
                                 .resizable()
-                                .scaledToFit()
+                                .scaledToFill()
                                 .onAppear() {
                                     if !viewModel.atLeastOneImageLoaded {
                                         viewModel.atLeastOneImageLoaded = true

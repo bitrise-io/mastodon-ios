@@ -8,6 +8,10 @@ struct ProportionalImageGridLayout: Layout {
     let aspects: [CGFloat]
     let spacing: CGFloat
     
+    func doUseTwoRows(forSubviewCount subviewCount: Int) -> Bool {
+        canUseTwoRows && subviewCount > 2
+    }
+    
     init(spacing: CGFloat, aspectRatios: [CGFloat], canUseTwoRows: Bool) {
         self.spacing = spacing
         self.canUseTwoRows = canUseTwoRows
@@ -23,7 +27,7 @@ struct ProportionalImageGridLayout: Layout {
             return CGSize(width: width, height: width / aspect)
         }
         
-        if canUseTwoRows && subviews.count > 2 {
+        if doUseTwoRows(forSubviewCount: subviews.count) {
             // Split into two rows
             let row1Count = subviews.count / 2 + subviews.count % 2
             let row2Count = subviews.count - row1Count
@@ -46,7 +50,7 @@ struct ProportionalImageGridLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         guard subviews.count == aspects.count else { return }
         
-        if canUseTwoRows && subviews.count > 1 {
+        if doUseTwoRows(forSubviewCount: subviews.count) {
             let row1Count = subviews.count / 2 + subviews.count % 2
             let row2Count = subviews.count - row1Count
             
