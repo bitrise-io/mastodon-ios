@@ -91,11 +91,11 @@ struct ImageAttachmentDetails {
 }
 
 enum MediaAttachmentView {
-    case images([MastodonImageAttachment])
+    case images([MastodonImageAttachment], altTextTranslations: [String : String]?)
     case notYetImplemented(String)
     case emptyAttachment
     
-    init(_ media: [Mastodon.Entity.Attachment]) {
+    init(_ media: [Mastodon.Entity.Attachment], altTextTranslations: [String : String]?) {
         switch media.first?.type {
         case .none:
             self = .emptyAttachment
@@ -103,7 +103,7 @@ enum MediaAttachmentView {
             let images = media.map { attachment in
                 MastodonImageAttachment(attachment)
             }.compactMap { $0 }
-            self = .images(images)
+            self = .images(images, altTextTranslations: altTextTranslations)
         case .gifv:
             self = .notYetImplemented("gifv")
         case .video:
@@ -120,12 +120,12 @@ enum MediaAttachmentView {
 }
 
 extension MediaAttachmentView {
-    @ViewBuilder func view(withContentConcealModel contentConceal: ContentConcealViewModel) -> some View {
+    @ViewBuilder func view(withContentConcealModel contentConceal: ContentConcealViewModel, showAltText: @escaping(String)->()) -> some View {
         switch self {
         case .emptyAttachment:
             Image(systemName: "questionmark.square.dashed")
-        case .images(let attachments):
-            ImageGridView(viewModel: ImageGridViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal))
+        case .images(let attachments, let altTextTranslations):
+            ImageGridView(viewModel: ImageGridViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, showAltText: showAltText))
         case .notYetImplemented(let string):
             Text("Needs Implementation (\(string))")
                 .font(.footnote)
@@ -149,7 +149,11 @@ struct ImageGridView: View {
                         
                         if let altText = img.basicData.altText, altText.isNotEmpty {
                             Button {
-                                print("show ALT text: \(altText)")
+                                if let translation = viewModel.altTextTranslations?[img.id] {
+                                    viewModel.showAltText(translation)
+                                } else {
+                                    viewModel.showAltText(altText)
+                                }
                             } label: {
                                 Text("ALT")
                                     .foregroundStyle(.white)
@@ -245,13 +249,17 @@ struct BlurhashImageView: View {
 
 class ImageGridViewModel: ObservableObject {
     let imageAttachments: [MastodonImageAttachment]
+    let altTextTranslations: [String : String]?
     @Published var atLeastOneImageLoaded = false
     @Published var blurhashes = [ Mastodon.Entity.Attachment.ID : UIImage ]()
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
+    let showAltText: (String)->()
     
-    init(imageAttachments: [MastodonImageAttachment], contentConcealViewModel: ContentConcealViewModel) {
+    init(imageAttachments: [MastodonImageAttachment], contentConcealViewModel: ContentConcealViewModel, altTextTranslations: [String: String]?, showAltText: @escaping (String)->()) {
         self.imageAttachments = imageAttachments
         self.contentConcealViewModel = contentConcealViewModel
+        self.altTextTranslations = altTextTranslations
+        self.showAltText = showAltText
         loadBlurhashes()
     }
     

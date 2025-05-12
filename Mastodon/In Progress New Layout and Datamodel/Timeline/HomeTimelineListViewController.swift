@@ -105,6 +105,7 @@ private class HomeTimelineListViewModel: ObservableObject {
             }
         }
     }
+    @Published private(set) var isShowingAltText: String?
     @Published var isPresentingAlert: Bool = false
     @Published var isPerformingPostAction: (action: MastodonPostMenuAction, post: MastodonContentPost)? = nil
     @Published var isPerformingAccountAction: (action: MastodonPostMenuAction, account: MastodonAccount)? = nil
@@ -194,8 +195,12 @@ private class HomeTimelineListViewModel: ObservableObject {
             guard canTranslate(post: actionablePost) else { return nil }
             return translationsToShow.contains(actionablePost.id)
         }()
+        let translation: Mastodon.Entity.Translation? = {
+            guard let actionablePost else { return nil }
+            return translations[actionablePost.id]
+        }()
         let rowViewModel = MastodonPostViewModel(post: post,
-                                                 isShowingTranslation: isShowingTranslation,
+                                                 isShowingTranslation: isShowingTranslation, translation: translation,
                                                  myRelationshipToAuthor: relationship,
                                                  isDoingAction: isDoingAction,
                                                  actionHandler: self)
@@ -225,47 +230,80 @@ struct HomeTimelineListView: View {
     
     var body: some View {
         GeometryReader { geo in
-            ScrollViewReader { proxy in
-                List {
-                    ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
-                        switch item {
-                        case let .missingPosts(newerThan, olderThan, timeGapDescription):
-                            Text(timeGapDescription)
-                        case .loadingIndicator:
-                            HStack {
-                                Spacer()
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                                Spacer()
-                            }
-                        case .post(let post):
-                            let usableWidth =
+            ZStack { // to show ALT text when needed
+                ScrollViewReader { proxy in
+                    List {
+                        ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
+                            switch item {
+                            case let .missingPosts(newerThan, olderThan, timeGapDescription):
+                                Text(timeGapDescription)
+                            case .loadingIndicator:
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                    Spacer()
+                                }
+                            case .post(let post):
+                                let usableWidth =
                                 geo.size.width - geo.safeAreaInsets.leading
                                 - geo.safeAreaInsets.trailing
-                            let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
-                            
-                            let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
-                            HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
-                                contentConcealModel: viewModel.contentConcelModel(forPost: post),
-                                contentWidth: contentWidth)
-                            .padding(spacingBetweenGutterAndContent)
-                            .listRowInsets(
-                                EdgeInsets(
-                                    top: 0, leading: 0, bottom: 0, trailing: 0)
-                            )
-                            .frame(width: usableWidth)
-                            .onAppear {
-                                viewModel.didAppear(item.id)
+                                let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
+                                
+                                let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
+                                HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
+                                                        contentConcealModel: viewModel.contentConcelModel(forPost: post),
+                                                        contentWidth: contentWidth)
+                                .padding(spacingBetweenGutterAndContent)
+                                .listRowInsets(
+                                    EdgeInsets(
+                                        top: 0, leading: 0, bottom: 0, trailing: 0)
+                                )
+                                .frame(width: usableWidth)
+                                .onAppear {
+                                    viewModel.didAppear(item.id)
+                                }
                             }
                         }
                     }
+                    .listStyle(.plain)
+                    .refreshable {
+                        await viewModel.refreshFeedFromTop()
+                    }
+                    .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
+                        viewModel.requestLoad(.newer)
+                    }
                 }
-                .listStyle(.plain)
-                .refreshable {
-                    await viewModel.refreshFeedFromTop()
-                }
-                .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                    viewModel.requestLoad(.newer)
+                
+                // Alt text
+                if let altText = viewModel.isShowingAltText {
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            viewModel.showAltText(nil)
+                        }
+                        .overlay(
+                            VStack {
+                                Spacer()
+                                    .frame(maxHeight: .infinity)
+                                ScrollView {
+                                    Text(altText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .padding()
+                                        .foregroundStyle(Color.white)
+                                        .frame(maxWidth: min(300, geo.size.width * 0.85))
+                                }
+                                .frame(maxHeight: geo.size.height * 0.8)
+                                .environment(\.colorScheme, .dark)
+                                .background() {
+                                    RoundedRectangle(cornerRadius: CornerRadius.standard)
+                                        .fill(.black.opacity(0.6))
+                                }
+                                .fixedSize(horizontal: false, vertical: true)
+                                Spacer()
+                                    .frame(maxHeight: .infinity)
+                            }
+                        )
                 }
             }
         }
@@ -389,7 +427,7 @@ private struct HomeTimelinePostRowView: View {
                     switch attachment {
                     case .media(let array):
                         if contentConcealModel.currentMode.isShowingContent {
-                            MediaAttachmentView(array).view(withContentConcealModel: contentConcealModel)
+                            MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, showAltText: viewModel.actionHandler.showAltText)
                                 .frame(width: contentWidth)
                         }
                     case .poll(let poll):
@@ -623,23 +661,36 @@ struct MastodonPostViewModel {
     let actionHandler: MastodonPostMenuActionHandler
     let post: GenericMastodonPost
     let isShowingTranslation: Bool?
+    let translation: Mastodon.Entity.Translation?
     let isDoingAction: MastodonPostMenuAction?
     let myRelationshipToAuthor: MastodonAccount.Relationship
 
     init(
         post: GenericMastodonPost,
         isShowingTranslation: Bool?,
+        translation: Mastodon.Entity.Translation?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
         isDoingAction: MastodonPostMenuAction?,
         actionHandler: MastodonPostMenuActionHandler
     ) {
         self.post = post
         self.isShowingTranslation = isShowingTranslation
+        self.translation = translation
         self.myRelationshipToAuthor = myRelationshipToAuthor
         self.isDoingAction = isDoingAction
         self.actionHandler = actionHandler
         
         assert(post.actionablePost != nil, "unexpected post type")
+    }
+    
+    var altTextTranslations: [String : String]? {
+        guard isShowingTranslation == true else { return nil }
+        guard let attachmentTranslations = translation?.mediaAttachments else { return nil }
+        
+        let dictionary = attachmentTranslations.reduce(into: [ String : String]()) { partialResult, attachment in
+            partialResult[attachment.id] = attachment.description
+        }
+        return dictionary
     }
 }
 
@@ -683,6 +734,10 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
+    func showAltText(_ text: String?) {
+        isShowingAltText = text
+    }
+    
     func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition) {
         parentVcPresentScene?(scene, transition)
     }

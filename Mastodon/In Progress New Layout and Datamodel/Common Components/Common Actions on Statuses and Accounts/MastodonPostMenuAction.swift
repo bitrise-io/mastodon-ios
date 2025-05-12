@@ -24,6 +24,7 @@ protocol MastodonPostMenuActionHandler {
     func canTranslate(post: MastodonContentPost) -> Bool
     func translation(forContentPostId postId: Mastodon.Entity.Status.ID) -> Mastodon.Entity.Translation?
     func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition)
+    func showAltText(_ text: String?)
 }
 
 
