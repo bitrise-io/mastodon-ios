@@ -261,7 +261,7 @@ struct HomeTimelineListView: View {
                                 let usableWidth =
                                 geo.size.width - geo.safeAreaInsets.leading
                                 - geo.safeAreaInsets.trailing
-                                let contentWidth = usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize
+                                let contentWidth = max(1, usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
                                 
                                 let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
                                 HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
