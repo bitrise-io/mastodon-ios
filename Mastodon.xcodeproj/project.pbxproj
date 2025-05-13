@@ -1282,6 +1282,7 @@
 				"Common Components/ProportionalImageGridLayout.swift",
 				"Common Components/Views/AuthorHeaderView.swift",
 				"Common Components/Views/AvatarView.swift",
+				"Common Components/Views/MastodonTimelineModalView/AltTextView.swift",
 				"Common Components/Views/MediaAttachmentView.swift",
 				"Common Components/Views/SecondaryBackground.swift",
 				"Common Components/Views/ShowMoreLozenge.swift",

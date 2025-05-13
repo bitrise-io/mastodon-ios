@@ -120,12 +120,12 @@ enum MediaAttachmentView {
 }
 
 extension MediaAttachmentView {
-    @ViewBuilder func view(withContentConcealModel contentConceal: ContentConcealViewModel, showAltText: @escaping(String)->()) -> some View {
+    @ViewBuilder func view(withContentConcealModel contentConceal: ContentConcealViewModel, actionHandler: MastodonPostMenuActionHandler) -> some View {
         switch self {
         case .emptyAttachment:
             Image(systemName: "questionmark.square.dashed")
         case .images(let attachments, let altTextTranslations):
-            ImageGridView(viewModel: ImageGridViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, showAltText: showAltText))
+            ImageGridView(viewModel: ImageGridViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
         case .notYetImplemented(let string):
             Text("Needs Implementation (\(string))")
                 .font(.footnote)
@@ -147,13 +147,16 @@ struct ImageGridView: View {
                         BlurhashImageView(imageAttachment: img, viewModel: viewModel)
                             .clipped()
                             .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
+                            .onTapGesture {
+                                showImageGallery(startingWith: img.id)
+                            }
                         
                         if let altText = img.basicData.altText, altText.isNotEmpty {
                             Button {
                                 if let translation = viewModel.altTextTranslations?[img.id] {
-                                    viewModel.showAltText(translation)
+                                    viewModel.actionHandler.showModal(.altText(translation))
                                 } else {
-                                    viewModel.showAltText(altText)
+                                    viewModel.actionHandler.showModal(.altText(altText))
                                 }
                             } label: {
                                 Text("ALT")
@@ -202,6 +205,22 @@ struct ImageGridView: View {
                 .padding(standardPadding)
             }
         }
+    }
+    
+    func showImageGallery(startingWith: Mastodon.Entity.Attachment.ID) {
+        let images: [(Mastodon.Entity.Attachment.ID, URL)] = viewModel.imageAttachments.compactMap { img in
+            if let url = img.basicData.fullsizeUrl {
+                return (img.id, url)
+            } else {
+                return nil
+            }
+        }
+        let blurhashes = viewModel.blurhashes
+        let altText = viewModel.imageAttachments.reduce(into: [String : String]()) { partialResult, img in
+            partialResult[img.id] = img.basicData.altText
+        }
+        let altTextTranslations = viewModel.altTextTranslations
+        viewModel.actionHandler.showModal(.images(images, altText: altText, translations: viewModel.altTextTranslations))
     }
 }
 
@@ -255,13 +274,13 @@ class ImageGridViewModel: ObservableObject {
     @Published var atLeastOneImageLoaded = false
     @Published var blurhashes = [ Mastodon.Entity.Attachment.ID : UIImage ]()
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
-    let showAltText: (String)->()
+    let actionHandler: MastodonPostMenuActionHandler
     
-    init(imageAttachments: [MastodonImageAttachment], contentConcealViewModel: ContentConcealViewModel, altTextTranslations: [String: String]?, showAltText: @escaping (String)->()) {
+    init(imageAttachments: [MastodonImageAttachment], contentConcealViewModel: ContentConcealViewModel, altTextTranslations: [String: String]?, actionHandler: MastodonPostMenuActionHandler) {
         self.imageAttachments = imageAttachments
         self.contentConcealViewModel = contentConcealViewModel
         self.altTextTranslations = altTextTranslations
-        self.showAltText = showAltText
+        self.actionHandler = actionHandler
         loadBlurhashes()
     }
     

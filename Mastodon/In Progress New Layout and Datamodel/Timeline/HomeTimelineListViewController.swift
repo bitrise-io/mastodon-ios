@@ -92,6 +92,11 @@ extension MastodonPostMenuAction {
     }
 }
 
+enum MastodonTimelineModalView {
+    case images([(Mastodon.Entity.Attachment.ID, URL)], altText: [Mastodon.Entity.Attachment.ID : String]?, translations: [Mastodon.Entity.Attachment.ID : String]?)
+    case altText(String)
+}
+
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
     public var parentVcPresentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> ())?
@@ -105,10 +110,22 @@ private class HomeTimelineListViewModel: ObservableObject {
             }
         }
     }
-    @Published private(set) var isShowingAltText: String?
+    var activeModal: MastodonTimelineModalView? = nil {
+        didSet {
+            if !isShowingModal && activeModal != nil {
+                isShowingModal = true
+            } else if isShowingModal && activeModal == nil {
+                isShowingModal = false
+            }
+        }
+    }
+    
+    @Published var isShowingModal: Bool = false
     @Published var isPresentingAlert: Bool = false
+    
     @Published var isPerformingPostAction: (action: MastodonPostMenuAction, post: MastodonContentPost)? = nil
     @Published var isPerformingAccountAction: (action: MastodonPostMenuAction, account: MastodonAccount)? = nil
+    
     @Published var timelineItems = [TimelineItem]()
     private var feedLoader: TimelineFeedLoader?
     private var feedLoaderResultsSubscription: AnyCancellable?
@@ -274,37 +291,6 @@ struct HomeTimelineListView: View {
                         viewModel.requestLoad(.newer)
                     }
                 }
-                
-                // Alt text
-                if let altText = viewModel.isShowingAltText {
-                    Color.black.opacity(0.6)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            viewModel.showAltText(nil)
-                        }
-                        .overlay(
-                            VStack {
-                                Spacer()
-                                    .frame(maxHeight: .infinity)
-                                ScrollView {
-                                    Text(altText)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .padding()
-                                        .foregroundStyle(Color.white)
-                                        .frame(maxWidth: min(300, geo.size.width * 0.85))
-                                }
-                                .frame(maxHeight: geo.size.height * 0.8)
-                                .environment(\.colorScheme, .dark)
-                                .background() {
-                                    RoundedRectangle(cornerRadius: CornerRadius.standard)
-                                        .fill(.black.opacity(0.6))
-                                }
-                                .fixedSize(horizontal: false, vertical: true)
-                                Spacer()
-                                    .frame(maxHeight: .infinity)
-                            }
-                        )
-                }
             }
         }
         .onAppear() {
@@ -318,6 +304,20 @@ struct HomeTimelineListView: View {
         } message: { alert in
             if let messageText = alert.messageText {
                 Text(messageText)
+            }
+        }
+        .overlay {
+            if viewModel.isShowingModal, let activeModal = viewModel.activeModal {
+                GeometryReader { geo in
+                    ZStack {
+                        Color.black.opacity(0.6)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                viewModel.activeModal = nil
+                            }
+                        activeModal.view(sizedForFrame: geo.size)
+                    }
+                }
             }
         }
     }
@@ -393,6 +393,17 @@ struct HomeTimelineListView: View {
     }
 }
 
+extension MastodonTimelineModalView {
+    @ViewBuilder func view(sizedForFrame frameSize: CGSize) -> some View {
+        switch self {
+        case .altText(let altTextString):
+            AltTextView(altTextString: altTextString, frameSize: frameSize)
+        case .images(let imagesInfo, let altTextStrings, let translations):
+            AltTextView(altTextString: "THIS WILL BE AN IMAGE", frameSize: frameSize)
+        }
+    }
+}
+
 private struct HomeTimelinePostRowView: View {
 
     let viewModel: MastodonPostViewModel
@@ -427,7 +438,7 @@ private struct HomeTimelinePostRowView: View {
                     switch attachment {
                     case .media(let array):
                         if contentConcealModel.currentMode.isShowingContent {
-                            MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, showAltText: viewModel.actionHandler.showAltText)
+                            MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
                                 .frame(width: contentWidth)
                         }
                     case .poll(let poll):
@@ -734,8 +745,8 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
-    func showAltText(_ text: String?) {
-        isShowingAltText = text
+    func showModal(_ modalView: MastodonTimelineModalView?) {
+        activeModal = modalView
     }
     
     func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition) {
