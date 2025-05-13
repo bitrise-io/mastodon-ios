@@ -8,6 +8,7 @@ struct MastodonAccount: Identifiable, Codable {
     let id: Mastodon.Entity.Account.ID
     let metadata: MetaData
     let displayInfo: DisplayInfo
+    let _legacyEntity: Mastodon.Entity.Account
 }
 
 struct ImageUrl: Codable {
@@ -86,7 +87,9 @@ extension MastodonAccount: FromAccountEntityDerivable {
             id: entity.id,
             metadata: MetaData.fromEntity(entity),
             displayInfo: DisplayInfo.fromEntity(
-                entity))
+                entity),
+            _legacyEntity: entity
+        )
     }
 }
 
@@ -148,6 +151,7 @@ extension MastodonAccount {
         let iHaveRequestedToFollowThem: Bool
         let iAmMutingThem: Bool
         let iAmBlockingThem: Bool
+        let _legacyEntity: Mastodon.Entity.Relationship
         
         init(_ entity: Mastodon.Entity.Relationship, fetchedAt: Date?) {
             id = entity.id
@@ -156,6 +160,7 @@ extension MastodonAccount {
             iHaveRequestedToFollowThem = entity.requested
             iAmMutingThem = entity.muting
             iAmBlockingThem = entity.blocking
+            _legacyEntity = entity
         }
         
         var canFollow: Bool {

@@ -7,15 +7,12 @@ struct AuthorHeaderView: View {
     let author: MastodonAccount
     
     var body: some View {
-        HStack(alignment: .top) {
-            AvatarView(size: .large, author: author, goToProfile: nil)
-            VStack(alignment: .leading) {
-                textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
-                    .alignmentGuide(.gutterAlign) { d in
-                        return d[HorizontalAlignment.leading]
-                    }
-                textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
-            }
+        VStack(alignment: .leading) {
+            textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
+                .alignmentGuide(.gutterAlign) { d in
+                    return d[HorizontalAlignment.leading]
+                }
+            textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
         }
     }
 }

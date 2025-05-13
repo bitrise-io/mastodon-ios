@@ -411,53 +411,65 @@ private struct HomeTimelinePostRowView: View {
     let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
     
     var body: some View {
+        let author = viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author
+        
         VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
             
             viewModel.socialContextHeader
-            AuthorHeaderView(author: viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author)
             
-            contentConcealLozenge
-                .frame(width: contentWidth)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top) {
             
-            if contentConcealModel.currentMode.isShowingContent {
-                if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
-                    TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
-                    )
-                    .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
-                    .alignmentGuide(.gutterAlign) { d in
-                        return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
-                    }
-                }
-                viewModel.textContentView
-                    .frame(width: contentWidth, alignment: .leading)
+                AvatarView(size: .large, author: author, goToProfile: { _ in
+                    goToProfile(author)
+                })
                 
-                if let attachment = viewModel.post.actionablePost?.content.attachment {
-                    switch attachment {
-                    case .media(let array):
-                        if contentConcealModel.currentMode.isShowingContent {
-                            MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
+                VStack(spacing: spacingBetweenGutterAndContent) {
+                    AuthorHeaderView(author: author)
+                    
+                    contentConcealLozenge
+                        .frame(width: contentWidth)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    if contentConcealModel.currentMode.isShowingContent {
+                        if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
+                            TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
+                            )
+                            .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
+                            .alignmentGuide(.gutterAlign) { d in
+                                return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
+                            }
+                        }
+                        viewModel.textContentView
+                            .frame(width: contentWidth, alignment: .leading)
+                        
+                        if let attachment = viewModel.post.actionablePost?.content.attachment {
+                            switch attachment {
+                            case .media(let array):
+                                if contentConcealModel.currentMode.isShowingContent {
+                                    MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
+                                        .frame(width: contentWidth)
+                                }
+                            case .poll(let poll):
+                                HStack {
+                                    Image(systemName: "checklist")
+                                    Text("a poll")
+                                }
                                 .frame(width: contentWidth)
+                            case .linkPreviewCard(let card):
+                                HStack {
+                                    Image(systemName: "text.below.photo")
+                                    Text("a link preview")
+                                }
+                                .frame(width: contentWidth)
+                            }
                         }
-                    case .poll(let poll):
-                        HStack {
-                            Image(systemName: "checklist")
-                            Text("a poll")
-                        }
-                        .frame(width: contentWidth)
-                    case .linkPreviewCard(let card):
-                        HStack {
-                            Image(systemName: "text.below.photo")
-                            Text("a link preview")
-                        }
-                        .frame(width: contentWidth)
+                    }
+                    
+                    if let actionablePost = viewModel.post.actionablePost {
+                        ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
+                            .frame(width: contentWidth, alignment: .leading)
                     }
                 }
-            }
-            
-            if let actionablePost = viewModel.post.actionablePost {
-                ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
-                    .frame(width: contentWidth, alignment: .leading)
             }
         }
     }
@@ -547,6 +559,19 @@ private struct HomeTimelinePostRowView: View {
             PostContentView(text: string)
         case .hashtags(let tags):
             HashtagRowView(hashtags: tags)
+        }
+    }
+    
+    func goToProfile(_ account: MastodonAccount) {
+        switch viewModel.myRelationshipToAuthor {
+        case .isMe:
+            let profile: ProfileViewController.ProfileType = .me(account._legacyEntity)
+            viewModel.actionHandler.presentScene(.profile(profile), transition: .show)
+        case .isNotMe(let info):
+            if let info, let me = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount {
+                let profile: ProfileViewController.ProfileType = .notMe(me: me, displayAccount: account._legacyEntity, relationship: info._legacyEntity)
+                viewModel.actionHandler.presentScene(.profile(profile), transition: .show)
+            }
         }
     }
 }
