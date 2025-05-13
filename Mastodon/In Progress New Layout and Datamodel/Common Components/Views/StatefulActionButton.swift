@@ -51,6 +51,7 @@ struct StatefulCountedActionViewModel {
 }
 
 struct StatefulCountedActionButton: View {
+    let iconFont: Font = .body
     let viewModel: StatefulCountedActionViewModel
     
     var body: some View {
@@ -59,14 +60,14 @@ struct StatefulCountedActionButton: View {
                 switch viewModel.displayDetails.isSelected {
                 case .isFalse, .isTrue:
                     Image(systemName: viewModel.iconName)
-                        .font(.subheadline)
+                        .font(iconFont)
                 case .fetching, .settingToFalse, .settingToTrue:
                     ProgressView()
                         .progressViewStyle(.circular)
-                        .font(.subheadline)
+                        .font(iconFont)
                 case .unknown:
                     Image(systemName: "questionmark")
-                        .font(.subheadline)
+                        .font(iconFont)
                 }
                 ZStack(alignment: .leading) {
                     Text("0000")         // to keep the required space
