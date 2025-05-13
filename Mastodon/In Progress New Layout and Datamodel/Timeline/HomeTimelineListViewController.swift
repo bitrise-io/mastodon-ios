@@ -92,7 +92,7 @@ extension MastodonPostMenuAction {
     }
 }
 
-enum MastodonTimelineModalView {
+enum MastodonTimelineOverlayView {
     case images(focusedImage: Mastodon.Entity.Attachment.ID, ImageGalleryViewModel)
     case altText(String)
 }
@@ -110,17 +110,17 @@ private class HomeTimelineListViewModel: ObservableObject {
             }
         }
     }
-    var activeModal: MastodonTimelineModalView? = nil {
+    var activeOverlay: MastodonTimelineOverlayView? = nil {
         didSet {
-            if !isShowingModal && activeModal != nil {
-                isShowingModal = true
-            } else if isShowingModal && activeModal == nil {
-                isShowingModal = false
+            if !isShowingOverlay && activeOverlay != nil {
+                isShowingOverlay = true
+            } else if isShowingOverlay && activeOverlay == nil {
+                isShowingOverlay = false
             }
         }
     }
     
-    @Published var isShowingModal: Bool = false
+    @Published var isShowingOverlay: Bool = false
     @Published var isPresentingAlert: Bool = false
     
     @Published var isPerformingPostAction: (action: MastodonPostMenuAction, post: MastodonContentPost)? = nil
@@ -303,15 +303,15 @@ struct HomeTimelineListView: View {
             }
         }
         .overlay {
-            if viewModel.isShowingModal, let activeModal = viewModel.activeModal {
+            if viewModel.isShowingOverlay, let activeOverlay = viewModel.activeOverlay {
                 GeometryReader { geo in
                     ZStack {
                         Color.black.opacity(0.6)
                             .ignoresSafeArea()
                             .onTapGesture {
-                                viewModel.activeModal = nil
+                                viewModel.activeOverlay = nil
                             }
-                        activeModal.view(sizedForFrame: geo.size)
+                        activeOverlay.view(sizedForFrame: geo.size)
                     }
                 }
             }
@@ -389,7 +389,7 @@ struct HomeTimelineListView: View {
     }
 }
 
-extension MastodonTimelineModalView {
+extension MastodonTimelineOverlayView {
     @ViewBuilder func view(sizedForFrame frameSize: CGSize) -> some View {
         switch self {
         case .altText(let altTextString):
@@ -743,8 +743,8 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
-    func showModal(_ modalView: MastodonTimelineModalView?) {
-        activeModal = modalView
+    func showOverlay(_ overlay: MastodonTimelineOverlayView?) {
+        activeOverlay = overlay
     }
     
     func presentScene(_ scene: SceneCoordinator.Scene, transition: SceneCoordinator.Transition) {

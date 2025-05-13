@@ -154,9 +154,9 @@ struct ImageGridView: View {
                         if let altText = img.basicData.altText, altText.isNotEmpty {
                             Button {
                                 if let translation = viewModel.altTextTranslations?[img.id] {
-                                    viewModel.actionHandler.showModal(.altText(translation))
+                                    viewModel.actionHandler.showOverlay(.altText(translation))
                                 } else {
-                                    viewModel.actionHandler.showModal(.altText(altText))
+                                    viewModel.actionHandler.showOverlay(.altText(altText))
                                 }
                             } label: {
                                 Text("ALT")
@@ -221,7 +221,7 @@ struct ImageGridView: View {
         }
         let altTextTranslations = viewModel.altTextTranslations
         let imageViewModel = ImageGalleryViewModel(imageAttachments: viewModel.imageAttachments, contentConcealViewModel: .alwaysShow, altTextTranslations: altTextTranslations, actionHandler: viewModel.actionHandler)
-        viewModel.actionHandler.showModal(.images(focusedImage: focusing, imageViewModel))
+        viewModel.actionHandler.showOverlay(.images(focusedImage: focusing, imageViewModel))
     }
 }
 
