@@ -22,6 +22,9 @@ extension GenericMastodonPost.PostContent.ContentWarned {
 /// Revealing content removes the filtered layer first, then the contentWarned layer. Concealing content replaces both layers at once.
 @MainActor
 class ContentConcealViewModel: ObservableObject {
+    
+    static let alwaysShow = ContentConcealViewModel(contentPost: nil, context: nil)
+    
     public enum ContentDisplayMode {
         case neverConceal
         case concealAll(reasons: [String], showAnyway: Bool)

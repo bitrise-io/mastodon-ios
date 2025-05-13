@@ -125,7 +125,7 @@ extension MediaAttachmentView {
         case .emptyAttachment:
             Image(systemName: "questionmark.square.dashed")
         case .images(let attachments, let altTextTranslations):
-            ImageGridView(viewModel: ImageGridViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
+            ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
         case .notYetImplemented(let string):
             Text("Needs Implementation (\(string))")
                 .font(.footnote)
@@ -135,7 +135,7 @@ extension MediaAttachmentView {
 }
 
 struct ImageGridView: View {
-    @ObservedObject var viewModel: ImageGridViewModel
+    @ObservedObject var viewModel: ImageGalleryViewModel
     
     var body: some View {
         ZStack(alignment: .topTrailing) { // places the Hide/Show button, if there is one
@@ -148,7 +148,7 @@ struct ImageGridView: View {
                             .clipped()
                             .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
                             .onTapGesture {
-                                showImageGallery(startingWith: img.id)
+                                showImageGallery(focusing: img.id)
                             }
                         
                         if let altText = img.basicData.altText, altText.isNotEmpty {
@@ -207,7 +207,7 @@ struct ImageGridView: View {
         }
     }
     
-    func showImageGallery(startingWith: Mastodon.Entity.Attachment.ID) {
+    func showImageGallery(focusing: Mastodon.Entity.Attachment.ID) {
         let images: [(Mastodon.Entity.Attachment.ID, URL)] = viewModel.imageAttachments.compactMap { img in
             if let url = img.basicData.fullsizeUrl {
                 return (img.id, url)
@@ -220,13 +220,14 @@ struct ImageGridView: View {
             partialResult[img.id] = img.basicData.altText
         }
         let altTextTranslations = viewModel.altTextTranslations
-        viewModel.actionHandler.showModal(.images(images, altText: altText, translations: viewModel.altTextTranslations))
+        let imageViewModel = ImageGalleryViewModel(imageAttachments: viewModel.imageAttachments, contentConcealViewModel: .alwaysShow, altTextTranslations: altTextTranslations, actionHandler: viewModel.actionHandler)
+        viewModel.actionHandler.showModal(.images(focusedImage: focusing, imageViewModel))
     }
 }
 
 struct BlurhashImageView: View {
     let imageAttachment: MastodonImageAttachment
-    @ObservedObject var viewModel: ImageGridViewModel
+    @ObservedObject var viewModel: ImageGalleryViewModel
     
     var body: some View {
         ZStack {
@@ -247,11 +248,6 @@ struct BlurhashImageView: View {
                             image
                                 .resizable()
                                 .scaledToFill()
-                                .onAppear() {
-                                    if !viewModel.atLeastOneImageLoaded {
-                                        viewModel.atLeastOneImageLoaded = true
-                                    }
-                                }
                         default:
                             EmptyView()
                         }
@@ -268,10 +264,9 @@ struct BlurhashImageView: View {
     }
 }
 
-class ImageGridViewModel: ObservableObject {
+class ImageGalleryViewModel: ObservableObject {
     let imageAttachments: [MastodonImageAttachment]
     let altTextTranslations: [String : String]?
-    @Published var atLeastOneImageLoaded = false
     @Published var blurhashes = [ Mastodon.Entity.Attachment.ID : UIImage ]()
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
     let actionHandler: MastodonPostMenuActionHandler

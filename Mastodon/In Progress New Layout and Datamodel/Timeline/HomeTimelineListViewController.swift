@@ -93,7 +93,7 @@ extension MastodonPostMenuAction {
 }
 
 enum MastodonTimelineModalView {
-    case images([(Mastodon.Entity.Attachment.ID, URL)], altText: [Mastodon.Entity.Attachment.ID : String]?, translations: [Mastodon.Entity.Attachment.ID : String]?)
+    case images(focusedImage: Mastodon.Entity.Attachment.ID, ImageGalleryViewModel)
     case altText(String)
 }
 
@@ -226,13 +226,9 @@ private class HomeTimelineListViewModel: ObservableObject {
     
     func contentConcelModel(forPost post: GenericMastodonPost) -> ContentConcealViewModel {
         
-        func dummyModel() -> ContentConcealViewModel {
-            return ContentConcealViewModel(contentPost: nil, context: nil)
-        }
-        
-        guard let actionablePost = post.actionablePost else { return dummyModel() }
+        guard let actionablePost = post.actionablePost else { return .alwaysShow }
         return feedLoader?.contentConcealViewModel(forContentPost: actionablePost)
-        ?? dummyModel()
+        ?? .alwaysShow
     }
 }
 
@@ -398,8 +394,10 @@ extension MastodonTimelineModalView {
         switch self {
         case .altText(let altTextString):
             AltTextView(altTextString: altTextString, frameSize: frameSize)
-        case .images(let imagesInfo, let altTextStrings, let translations):
-            AltTextView(altTextString: "THIS WILL BE AN IMAGE", frameSize: frameSize)
+        case .images(let focusedImage, let viewModel):
+            if let img = viewModel.imageAttachments.first(where: { $0.id == focusedImage }) {
+                ZoomableBlurhashImageView(image: img, viewModel: viewModel, frameSize: frameSize)
+            }
         }
     }
 }
