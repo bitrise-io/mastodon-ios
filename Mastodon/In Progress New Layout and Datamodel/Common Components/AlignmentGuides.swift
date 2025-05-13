@@ -9,7 +9,7 @@ let spacingBetweenGutterAndContent: CGFloat = _eight
 let standardPadding: CGFloat = _eight
 
 struct AvatarSize {
-    static var large: CGFloat = 44
+    static var large: CGFloat = 55
     static var small: CGFloat = 32
 }
 
