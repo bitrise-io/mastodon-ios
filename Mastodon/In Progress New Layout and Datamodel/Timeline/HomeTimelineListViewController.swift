@@ -441,6 +441,19 @@ private struct HomeTimelinePostRowView: View {
                         }
                         viewModel.textContentView
                             .frame(width: contentWidth, alignment: .leading)
+                            .onTapGesture {
+                                guard let actionablePost = viewModel.post.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+                                viewModel.actionHandler.presentScene(
+                                .thread(
+                                    viewModel: ThreadViewModel(
+                                        authenticationBox: currentUser,
+                                        optionalRoot: .root(
+                                            context: .init(
+                                                status: MastodonStatus(
+                                                    entity: actionablePost._legacyEntity,
+                                                    showDespiteContentWarning:
+                                                        false))))), transition: .show)
+                            }
                         
                         if let attachment = viewModel.post.actionablePost?.content.attachment {
                             switch attachment {

@@ -6,10 +6,12 @@ import MastodonSDK
 class GenericMastodonPost {
     let id: Mastodon.Entity.Status.ID
     let metaData: PostMetadata
+    let _legacyEntity: Mastodon.Entity.Status
     
-    init(id: Mastodon.Entity.Status.ID, metaData: PostMetadata) {
+    init(id: Mastodon.Entity.Status.ID, metaData: PostMetadata, _legacyEntity: Mastodon.Entity.Status) {
         self.id = id
         self.metaData = metaData
+        self._legacyEntity = _legacyEntity
     }
 }
 

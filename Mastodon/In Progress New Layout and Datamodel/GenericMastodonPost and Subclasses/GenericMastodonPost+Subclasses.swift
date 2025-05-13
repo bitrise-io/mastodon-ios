@@ -6,12 +6,12 @@ import MastodonSDK
 extension GenericMastodonPost {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> GenericMastodonPost {
         if let reblog = status.reblog {
-            return MastodonBoostPost(id: status.id, metaData: PostMetadata.fromStatus(status), boostedPost: GenericMastodonPost.fromStatus(reblog) as! MastodonContentPost)
+            return MastodonBoostPost(id: status.id, metaData: PostMetadata.fromStatus(status), boostedPost: GenericMastodonPost.fromStatus(reblog) as! MastodonContentPost, _legacyEntity: status)
         }
 //        else if let quote = status.quote {
 //        }
         else {
-            return MastodonBasicPost(id: status.id, metaData: PostMetadata.fromStatus(status), content: PostContent.fromStatus(status), inReplyTo: InReplyToDetails.fromStatus(status), attachment: PostAttachment.fromStatus(status))
+            return MastodonBasicPost(id: status.id, metaData: PostMetadata.fromStatus(status), content: PostContent.fromStatus(status), inReplyTo: InReplyToDetails.fromStatus(status), attachment: PostAttachment.fromStatus(status), _legacyEntity: status)
         }
     }
     
@@ -24,7 +24,7 @@ extension GenericMastodonPost {
             return updatedPost
         } else if let boostPost = self as? MastodonBoostPost {
             guard boostPost.boostedPost.id == updatedPost.id, let updatedPost = updatedPost as? MastodonContentPost else { throw PostActionFailure.postIdMismatch }
-            return MastodonBoostPost(id: boostPost.id, metaData: boostPost.metaData, boostedPost: updatedPost)
+            return MastodonBoostPost(id: boostPost.id, metaData: boostPost.metaData, boostedPost: updatedPost, _legacyEntity: updatedPost._legacyEntity)
         } else {
             assertionFailure("not implemented")
             return self
@@ -35,9 +35,9 @@ extension GenericMastodonPost {
 class MastodonContentPost: GenericMastodonPost {
     let content: GenericMastodonPost.PostContent
     
-    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, content: GenericMastodonPost.PostContent) {
+    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, content: GenericMastodonPost.PostContent, _legacyEntity: Mastodon.Entity.Status) {
         self.content = content
-        super.init(id: id, metaData: metaData)
+        super.init(id: id, metaData: metaData, _legacyEntity: _legacyEntity)
     }
 }
 
@@ -45,27 +45,27 @@ class MastodonBasicPost: MastodonContentPost {
     let inReplyTo: GenericMastodonPost.InReplyToDetails?
     let attachment: GenericMastodonPost.PostAttachment?
     
-    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, content: GenericMastodonPost.PostContent, inReplyTo: GenericMastodonPost.InReplyToDetails?, attachment: GenericMastodonPost.PostAttachment?) {
+    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, content: GenericMastodonPost.PostContent, inReplyTo: GenericMastodonPost.InReplyToDetails?, attachment: GenericMastodonPost.PostAttachment?, _legacyEntity: Mastodon.Entity.Status) {
         self.inReplyTo = inReplyTo
         self.attachment = attachment
-        super.init(id: id, metaData: metaData, content: content)
+        super.init(id: id, metaData: metaData, content: content, _legacyEntity: _legacyEntity)
     }
 }
 
 class MastodonBoostPost: GenericMastodonPost {
     let boostedPost: MastodonContentPost
     
-    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, boostedPost: MastodonContentPost) {
+    init(id: Mastodon.Entity.Status.ID, metaData: GenericMastodonPost.PostMetadata, boostedPost: MastodonContentPost, _legacyEntity: Mastodon.Entity.Status) {
         self.boostedPost = boostedPost
-        super.init(id: id, metaData: metaData)
+        super.init(id: id, metaData: metaData, _legacyEntity: _legacyEntity)
     }
 }
 
 class MastodonQuotePost: MastodonContentPost {
     let quotedPost: MastodonBasicPost
     
-    init(id: Mastodon.Entity.Status.ID, content: GenericMastodonPost.PostContent, metaData: GenericMastodonPost.PostMetadata, quotedPost: MastodonBasicPost) {
+    init(id: Mastodon.Entity.Status.ID, content: GenericMastodonPost.PostContent, metaData: GenericMastodonPost.PostMetadata, quotedPost: MastodonBasicPost, _legacyEntity: Mastodon.Entity.Status) {
         self.quotedPost = quotedPost
-        super.init(id: id, metaData: metaData, content: content)
+        super.init(id: id, metaData: metaData, content: content, _legacyEntity: _legacyEntity)
     }
 }
