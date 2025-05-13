@@ -305,13 +305,25 @@ struct HomeTimelineListView: View {
         .overlay {
             if viewModel.isShowingOverlay, let activeOverlay = viewModel.activeOverlay {
                 GeometryReader { geo in
-                    ZStack {
-                        Color.black.opacity(0.6)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                viewModel.activeOverlay = nil
-                            }
-                        activeOverlay.view(sizedForFrame: geo.size)
+                    ZStack(alignment: .topLeading) {
+                        ZStack {
+                            Color.black.opacity(0.6)
+                                .ignoresSafeArea()
+                                .onTapGesture {
+                                    viewModel.activeOverlay = nil
+                                }
+                            
+                            activeOverlay.view(sizedForFrame: geo.size)
+                        }
+                        
+                        Button {
+                            viewModel.activeOverlay = nil
+                        } label: {
+                            Image(systemName: "xmark.circle")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                        }
+                        .padding(standardPadding)
                     }
                 }
             }
