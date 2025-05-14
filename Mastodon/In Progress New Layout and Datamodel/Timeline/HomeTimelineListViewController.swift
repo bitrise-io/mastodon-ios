@@ -446,10 +446,7 @@ private struct HomeTimelinePostRowView: View {
                         if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
                             TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
                             )
-                            .frame(width: contentWidth + distanceFromAvatarLeadingEdgeToContentLeadingEdge, alignment: .leading)
-                            .alignmentGuide(.gutterAlign) { d in
-                                return d[.leading] + distanceFromAvatarLeadingEdgeToContentLeadingEdge
-                            }
+                            .frame(width: contentWidth, alignment: .leading)
                         }
                         viewModel.textContentView
                             .frame(width: contentWidth, alignment: .leading)
