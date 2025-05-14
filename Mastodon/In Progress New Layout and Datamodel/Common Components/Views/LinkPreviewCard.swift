@@ -22,6 +22,7 @@ struct LinkPreviewCard: View {
     
     @State var blurhash: UIImage?
     @State var couldShowImage = true
+    @State var loadingEmbeddedContent = false
     
     var body: some View {
         let previewFrame = previewFrameSize(fittingWidth: fittingWidth)
@@ -98,8 +99,9 @@ struct LinkPreviewCard: View {
     }
     
     @ViewBuilder var previewVisual: some View {
-        if couldShowImage, let imageUrl = cardEntity.image {
-            AsyncImage(url: URL(string: imageUrl))
+        ZStack {
+            if couldShowImage, let imageUrl = cardEntity.image {
+                AsyncImage(url: URL(string: imageUrl))
                 { phase in
                     switch phase {
                     case .empty:
@@ -116,24 +118,62 @@ struct LinkPreviewCard: View {
                     case .failure:
                         Color.clear.frame(height: 0)
                             .onAppear {
-                                couldShowImage = false
+                                switch cardEntity.type {
+                                case .link, .photo:
+                                    couldShowImage = false
+                                default:
+                                    break
+                                }
                             }
                     @unknown default:
                         EmptyView()
                     }
                 }
                 .onAppear() {
-                    Task {
-                        if let blurhashString = cardEntity.blurhash, let width = cardEntity.width, let height = cardEntity.height {
-                            blurhash = try? await BlurhashImageCacheService.shared.image(
-                                blurhash: blurhashString,
-                                size: CGSize(width: width, height: height),
-                                url: cardEntity.url
-                            ).singleOutput()
+                    loadBlurhash()
+                }
+            }
+            
+            if let html = cardEntity.html, !html.isEmpty {
+
+                if loadingEmbeddedContent {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    WebContentView(style: .linkPreviewCard, html: html)
+                } else {
+                    Button {
+                        loadingEmbeddedContent = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "play.fill")
+                                .font(.title2)
+                            Text(L10n.Common.Controls.Status.loadEmbed)
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(EdgeInsets(top: standardPadding, leading: ButtonPadding.capsuleHorizontal, bottom: standardPadding, trailing: ButtonPadding.capsuleHorizontal))
+                        .background {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
                         }
                     }
+                    .buttonStyle(.borderless)
                 }
-        } else if let html = cardEntity.html, !html.isEmpty {
+            }
+        }
+        .onAppear() {
+            loadBlurhash()
+        }
+    }
+    
+    func loadBlurhash() {
+        Task {
+            if let blurhashString = cardEntity.blurhash, let width = cardEntity.width, let height = cardEntity.height {
+                blurhash = try? await BlurhashImageCacheService.shared.image(
+                    blurhash: blurhashString,
+                    size: CGSize(width: width, height: height),
+                    url: cardEntity.url
+                ).singleOutput()
+            }
         }
     }
     
@@ -164,6 +204,7 @@ struct LinkPreviewCard: View {
                     HStack(spacing: tinySpacing) {
                         AvatarView(size: .tiny, author: account, goToProfile: nil)
                         TextViewWithCustomEmoji.linkPreviewCardAuthorButton(html: account.displayNameWithFallback, emojis: account.emojis)
+                            .lineLimit(1)
                     }
                     .padding(EdgeInsets(top: tinySpacing, leading: 6, bottom: tinySpacing, trailing: 6))
                     .background {
@@ -193,9 +234,11 @@ struct LinkPreviewCard: View {
         if let providerName = cardEntity.providerName {
             HStack(spacing: 2) {
                 Text(providerName)
+                    .lineLimit(1)
                 if let formattedPublishedDate = cardEntity.publishedAt?.abbreviatedDate {
                     Text("·")
                     Text(formattedPublishedDate)
+                        .lineLimit(1)
                 }
             }
             .font(.subheadline)

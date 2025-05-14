@@ -1291,6 +1291,7 @@
 				"Common Components/Views/SocialContextHeader.swift",
 				"Common Components/Views/StatefulActionButton.swift",
 				"Common Components/Views/TextViewWithCustomEmoji.swift",
+				"Common Components/Views/WebContentView.swift",
 				"Common Components/ZoomableScrollView.swift",
 				FeedLoader/LastReadMarkers.swift,
 				FeedLoader/MastodonFeedLoader.swift,
