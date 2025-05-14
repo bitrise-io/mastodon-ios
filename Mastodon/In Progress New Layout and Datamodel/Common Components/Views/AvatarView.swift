@@ -7,12 +7,25 @@ private let avatarShape = RoundedRectangle(cornerRadius: 8)
 struct AvatarView: View {
     @ScaledMetric var sizeLarge = AvatarSize.large
     @ScaledMetric var sizeSmall = AvatarSize.small
+    @ScaledMetric var sizeTiny = AvatarSize.tiny
     
     @State var isNavigating: Bool = false
     
     enum Size {
         case large
         case small
+        case tiny
+        
+        var shape: RoundedRectangle {
+            switch self {
+            case .large:
+                RoundedRectangle(cornerRadius: CornerRadius.standard)
+            case .small:
+                RoundedRectangle(cornerRadius: CornerRadius.standard)
+            case .tiny:
+                RoundedRectangle(cornerRadius: CornerRadius.tiny)
+            }
+        }
     }
     
     let size: Size
@@ -23,6 +36,7 @@ struct AvatarView: View {
         switch size {
         case .large: sizeLarge
         case .small: sizeSmall
+        case .tiny: sizeTiny
         }
     }
     

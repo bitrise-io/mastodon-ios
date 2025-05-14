@@ -1,0 +1,219 @@
+// Copyright © 2025 Mastodon gGmbH. All rights reserved.
+
+import MastodonAsset
+import MastodonLocalization
+import MastodonSDK
+import SwiftUI
+import MastodonCore
+
+struct LinkPreviewCard: View {
+    
+    private let compactPreviewHeight: CGFloat = 96
+    
+    enum Layout: Equatable {
+        case noPreviewVisual
+        case compact
+        case large(aspectRatio: CGFloat)
+    }
+    
+    let cardEntity: Mastodon.Entity.Card
+    let fittingWidth: CGFloat
+    @State var blurhash: UIImage?
+    @State var couldShowImage = true
+    
+    var body: some View {
+        let previewFrame = previewFrameSize(fittingWidth: fittingWidth)
+        VStack(spacing: 0) {
+            switch cardEntity.layout {
+            case .large:
+                VStack(alignment: .leading, spacing: 0) {
+                    previewVisual
+                        .frame(width: previewFrame.width, height: previewFrame.height)
+                    Divider()
+                    textContentStack
+                }
+            case .compact:
+                HStack(spacing: 0) {
+                    previewVisual
+                        .frame(width: previewFrame.width, height: previewFrame.height)
+                    Divider()
+                    textContentStack
+                        .frame(width: fittingWidth - previewFrame.width)
+                }
+            case .noPreviewVisual:
+                textContentStack
+                    .frame(width: fittingWidth)
+            }
+            
+            Divider()
+            
+            HStack {
+                authorMolecule
+                    .fixedSize()
+                Spacer()
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.standard))
+        .background {
+            RoundedRectangle(cornerRadius: CornerRadius.standard)
+                .fill(.clear)
+                .stroke(.secondary)
+        }
+        .accessibilityLabel(accessibilityLabelText)
+    }
+    
+    var accessibilityLabelText: String {
+        let title = cardEntity.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url = URL(string: cardEntity.url)
+        if let host = url?.host {
+            return "\(title) \(host)"
+        } else {
+            return title
+        }
+    }
+    
+    func previewFrameSize(fittingWidth: CGFloat) -> CGSize {
+        guard couldShowImage else { return .zero }
+        
+        switch cardEntity.layout {
+        case .noPreviewVisual:
+                return .zero
+        case .compact:
+            guard let previewWidth = cardEntity.width, let previewHeight = cardEntity.height else { return .zero }
+            let height: CGFloat = compactPreviewHeight
+            let aspectRatio = CGFloat(previewWidth) / CGFloat(previewHeight)
+            let width = floor(height * aspectRatio)
+            return CGSize(width: width, height: height)
+        case .large(let aspectRatio):
+            return CGSize(width: fittingWidth, height: fittingWidth / aspectRatio)
+        }
+    }
+    
+    @ViewBuilder var previewVisual: some View {
+        if couldShowImage, let imageUrl = cardEntity.image {
+            AsyncImage(url: URL(string: imageUrl))
+                { phase in
+                    switch phase {
+                    case .empty:
+                        if let blurhash {
+                            Image(uiImage: blurhash)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                        ProgressView()
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    case .failure:
+                        Color.clear.frame(height: 0)
+                            .onAppear {
+                                couldShowImage = false
+                            }
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+        } else if let html = cardEntity.html, !html.isEmpty {
+        }
+    }
+    
+    @ViewBuilder var authorMolecule: some View {
+        // avatar button if the author has an account, otherwise shows author information as text
+        HStack {
+            if let author = cardEntity.authors?.first, let account = author.account {
+                // Author has an account; show Mastodon logo and avatar button
+                Image(uiImage: Asset.Scene.Sidebar.logo.image.withRenderingMode(.alwaysTemplate))
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.secondary)
+                    .frame(width: 17, height: 17)
+                
+                Text(L10n.Common.Controls.Status.Card.by)
+                    .foregroundStyle(.secondary)
+                
+                Button { // author account button
+                } label: {
+                    HStack(spacing: tinySpacing) {
+                        AvatarView(size: .tiny, author: account, goToProfile: nil)
+                        TextViewWithCustomEmoji.linkPreviewCardAuthorButton(html: account.displayNameWithFallback, emojis: account.emojis)
+                    }
+                    .padding(EdgeInsets(top: tinySpacing, leading: 6, bottom: tinySpacing, trailing: 6))
+                    .background {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Asset.Colors.Button.userFollowing.swiftUIColor)
+                    }
+                }
+                .buttonStyle(.borderless)
+            } else {
+                // No account, show author label
+                if let author = cardEntity.authors?.first, let authorName = author.name, authorName.isEmpty == false {
+                    Text(L10n.Common.Controls.Status.Card.byAuthor(authorName))
+                        .foregroundStyle(.secondary)
+                } else if let authorName = cardEntity.authorName, authorName.isNotEmpty {  // deprecated since 4.3.0
+                    Text(L10n.Common.Controls.Status.Card.byAuthor(authorName))
+                        .foregroundStyle(.secondary)
+                } else if let linkHost = URL(string: cardEntity.url)?.host {
+                    Text(linkHost)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(EdgeInsets(top: standardPadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
+    }
+    
+    @ViewBuilder var publisherAttributionMolecule: some View {
+        if let providerName = cardEntity.providerName {
+            HStack(spacing: 2) {
+                Text(providerName)
+                if let formattedPublishedDate = cardEntity.publishedAt?.abbreviatedDate {
+                    Text("·")
+                    Text(formattedPublishedDate)
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+    }
+    
+    @ViewBuilder var textContentStack: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            publisherAttributionMolecule
+            Text(cardEntity.title)
+                .font(.body)
+                .fontWeight(.semibold)
+                .multilineTextAlignment(.leading)
+            switch cardEntity.layout {
+            case .noPreviewVisual, .large:
+                Spacer()
+                    .frame(maxHeight: tinySpacing)
+                Text(cardEntity.description)
+                    .font(.subheadline)
+                    .lineLimit(2)
+            case .compact:
+                EmptyView()
+            }
+        }
+        .padding(EdgeInsets(top: doublePadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
+    }
+}
+
+private extension Mastodon.Entity.Card {
+    var layout: LinkPreviewCard.Layout {
+        if (image == nil || image!.isEmpty) && (html == nil || html!.isEmpty) {
+            return .noPreviewVisual
+        }
+        var aspectRatio = CGFloat(width ?? 1) / CGFloat(height ?? 1)
+        if !aspectRatio.isFinite {
+            aspectRatio = 1
+        }
+        
+        if (abs(aspectRatio - 1) < 0.05 || image == nil) && (html == nil || html!.isEmpty) {
+            return .compact
+        } else {
+            return .large(aspectRatio: aspectRatio)
+        }
+    }
+}

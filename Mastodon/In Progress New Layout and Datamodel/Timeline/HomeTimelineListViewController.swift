@@ -481,10 +481,7 @@ private struct HomeTimelinePostRowView: View {
                                 }
                                 .frame(width: contentWidth)
                             case .linkPreviewCard(let card):
-                                HStack {
-                                    Image(systemName: "text.below.photo")
-                                    Text("a link preview")
-                                }
+                                LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth)
                                 .frame(width: contentWidth)
                             }
                         }

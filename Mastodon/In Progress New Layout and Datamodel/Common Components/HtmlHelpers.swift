@@ -13,6 +13,7 @@ struct HtmlFormattingOptions {
         case inlinePostPreview
         case fullPost
         case socialContextHeader
+        case linkPreviewCardAuthor
     }
     
     let format: Format
@@ -25,6 +26,8 @@ struct HtmlFormattingOptions {
             17
         case .socialContextHeader:
             13
+        case .linkPreviewCardAuthor:
+            14
         }
     }
     
@@ -34,13 +37,18 @@ struct HtmlFormattingOptions {
             [:]
         case .fullPost:
             [
-                .font: UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .regular)),
-                .foregroundColor: UIColor.label,
+                .font : UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .regular)),
+                .foregroundColor : UIColor.label,
             ]
         case .socialContextHeader:
             [
-                .font: UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .bold)),
-                .foregroundColor: UIColor.secondaryLabel,
+                .font : UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .bold)),
+                .foregroundColor : UIColor.secondaryLabel,
+            ]
+        case .linkPreviewCardAuthor:
+            [
+                .font : UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
+                .foregroundColor : UIColor.label
             ]
         }
     }
@@ -55,6 +63,8 @@ struct HtmlFormattingOptions {
                 .foregroundColor: UIColor.link,
             ]
         case .socialContextHeader:
+            [:]
+        case .linkPreviewCardAuthor:
             [:]
         }
     }

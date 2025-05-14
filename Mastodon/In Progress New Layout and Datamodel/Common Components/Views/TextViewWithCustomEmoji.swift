@@ -9,6 +9,7 @@ enum TextViewWithCustomEmoji {
     
     case timelinePost(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis)
+    case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
 }
 
 extension TextViewWithCustomEmoji: View {
@@ -18,6 +19,8 @@ extension TextViewWithCustomEmoji: View {
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .fullPost))
         case .socialContextHeader(let html, let emojis):
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .socialContextHeader))
+        case .linkPreviewCardAuthorButton(let html, let emojis):
+            Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .linkPreviewCardAuthor))
         }
     }
 }

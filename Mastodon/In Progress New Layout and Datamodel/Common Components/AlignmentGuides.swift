@@ -7,15 +7,19 @@ private let _eight: CGFloat = 8
 
 let spacingBetweenGutterAndContent: CGFloat = _eight
 let standardPadding: CGFloat = _eight
+let doublePadding: CGFloat = _eight * 2
+let tinySpacing: CGFloat = _eight / 2
 
 struct AvatarSize {
     static var large: CGFloat = 55
     static var small: CGFloat = 32
+    static var tiny: CGFloat = 16
 }
 
 struct CornerRadius {
     static var standard: CGFloat = _eight
     static var small: CGFloat = _eight / 2
+    static var tiny: CGFloat = 3
 }
 
 struct ButtonPadding {
