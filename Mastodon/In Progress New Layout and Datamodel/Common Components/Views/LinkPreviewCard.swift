@@ -18,6 +18,8 @@ struct LinkPreviewCard: View {
     
     let cardEntity: Mastodon.Entity.Card
     let fittingWidth: CGFloat
+    let navigateToScene: (SceneCoordinator.Scene, SceneCoordinator.Transition)->()
+    
     @State var blurhash: UIImage?
     @State var couldShowImage = true
     
@@ -62,6 +64,10 @@ struct LinkPreviewCard: View {
                 .stroke(.secondary)
         }
         .accessibilityLabel(accessibilityLabelText)
+        .onTapGesture {
+            guard let url = URL(string: cardEntity.url) else { return }
+            navigateToScene(.safari(url: url), .safariPresent(animated: true, completion: nil))
+        }
     }
     
     var accessibilityLabelText: String {
@@ -135,6 +141,14 @@ struct LinkPreviewCard: View {
                     .foregroundStyle(.secondary)
                 
                 Button { // author account button
+                    guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount else { return }
+                    let profileType: ProfileViewController.ProfileType
+                    if currentUser.id == account.id {
+                        profileType = .me(currentUser)
+                    } else {
+                        profileType = .notMe(me: currentUser, displayAccount: account, relationship: nil)
+                    }
+                    navigateToScene(.profile(profileType), .show)
                 } label: {
                     HStack(spacing: tinySpacing) {
                         AvatarView(size: .tiny, author: account, goToProfile: nil)

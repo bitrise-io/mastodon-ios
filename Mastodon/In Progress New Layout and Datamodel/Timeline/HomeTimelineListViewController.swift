@@ -481,7 +481,9 @@ private struct HomeTimelinePostRowView: View {
                                 }
                                 .frame(width: contentWidth)
                             case .linkPreviewCard(let card):
-                                LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth)
+                                LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
+                                    viewModel.actionHandler.presentScene(scene, transition: transition)
+                                })
                                 .frame(width: contentWidth)
                             }
                         }
