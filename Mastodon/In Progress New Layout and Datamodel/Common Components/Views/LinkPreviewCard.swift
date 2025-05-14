@@ -122,6 +122,17 @@ struct LinkPreviewCard: View {
                         EmptyView()
                     }
                 }
+                .onAppear() {
+                    Task {
+                        if let blurhashString = cardEntity.blurhash, let width = cardEntity.width, let height = cardEntity.height {
+                            blurhash = try? await BlurhashImageCacheService.shared.image(
+                                blurhash: blurhashString,
+                                size: CGSize(width: width, height: height),
+                                url: cardEntity.url
+                            ).singleOutput()
+                        }
+                    }
+                }
         } else if let html = cardEntity.html, !html.isEmpty {
         }
     }
