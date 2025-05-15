@@ -468,7 +468,7 @@ private struct HomeTimelinePostRowView: View {
                             switch attachment {
                             case .media(let array):
                                 if contentConcealModel.currentMode.isShowingContent {
-                                    MediaAttachmentView(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
+                                    MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
                                         .frame(width: contentWidth)
                                 }
                             case .poll(let poll):

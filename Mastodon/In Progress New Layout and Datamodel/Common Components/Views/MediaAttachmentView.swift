@@ -1,28 +1,56 @@
 // Copyright © 2025 Mastodon gGmbH. All rights reserved.
 
+import AVKit
 import SwiftUI
 import MastodonSDK
 import MastodonCore
 import MastodonLocalization
+import Combine
 
 let buttonBackgroundColor = Color.black.opacity(0.6)
 let maxHeightForHiddenMedia: CGFloat = 100
 
-struct MastodonImageAttachment: Identifiable {
+class GenericMastodonAttachment: Identifiable {
     let id: Mastodon.Entity.Attachment.ID
     let basicData: MastodonAttachmentBasicData
+    
+    init(entity: Mastodon.Entity.Attachment) {
+        id = entity.id
+        basicData = MastodonAttachmentBasicData(entity)
+    }
+}
+
+class MastodonImageAttachment: GenericMastodonAttachment {
     let imageDetails: ImageAttachmentDetails
     
     init?(_ entity: Mastodon.Entity.Attachment) {
-        id = entity.id
-        switch entity.type {
-        case .image:
-            guard let meta = entity.meta else { return nil }
-            basicData = MastodonAttachmentBasicData(entity)
-            imageDetails = ImageAttachmentDetails(meta)
-        default:
-            return nil
-        }
+        guard let meta = entity.meta else { return nil }
+        imageDetails = ImageAttachmentDetails(meta)
+        super.init(entity: entity)
+    }
+}
+
+class MastodonPlayableAttachment: GenericMastodonAttachment {
+    let imageDetails: ImageAttachmentDetails?
+    let duration: Double?
+    
+    init?(_ entity: Mastodon.Entity.Attachment) {
+        guard let meta = entity.meta else { return nil }
+        imageDetails = ImageAttachmentDetails(meta)
+        duration = meta.duration
+        super.init(entity: entity)
+    }
+    
+    var url: URL? {
+        return basicData.fullsizeUrl
+    }
+    
+    var size: CGSize? {
+        return imageDetails?.originalSize
+    }
+    
+    var blurhash: String? {
+        return basicData.blurhash
     }
 }
 
@@ -90,8 +118,11 @@ struct ImageAttachmentDetails {
     }
 }
 
-enum MediaAttachmentView {
+enum MediaAttachment {
     case images([MastodonImageAttachment], altTextTranslations: [String : String]?)
+    case gifv(MastodonPlayableAttachment, altTextTranslation: String?)
+    case video(MastodonPlayableAttachment, altTextTranslation: String?)
+    case audio(MastodonPlayableAttachment, altTextTranslation: String?)
     case notYetImplemented(String)
     case emptyAttachment
     
@@ -103,14 +134,29 @@ enum MediaAttachmentView {
             let images = media.map { attachment in
                 MastodonImageAttachment(attachment)
             }.compactMap { $0 }
-            self = .images(images, altTextTranslations: altTextTranslations)
+            if images.isNotEmpty {
+                self = .images(images, altTextTranslations: altTextTranslations)
+            } else {
+                self = .emptyAttachment
+            }
         case .gifv:
-            self = .notYetImplemented("gifv")
+            if let entity = media.first, let attachment = MastodonPlayableAttachment(entity) {
+                self = .gifv(attachment, altTextTranslation: altTextTranslations?.values.first)
+            } else {
+                self = .emptyAttachment
+            }
         case .video:
-            self = .notYetImplemented("video")
+            if let entity = media.first, let attachment = MastodonPlayableAttachment(entity) {
+                self = .video(attachment, altTextTranslation: altTextTranslations?.values.first)
+            } else {
+                self = .emptyAttachment
+            }
         case .audio:
-            self = .notYetImplemented("audio")
-            
+            if let entity = media.first, let attachment = MastodonPlayableAttachment(entity) {
+                self = .audio(attachment, altTextTranslation: altTextTranslations?.values.first)
+            } else {
+                self = .emptyAttachment
+            }
         case ._other(let string):
             self = .notYetImplemented(string)
         case .unknown:
@@ -119,13 +165,19 @@ enum MediaAttachmentView {
     }
 }
 
-extension MediaAttachmentView {
+extension MediaAttachment {
     @ViewBuilder func view(withContentConcealModel contentConceal: ContentConcealViewModel, actionHandler: MastodonPostMenuActionHandler) -> some View {
         switch self {
         case .emptyAttachment:
             Image(systemName: "questionmark.square.dashed")
         case .images(let attachments, let altTextTranslations):
-            ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
+            ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
+                ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
+            }
+        case .audio, .gifv, .video:
+            ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
+                PlayerView(media: self, contentConcealViewModel: contentConceal)
+            }
         case .notYetImplemented(let string):
             Text("Needs Implementation (\(string))")
                 .font(.footnote)
@@ -134,62 +186,30 @@ extension MediaAttachmentView {
     }
 }
 
-struct ImageGridView: View {
-    @ObservedObject var viewModel: ImageGalleryViewModel
+struct ConcealableMediaAttachmentView<Content: View>: View {
+    @ObservedObject var contentConcealViewModel: ContentConcealViewModel
+    let contentView: Content
+
+    init(contentConcealViewModel: ContentConcealViewModel, @ViewBuilder content: () -> Content) {
+        self.contentConcealViewModel = contentConcealViewModel
+        self.contentView = content()
+    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) { // places the Hide/Show button, if there is one
             
-            // The images
-            ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
-                ForEach(viewModel.imageAttachments) { img in
-                    ZStack(alignment: .bottomLeading) { // places the ALT text button
-                        BlurhashImageView(imageAttachment: img, viewModel: viewModel)
-                            .clipped()
-                            .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
-                            .onTapGesture {
-                                showImageGallery(focusing: img.id)
-                            }
-                        
-                        if let altText = img.basicData.altText, altText.isNotEmpty {
-                            Button {
-                                if let translation = viewModel.altTextTranslations?[img.id] {
-                                    viewModel.actionHandler.showOverlay(.altText(translation))
-                                } else {
-                                    viewModel.actionHandler.showOverlay(.altText(altText))
-                                }
-                            } label: {
-                                Text("ALT")
-                                    .foregroundStyle(.white)
-                                    .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.horizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.horizontal))
-                                    .background() {
-                                        RoundedRectangle(cornerRadius: CornerRadius.small)
-                                            .fill(buttonBackgroundColor)
-                                    }
-                            }
-                            .fixedSize()
-                            .padding(standardPadding)
-                            .buttonStyle(.borderless)
-                            .accessibilityHidden(true)
-                        }
-                    }
-                    .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
-                }
-            }
-            .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
-            .cornerRadius(CornerRadius.standard)
-            .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
+            contentView
             
             // Hide/Show button
-            switch viewModel.contentConcealViewModel.currentMode {
+            switch contentConcealViewModel.currentMode {
             case .neverConceal, .concealAll:
                 EmptyView()
             case .concealMediaOnly(let showAnyway):
                 Button {
                     if showAnyway {
-                        viewModel.contentConcealViewModel.hide()
+                        contentConcealViewModel.hide()
                     } else {
-                        viewModel.contentConcealViewModel.showMore()
+                        contentConcealViewModel.showMore()
                     }
                 } label: {
                     Text(showAnyway ? L10n.Common.Controls.Status.Actions.hide : L10n.Common.Controls.Status.Actions.show)
@@ -205,6 +225,53 @@ struct ImageGridView: View {
                 .padding(standardPadding)
             }
         }
+    }
+    
+}
+
+struct ImageGridView: View {
+    @ObservedObject var viewModel: ImageGalleryViewModel
+    
+    var body: some View {
+        // The images
+        ProportionalImageGridLayout(spacing: 1, aspectRatios: viewModel.imageAttachments.compactMap(\.imageDetails.originalSize?.aspectRatio), canUseTwoRows: !viewModel.useRestrictedHeight) {
+            ForEach(viewModel.imageAttachments) { img in
+                ZStack(alignment: .bottomLeading) { // places the ALT text button
+                    BlurhashImageView(url: img.basicData.fullsizeUrl, imageDetails: img.imageDetails, blurhash: viewModel.blurhashes[img.id], contentConcealViewModel: viewModel.contentConcealViewModel)
+                        .clipped()
+                        .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
+                        .onTapGesture {
+                            showImageGallery(focusing: img.id)
+                        }
+                    
+                    if let altText = img.basicData.altText, altText.isNotEmpty {
+                        Button {
+                            if let translation = viewModel.altTextTranslations?[img.id] {
+                                viewModel.actionHandler.showOverlay(.altText(translation))
+                            } else {
+                                viewModel.actionHandler.showOverlay(.altText(altText))
+                            }
+                        } label: {
+                            Text("ALT")
+                                .foregroundStyle(.white)
+                                .padding(EdgeInsets(top: ButtonPadding.vertical, leading: ButtonPadding.horizontal, bottom: ButtonPadding.vertical, trailing: ButtonPadding.horizontal))
+                                .background() {
+                                    RoundedRectangle(cornerRadius: CornerRadius.small)
+                                        .fill(buttonBackgroundColor)
+                                }
+                        }
+                        .fixedSize()
+                        .padding(standardPadding)
+                        .buttonStyle(.borderless)
+                        .accessibilityHidden(true)
+                    }
+                }
+                .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
+            }
+        }
+        .frame(maxHeight: viewModel.useRestrictedHeight ? maxHeightForHiddenMedia : nil)
+        .cornerRadius(CornerRadius.standard)
+        .animation(.easeInOut, value: viewModel.contentConcealViewModel.currentMode.isShowingMedia)
     }
     
     func showImageGallery(focusing: Mastodon.Entity.Attachment.ID) {
@@ -226,24 +293,26 @@ struct ImageGridView: View {
 }
 
 struct BlurhashImageView: View {
-    let imageAttachment: MastodonImageAttachment
-    @ObservedObject var viewModel: ImageGalleryViewModel
+    let url: URL?
+    let imageDetails: ImageAttachmentDetails
+    let blurhash: UIImage?
+    @ObservedObject var contentConcealViewModel: ContentConcealViewModel
     
     var body: some View {
         ZStack {
-            if let blurhash = viewModel.blurhashes[imageAttachment.id] {
+            if let blurhash {
                 Image(uiImage: blurhash)
                     .resizable()
                     .scaledToFill()
             }
             
-            if let url = imageAttachment.basicData.fullsizeUrl {
+            if let url {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
                         EmptyView() // show blurhash behind
                     case .success(let image):
-                        switch viewModel.contentConcealViewModel.currentMode {
+                        switch contentConcealViewModel.currentMode {
                         case .neverConceal, .concealMediaOnly(showAnyway: true), .concealAll(_, showAnyway: true):
                             image
                                 .resizable()
@@ -300,5 +369,126 @@ class ImageGalleryViewModel: ObservableObject {
         case .concealAll(_, let showAnyway), .concealMediaOnly(let showAnyway):
             return !showAnyway
         }
+    }
+}
+
+struct PlayerView: View {
+    let media: MediaAttachment
+    @ObservedObject var contentConcealViewModel: ContentConcealViewModel
+    @StateObject var playerObserver = VideoPlayerObserver()
+    let player: AVPlayer?
+    
+    init(media: MediaAttachment, contentConcealViewModel: ContentConcealViewModel) {
+        self.media = media
+        self.contentConcealViewModel = contentConcealViewModel
+        
+        if let attachmentInfo = media.attachmentInfo, let url = attachmentInfo.url {
+            self.player = AVPlayer(url: url)
+        } else {
+            self.player = nil
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            if let blurImage = playerObserver.blurImage {
+                Image(uiImage: blurImage)
+                    .resizable()
+                    .scaledToFill()
+            }
+            
+            VideoPlayer(player: playerObserver.player)
+            
+            if shouldShowPlayButton && !playerObserver.isPlaying {
+                Button {
+                    playerObserver.player?.play()
+                } label: {
+                    Image(systemName: "play.fill")
+                        .font(.title2)
+                        .padding(EdgeInsets(top: standardPadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
+                        .background() {
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                        }
+                }
+                .buttonStyle(.borderless)
+            }
+        }
+        .onAppear() {
+            if let player, player != playerObserver.player {
+                playerObserver.startObserving(player: player, shouldLoop: shouldLoop)
+            }
+            if let attachmentInfo = media.attachmentInfo, let url = attachmentInfo.url, let blurhash = attachmentInfo.blurhash, let size = attachmentInfo.size {
+                Task {
+                    playerObserver.blurImage = try? await BlurhashImageCacheService.shared.image(blurhash: blurhash, size: size, url: url.absoluteString).singleOutput()
+                }
+            }
+        }
+        .onDisappear() {
+            playerObserver.player?.pause()
+        }
+    }
+    
+    var shouldLoop: Bool {
+        switch media {
+        case .gifv:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var shouldShowPlayButton: Bool {
+        switch media {
+        case .gifv:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension MediaAttachment {
+    var attachmentInfo: MastodonPlayableAttachment? {
+        switch self {
+        case .gifv(let info, _), .video(let info, _), .audio(let info, _):
+            return info
+        case .images, .notYetImplemented, .emptyAttachment:
+            return nil
+        }
+    }
+}
+
+class VideoPlayerObserver: ObservableObject {
+    @Published var isPlaying: Bool = false
+    @Published private(set) var player: AVPlayer?
+    @Published var blurImage: UIImage? = nil
+    private var cancellable: AnyCancellable?
+    
+    func startObserving(player: AVPlayer, shouldLoop: Bool) {
+        self.cancellable?.cancel()
+        self.player?.pause()
+        self.player = player
+        self.cancellable = player.publisher(for: \.rate, options: [.initial, .new])
+            .receive(on: DispatchQueue.main)
+            .map { $0 != 0 }
+            .assign(to: \.isPlaying, on: self)
+        
+        if shouldLoop {
+            NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: player.currentItem,
+                queue: .main
+            ) { [weak self] _ in
+                self?.player?.seek(to: .zero)
+                self?.player?.play()
+            }
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        self.cancellable?.cancel()
+        player?.pause()
     }
 }
