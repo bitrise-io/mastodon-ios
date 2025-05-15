@@ -53,6 +53,7 @@ final class NotificationTimelineViewModel {
         self.authenticationBox = authenticationBox
         self.scope = scope
         self.feedLoader = UngroupedNotificationsFeedLoader(scope.feedKind, forUser: authenticationBox.authentication.userIdentifier())
+        self.feedLoader.doFirstLoad()
         self.notificationPolicy = notificationPolicy
 
         NotificationCenter.default.addObserver(self, selector: #selector(Self.notificationFilteringChanged(_:)), name: .notificationFilteringChanged, object: nil)

@@ -48,6 +48,13 @@ final class UngroupedNotificationsFeedLoader: MastodonFeedLoader<GroupedNotifica
             authenticationBox: authenticationBox
         ).value
         
+        if accountID != nil {
+            // TODO: Remove this when NotificationRequestsTableViewController no longer needs it.  See IOS-424.
+            for item in ungrouped {
+                MastodonFeedItemCacheManager.shared.addToCache(item)
+            }
+        }
+        
         return ungrouped
     }
     
