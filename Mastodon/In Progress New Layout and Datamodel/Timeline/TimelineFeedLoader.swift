@@ -52,6 +52,10 @@ fileprivate let relationshipStaleThreshold: TimeInterval = 20 /*min*/ * 60 /*sec
 
 @MainActor
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
+#if DEBUG
+    private var hasLoadedOnce = false
+#endif
+    
     private let filterContext = Mastodon.Entity.FilterContext.home
     
     private let authenticatedUser: MastodonAuthenticationBox
@@ -112,8 +116,25 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
             let post = GenericMastodonPost.fromStatus(status)
             return TimelineItem.post(post)
         }
-        let newCache = CacheableTimeline(older: [], newer: newBatch)
         
+        let newCache: CacheableTimeline
+#if DEBUG
+        if !hasLoadedOnce {
+            hasLoadedOnce = true
+            let testingOldID = "" // insert useful postid for your purposes here
+            let older = try await APIService.shared.homeTimeline(sinceID: nil, maxID: testingOldID, authenticationBox: authenticatedUser)
+            let oldBatch = older.value.map { status in
+                let post = GenericMastodonPost.fromStatus(status)
+                return TimelineItem.post(post)
+            }
+            newCache = CacheableTimeline(older: oldBatch, newer: newBatch)
+        } else {
+            newCache = CacheableTimeline(older: [], newer: newBatch)
+        }
+#else
+        newCache = CacheableTimeline(older: [], newer: newBatch)
+#endif
+
         createContentConcealViewModels(newCache)
         try await fetchRelationships(newCache)
         try? await fetchReplyTos(newCache)

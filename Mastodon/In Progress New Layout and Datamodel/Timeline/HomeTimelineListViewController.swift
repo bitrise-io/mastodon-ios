@@ -496,6 +496,17 @@ private struct HomeTimelinePostRowView: View {
                         }
                     }
                     
+#if DEBUG
+                    VStack {
+                        Text(viewModel.post.id)
+                        if let actionableID = viewModel.post.actionablePost?.id, actionableID != viewModel.post.id {
+                            Text("(content: \(actionableID))")
+                        }
+                    }
+                    .foregroundStyle(.red)
+                    .font(.footnote)
+#endif
+                    
                     if let actionablePost = viewModel.post.actionablePost {
                         ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
                             .frame(width: contentWidth, alignment: .leading)
