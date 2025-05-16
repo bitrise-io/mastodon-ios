@@ -251,7 +251,12 @@ struct HomeTimelineListView: View {
                         ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
                             switch item {
                             case let .missingPosts(newerThan, olderThan, timeGapDescription):
-                                Text(timeGapDescription)
+                                GapLoaderView(newerThan: newerThan, olderThan: olderThan, gapDescription: timeGapDescription,
+                                              loadFromTop: {
+                                    viewModel.requestLoad(.olderThan(olderThan))
+                                }, loadFromBottom: {
+                                    viewModel.requestLoad(.newerThan(newerThan))
+                                })
                             case .loadingIndicator:
                                 HStack {
                                     Spacer()
@@ -1224,6 +1229,72 @@ extension ContentConcealViewModel {
                 return whenHiding ? L10n.Common.Controls.Status.showAnyway : L10n.Common.Controls.Status.Actions.hide
             } else {
                 return whenHiding ? L10n.Common.Controls.Status.showMore : L10n.Common.Controls.Status.Actions.hide
+            }
+        }
+    }
+}
+
+struct GapLoaderView: View {
+    let newerThan: String
+    let olderThan: String
+    let gapDescription: String
+    let loadFromTop: ()->()
+    let loadFromBottom: ()->()
+    
+    var body: some View {
+        HStack {
+            
+            VStack {
+                Button {
+                    loadFromTop()
+                } label: {
+                    Image(systemName: "arrowtriangle.down.fill")
+                        .font(.title2)
+                        .foregroundStyle(Asset.Colors.accent.swiftUIColor)
+                }
+                .buttonStyle(.borderless)
+                
+                Spacer()
+                    .frame(minHeight: standardPadding, maxHeight: .infinity)
+            }
+            
+            Spacer()
+                .frame(maxWidth: .infinity)
+            
+            VStack {
+                Text(L10n.Common.Controls.Timeline.Loader.loadMissingPosts)
+                    .lineLimit(1)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Text("older than: \(olderThan)")
+                    .lineLimit(1)
+                    .fixedSize()
+                    .font(.footnote)
+                Text("newer than: \(newerThan)")
+                    .lineLimit(1)
+                    .fixedSize()
+                    .font(.footnote)
+                Text(gapDescription)
+                    .font(.subheadline)
+                    .fontWeight(.regular)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+                .frame(maxWidth: .infinity)
+            
+            VStack {
+                Spacer()
+                    .frame(minHeight: standardPadding, maxHeight: .infinity)
+                
+                Button {
+                    loadFromBottom()
+                } label: {
+                    Image(systemName: "arrowtriangle.up.fill")
+                        .font(.title2)
+                        .foregroundStyle(Asset.Colors.accent.swiftUIColor)
+                }
+                .buttonStyle(.borderless)
             }
         }
     }

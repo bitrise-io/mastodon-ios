@@ -9,6 +9,10 @@ public protocol CacheableFeed {
     var hasResults: Bool { get }
 }
 
+public enum MastodonFeedLoaderError: Error {
+    case requestNotImplemented
+}
+
 @MainActor
 protocol MastodonFeedCacheManager<CachedType> {
     associatedtype CachedType
@@ -27,10 +31,12 @@ public struct MastodonFeedLoaderResult<ResultType> {
     let canLoadOlder: Bool
 }
 
-public enum MastodonFeedLoaderRequest {
+public enum MastodonFeedLoaderRequest: Equatable {
     case older
     case newer
     case reload
+    case newerThan(String)
+    case olderThan(String)
     
     var resultsInsertionPoint: InsertLocation {
         switch self {
@@ -40,12 +46,18 @@ public enum MastodonFeedLoaderRequest {
             return .start
         case .reload:
             return .replace
+        case .newerThan(let id):
+            return .asNewerThan(id)
+        case .olderThan(let id):
+            return .asOlderThan(id)
         }
     }
     enum InsertLocation {
         case start
         case end
         case replace
+        case asNewerThan(String)
+        case asOlderThan(String)
     }
 }
 
@@ -174,7 +186,7 @@ extension MastodonFeedLoader {
         
         let canLoadOlder: Bool? = {
             switch insertionPoint {
-            case .start:
+            case .start, .asOlderThan, .asNewerThan:
                 return records.canLoadOlder
             case .end:
                 return nil
@@ -245,7 +257,7 @@ extension MastodonFeedLoader {
     private func updateCacheByInserting(newlyFetchedResults: CachedType,
                                         at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         switch insertionPoint {
-        case .start:
+        case .start, .asNewerThan, .asOlderThan:
             guard newlyFetchedResults.hasResults else { return }
         case .replace:
             break
