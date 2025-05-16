@@ -1022,8 +1022,9 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     }
                 })
             } else {
-                let updated = try await APIService.shared.boost(boostableStatusId: actionablePostId, authenticationBox: authenticatedUser)
-                feedLoader?.updatePost(post: GenericMastodonPost.fromStatus(updated))
+                let updated = try await APIService.shared.boost(boostableStatusId: actionablePostId, authenticationBox: authenticatedUser) // this returns a new post, which is the boost action
+                let updatedActionable = updated.reblog ?? updated // when updating the existing records, we only care about the original post
+                feedLoader?.updatePost(post: GenericMastodonPost.fromStatus(updatedActionable))
                 clearPendingActions()
             }
         } catch {
