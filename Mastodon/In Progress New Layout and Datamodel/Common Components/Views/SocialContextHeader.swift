@@ -10,6 +10,15 @@ enum SocialContextHeader {
     case boosted(by: String, emojis: TextViewWithCustomEmoji.Emojis)
     //case pinned
     
+    var isPrivate: Bool {
+        switch self {
+        case .mention(let isPrivate), .reply(_, let isPrivate, _, _):
+            return isPrivate
+        default:
+            return false
+        }
+    }
+    
     var iconName: String {
         switch self {
         case .mention:
@@ -80,8 +89,7 @@ extension SocialContextHeader: View {
                 .foregroundStyle(color)
                 .frame(height: socialContextHeaderHeight)
             
-            
-            TextViewWithCustomEmoji.socialContextHeader(html: text, emojis: emojis)
+            TextViewWithCustomEmoji.socialContextHeader(html: text, emojis: emojis, isPrivate: isPrivate)
                 .frame(height: socialContextHeaderHeight)
                 .alignmentGuide(.gutterAlign) { d in
                     return d[HorizontalAlignment.leading]

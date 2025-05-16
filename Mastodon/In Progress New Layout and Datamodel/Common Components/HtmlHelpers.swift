@@ -1,6 +1,7 @@
 // Copyright © 2025 Mastodon gGmbH. All rights reserved.
 
 import Foundation
+import MastodonAsset
 import MastodonMeta
 import MetaTextKit
 import MastodonCore
@@ -13,6 +14,7 @@ struct HtmlFormattingOptions {
         case inlinePostPreview
         case fullPost
         case socialContextHeader
+        case socialContextHeaderPrivate
         case linkPreviewCardAuthor
     }
     
@@ -24,7 +26,7 @@ struct HtmlFormattingOptions {
             10
         case .fullPost:
             17
-        case .socialContextHeader:
+        case .socialContextHeader, .socialContextHeaderPrivate:
             13
         case .linkPreviewCardAuthor:
             14
@@ -45,6 +47,11 @@ struct HtmlFormattingOptions {
                 .font : UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .bold)),
                 .foregroundColor : UIColor.secondaryLabel,
             ]
+        case .socialContextHeaderPrivate:
+            [
+                .font : UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .bold)),
+                .foregroundColor : Asset.Colors.accent.color,
+            ]
         case .linkPreviewCardAuthor:
             [
                 .font : UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
@@ -62,7 +69,7 @@ struct HtmlFormattingOptions {
                 .font: UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
                 .foregroundColor: UIColor.link,
             ]
-        case .socialContextHeader:
+        case .socialContextHeader, .socialContextHeaderPrivate:
             [:]
         case .linkPreviewCardAuthor:
             [:]
