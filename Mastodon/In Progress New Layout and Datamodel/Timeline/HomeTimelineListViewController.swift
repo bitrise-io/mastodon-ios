@@ -955,7 +955,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
             // MARK: DELETE
                 case .deletePost:
                     guard let postID = post.actionablePost?.id else { throw PostActionFailure.noActionablePostId }
-                    try await deletePost(postID, askFirst: UserDefaults.shared.askBeforeDeletingAPost)
+                    await deletePost(postID, askFirst: UserDefaults.shared.askBeforeDeletingAPost)
                 }
             } catch {
                 // TODO: handle error in a way the user can see it
@@ -983,7 +983,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     // TRANSLATION
     private func showTranslation(forPost post: MastodonContentPost) async throws {
         
-        if let availableTranslation = translations[post.id] {
+        if translations[post.id] != nil {
             translationsShowing.insert(post.id)
             return
         } else {
@@ -1136,7 +1136,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     }
     
     func sharePost(_ actionablePost: MastodonContentPost) {
-        var activityItems: [Any] = {
+        let activityItems: [Any] = {
             guard let url = URL(string: actionablePost.metaData.url ?? actionablePost.metaData.uriForFediverse) else { return [] }
             return [
                 URLActivityItem(url: url)
