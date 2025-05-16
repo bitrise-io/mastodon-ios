@@ -77,7 +77,7 @@ extension GenericMastodonPost {
     }
 
     enum PrivacyLevel: Codable {
-        case `public`
+        case loudPublic
         case quietPublic
         case followersOnly
         case mentionedOnly
@@ -182,7 +182,7 @@ extension GenericMastodonPost.PrivacyLevel: FromStatusEntityDerivableOptional {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self? {
         switch status.visibility {
         case .public:
-            return .public
+            return .loudPublic
         case .unlisted:
             return .quietPublic
         case .private:

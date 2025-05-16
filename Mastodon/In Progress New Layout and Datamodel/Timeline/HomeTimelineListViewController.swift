@@ -99,6 +99,7 @@ enum MastodonTimelineOverlayView {
 
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
+    private var timestamper = TimestampUpdater(TimeInterval(30))
     public var parentVcPresentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> ())?
     private var authenticatedUser: MastodonAuthenticationBox?
     private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
@@ -217,6 +218,7 @@ private class HomeTimelineListViewModel: ObservableObject {
             return translations[actionablePost.id]
         }()
         let rowViewModel = MastodonPostViewModel(post: post,
+                                                 timestamper: timestamper,
                                                  isShowingTranslation: isShowingTranslation, translation: translation,
                                                  myRelationshipToAuthor: relationship,
                                                  isDoingAction: isDoingAction,
@@ -423,7 +425,10 @@ private struct HomeTimelinePostRowView: View {
     let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
     
     var body: some View {
-        let author = viewModel.post.actionablePost?.metaData.author ?? viewModel.post.metaData.author
+        let actionablePost = viewModel.post.actionablePost
+        let author = actionablePost?.metaData.author ?? viewModel.post.metaData.author
+        let visibility = actionablePost?.metaData.privacyLevel ?? viewModel.post.metaData.privacyLevel ?? .loudPublic
+        let postedDate = actionablePost?.metaData.createdAt ?? viewModel.post.metaData.createdAt
         
         VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
             
@@ -436,7 +441,7 @@ private struct HomeTimelinePostRowView: View {
                 })
                 
                 VStack(spacing: spacingBetweenGutterAndContent) {
-                    AuthorHeaderView(author: author)
+                    AuthorHeaderView(author: author, visibility: visibility, postedDate: postedDate, timestamper: viewModel.timestamper)
                     
                     contentConcealLozenge
                         .frame(width: contentWidth)
@@ -719,9 +724,11 @@ struct MastodonPostViewModel {
     let translation: Mastodon.Entity.Translation?
     let isDoingAction: MastodonPostMenuAction?
     let myRelationshipToAuthor: MastodonAccount.Relationship
+    let timestamper: TimestampUpdater
 
     init(
         post: GenericMastodonPost,
+        timestamper: TimestampUpdater,
         isShowingTranslation: Bool?,
         translation: Mastodon.Entity.Translation?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
@@ -729,6 +736,7 @@ struct MastodonPostViewModel {
         actionHandler: MastodonPostMenuActionHandler
     ) {
         self.post = post
+        self.timestamper = timestamper
         self.isShowingTranslation = isShowingTranslation
         self.translation = translation
         self.myRelationshipToAuthor = myRelationshipToAuthor

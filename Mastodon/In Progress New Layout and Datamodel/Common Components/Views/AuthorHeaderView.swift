@@ -5,13 +5,19 @@ import SwiftUI
 
 struct AuthorHeaderView: View {
     let author: MastodonAccount
+    let visibility: GenericMastodonPost.PrivacyLevel
+    let postedDate: Date
+    @ObservedObject var timestamper: TimestampUpdater
     
     var body: some View {
         VStack(alignment: .leading) {
-            textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
-                .alignmentGuide(.gutterAlign) { d in
-                    return d[HorizontalAlignment.leading]
-                }
+            HStack (alignment: .top) {
+                textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
+                    .alignmentGuide(.gutterAlign) { d in
+                        return d[HorizontalAlignment.leading]
+                    }
+                VisibilityAndTimestamp(timestamper: timestamper, referenceDate: postedDate, visibility: visibility)
+            }
             textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
         }
     }
@@ -32,5 +38,49 @@ extension MastodonAccount: AccountInfo {
     
     var fullAccount: Mastodon.Entity.Account? {
         return nil
+    }
+}
+
+struct VisibilityAndTimestamp: View {
+    @ObservedObject var timestamper: TimestampUpdater
+    let referenceDate: Date
+    let visibility: GenericMastodonPost.PrivacyLevel
+    
+    var body: some View {
+        HStack(spacing: tinySpacing) {
+            if shouldShowVisibilityIndicator {
+                Image(systemName: visibility.iconName)
+            }
+            Text(referenceDate.localizedExtremelyAbbreviatedTimeElapsedUntil(now: timestamper.timestamp))
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .font(.subheadline)
+        .frame(height: actionSuperheaderHeight)
+        .foregroundColor(.secondary)
+        .accessibilityLabel(referenceDate.localizedAbbreviatedSlowedTimeAgoSinceNow)
+    }
+    
+    var shouldShowVisibilityIndicator: Bool {
+        switch visibility {
+        case .loudPublic:
+            return false
+        default:
+            return true
+        }
+    }
+}
+
+extension GenericMastodonPost.PrivacyLevel {
+    var iconName: String {
+        switch self {
+        case .loudPublic:
+            "globe.europe.africa"
+        case .quietPublic:
+            "moon"
+        case .followersOnly:
+            "lock"
+        case .mentionedOnly:
+            "at"
+        }
     }
 }
