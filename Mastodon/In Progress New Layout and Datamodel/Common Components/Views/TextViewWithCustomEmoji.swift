@@ -8,6 +8,7 @@ enum TextViewWithCustomEmoji {
     typealias Emojis = [Mastodon.Entity.Emoji]
     
     case timelinePost(html: String, emojis: Emojis)
+    case authorHeader(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
     case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
 }
@@ -17,6 +18,8 @@ extension TextViewWithCustomEmoji: View {
         switch self {
         case .timelinePost(let html, let emojis):
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .fullPost))
+        case .authorHeader(let html, let emojis):
+            Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .authorHeader))
         case .socialContextHeader(let html, let emojis, let isPrivate):
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: isPrivate ? .socialContextHeaderPrivate : .socialContextHeader))
         case .linkPreviewCardAuthorButton(let html, let emojis):

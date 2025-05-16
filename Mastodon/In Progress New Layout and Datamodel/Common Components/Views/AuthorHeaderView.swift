@@ -12,7 +12,8 @@ struct AuthorHeaderView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack (alignment: .top) {
-                textComponent("\(author.displayInfo.displayName)", fontWeight: .semibold)
+                TextViewWithCustomEmoji.authorHeader(html: author.displayInfo.displayName, emojis: author.displayInfo.emojis)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .alignmentGuide(.gutterAlign) { d in
                         return d[HorizontalAlignment.leading]
                     }

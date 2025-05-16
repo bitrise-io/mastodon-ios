@@ -13,6 +13,7 @@ struct HtmlFormattingOptions {
     enum Format: CaseIterable {
         case inlinePostPreview
         case fullPost
+        case authorHeader
         case socialContextHeader
         case socialContextHeaderPrivate
         case linkPreviewCardAuthor
@@ -24,7 +25,7 @@ struct HtmlFormattingOptions {
         switch format {
         case .inlinePostPreview:
             10
-        case .fullPost:
+        case .fullPost, .authorHeader:
             17
         case .socialContextHeader, .socialContextHeaderPrivate:
             13
@@ -40,6 +41,11 @@ struct HtmlFormattingOptions {
         case .fullPost:
             [
                 .font : UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .regular)),
+                .foregroundColor : UIColor.label,
+            ]
+        case .authorHeader:
+            [
+                .font : UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
                 .foregroundColor : UIColor.label,
             ]
         case .socialContextHeader:
@@ -71,7 +77,7 @@ struct HtmlFormattingOptions {
             ]
         case .socialContextHeader, .socialContextHeaderPrivate:
             [:]
-        case .linkPreviewCardAuthor:
+        case .linkPreviewCardAuthor, .authorHeader:
             [:]
         }
     }
