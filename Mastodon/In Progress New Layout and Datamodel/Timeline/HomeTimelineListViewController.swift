@@ -283,6 +283,14 @@ struct HomeTimelineListView: View {
                                 .onAppear {
                                     viewModel.didAppear(item.id)
                                 }
+#if DEBUG
+                                .background {
+                                    if recentlyInsertedItemIds?.contains(post.id) == true {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(.blue.opacity(0.2))
+                                    }
+                                }
+#endif
                             }
                         }
                     }

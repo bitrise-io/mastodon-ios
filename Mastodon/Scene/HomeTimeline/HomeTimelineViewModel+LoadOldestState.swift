@@ -68,7 +68,7 @@ extension HomeTimelineViewModel.LoadOldestState {
                     switch viewModel.timelineContext {
                     case .home:
                         response = try await APIService.shared.homeTimeline(
-                            maxID: maxID,
+                            itemsImmediatelyBefore: maxID,
                             authenticationBox: viewModel.authenticationBox
                         )
                     case .public:

@@ -206,7 +206,7 @@ extension HomeTimelineViewModel {
         switch timelineContext {
         case .home:
             response = try? await APIService.shared.homeTimeline(
-               maxID: status.id,
+               itemsImmediatelyBefore: status.id,
                authenticationBox: authenticationBox
            )
         case .public:

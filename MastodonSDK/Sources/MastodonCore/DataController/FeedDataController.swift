@@ -270,7 +270,7 @@ private extension FeedDataController {
             switch timeline {
             case .home:
                 response = try await APIService.shared.homeTimeline(
-                    maxID: maxID,
+                    itemsImmediatelyBefore: maxID,
                     authenticationBox: authenticationBox
                 )
             case .public:

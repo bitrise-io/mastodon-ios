@@ -24,6 +24,7 @@ enum TimelineItem: Identifiable {
     static func gapBetween(_ olderItem: TimelineItem?, newerItem: TimelineItem?) -> TimelineItem? {
         switch (olderItem, newerItem) {
         case (.post(let olderPost), .post(let newerPost)):
+            assert(olderPost.id < newerPost.id)
             if newerPost.metaData.createdAt.timeIntervalSince(olderPost.metaData.createdAt) < 120 {
                 return .missingPosts(newerThan: olderPost.id, olderThan: newerPost.id, timeGapDescription: "")
             } else {
@@ -50,6 +51,10 @@ extension TimelineItem: Hashable {
 
 fileprivate let relationshipStaleThreshold: TimeInterval = 20 /*min*/ * 60 /*sec*/
 
+#if DEBUG
+public var recentlyInsertedItemIds: Set<String>?
+#endif
+
 @MainActor
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
 #if DEBUG
@@ -74,12 +79,13 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     }
 
     override func fetchResults(for request: MastodonFeedLoaderRequest) async throws -> CacheableTimeline {
-        let olderThan: String?
-        let newerThan: String?
+        
+        await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true) // TODO: legacy comments indicated this may not be the best place for this call
+        
+        let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>
         switch request {
         case .newer:
-            olderThan = nil
-            newerThan = {
+            let mostRecentID = {
                 switch records.allRecords.count {
                 case 0, 1:
                     return records.allRecords.first?.id
@@ -87,8 +93,9 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
                     return records.allRecords[1].id  // we want to allow the possibility of an overlap in order to detect gaps
                 }
             }()
+            response = try await APIService.shared.homeTimeline(itemsNoOlderThan: mostRecentID, authenticationBox: authenticatedUser)
         case .older:
-            olderThan = {
+            let olderThan = {
                 let count = records.allRecords.count
                 switch count {
                 case 0, 1:
@@ -97,21 +104,15 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
                     return records.allRecords[count - 2].id  // we want to allow the possibility of an overlap in order to detect gaps
                 }
             }()
-            newerThan = nil
+            response = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: olderThan, authenticationBox: authenticatedUser)
         case .reload:
-            olderThan = nil
-            newerThan = nil
+            response = try await APIService.shared.homeTimeline(authenticationBox: authenticatedUser)
         case .newerThan(let id):
-            olderThan = nil
-            newerThan = id
+            response = try await APIService.shared.homeTimeline(itemsImmediatelyAfter: id, authenticationBox: authenticatedUser)
         case .olderThan(let id):
-            olderThan = id
-            newerThan = nil
+            response = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: id, authenticationBox: authenticatedUser)
         }
-        
-        await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true) // TODO: legacy comments indicated this may not be the best place for this call
 
-        let response = try await APIService.shared.homeTimeline(sinceID: newerThan, maxID: olderThan, authenticationBox: authenticatedUser)
         let newBatch = response.value.map { status in
             let post = GenericMastodonPost.fromStatus(status)
             return TimelineItem.post(post)
@@ -122,7 +123,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         if !hasLoadedOnce {
             hasLoadedOnce = true
             let testingOldID = "" // insert useful postid for your purposes here
-            let older = try await APIService.shared.homeTimeline(sinceID: nil, maxID: testingOldID, authenticationBox: authenticatedUser)
+            let older = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: testingOldID, authenticationBox: authenticatedUser)
             let oldBatch = older.value.map { status in
                 let post = GenericMastodonPost.fromStatus(status)
                 return TimelineItem.post(post)
@@ -226,46 +227,53 @@ struct CacheableTimeline: CacheableFeed {
         }
         guard let matchingGapItemIndex else { assertionFailure(); items = existingItems; return }
         
-        var updatedItems = existingItems.prefix(upTo: matchingGapItemIndex)
-        
-        var itemsSeen = Set<String>()
-        
-        for newItem in inserting {
-            switch newItem {
-            case .loadingIndicator, .missingPosts:
-                assertionFailure("items to insert should only be .post items")
-                break
-            case .post(let post):
-                itemsSeen.insert(post.id)
-                updatedItems.append(newItem)
-            }
+        // start with the exiting items newer than the gap
+        var updatedItems = Array(existingItems.prefix(upTo: matchingGapItemIndex))
+ 
+        // add the items being inserted
+        var alreadySeen = Set<String>()
+        for insertingItem in inserting {
+            alreadySeen.insert(insertingItem.id)
+            updatedItems.append(insertingItem)
         }
         
-        var potentialStartOfNewGap = updatedItems.last
+#if DEBUG
+        recentlyInsertedItemIds = alreadySeen
+#endif
         
-        for olderExistingItem in existingItems.suffix(from: matchingGapItemIndex + 1) {
-            switch olderExistingItem {
-            case .loadingIndicator, .missingPosts:
-                updatedItems.append(olderExistingItem)
-            case .post(let post):
-                if let newGapStart = potentialStartOfNewGap {
-                    if post.id == potentialStartOfNewGap?.id {
-                        // Found overlap, so there is no gap. Proceed.
-                    } else {
-                        if let newGap = TimelineItem.gapBetween(olderExistingItem, newerItem: newGapStart) {
-                            updatedItems.append(newGap)
-                        } else {
-                            assertionFailure("why no new gap item?")
-                        }
-                    }
-                    potentialStartOfNewGap = nil
-                }
+        // Now deal with any remaining gap or overlap
+        
+        let firstIndexAfterGap = matchingGapItemIndex + 1
+        guard firstIndexAfterGap < existingItems.count else {
+            assertionFailure("A gap ought to have items on both sides of it")
+            items = Array(updatedItems)
+            return
+        }
+        
+        guard let lastNewItem = updatedItems.last else {
+            assertionFailure("should have had some existing items before the gap, at least")
+            items = existingItems
+            return
+        }
+        
+        if let firstDuplicateIndex = existingItems.suffix(from: firstIndexAfterGap).firstIndex(where: { alreadySeen.contains($0.id) }) {
+            // There is an overlap, so no need to include a gap, but we also don't want to include duplicates
+            if let firstNonDuplicateIndex = existingItems.suffix(from: firstIndexAfterGap).firstIndex(where: { !alreadySeen.contains($0.id) }) {
                 
-                if !itemsSeen.contains(post.id) {
-                    itemsSeen.insert(post.id)
-                    updatedItems.append(olderExistingItem)
+                for item in existingItems.suffix(from: firstNonDuplicateIndex) {
+                    if !alreadySeen.contains(item.id) {
+                        updatedItems.append(item)
+                    }
                 }
             }
+        } else {
+            // There is a gap
+            if let newGap = TimelineItem.gapBetween(existingItems[firstIndexAfterGap], newerItem: lastNewItem) {
+                updatedItems.append(newGap)
+            } else {
+                assertionFailure("why no new gap item?")
+            }
+            updatedItems.append(contentsOf: existingItems.suffix(from: firstIndexAfterGap))
         }
         
         items = Array(updatedItems)
@@ -283,17 +291,24 @@ struct CacheableTimeline: CacheableFeed {
         }
         guard let matchingGapItemIndex, let firstInsertingItem = inserting.first else { assertionFailure(); items = existingItems; return }
         
-        let firstOverlapIndex = existingItems.firstIndex { item in
-            item.id == firstInsertingItem.id
+        let insertingItemIDs: Set<String> = inserting.reduce(into: Set<String>()) { partialResult, item in
+            partialResult.insert(item.id)
         }
+#if DEBUG
+        recentlyInsertedItemIds = insertingItemIDs
+#endif
         
         var updatedItems: [TimelineItem]
-        if let firstOverlapIndex {
-            // gap is now erased
+        
+        // start with the existing items newer than the gap (possibly truncated), and any remaining gap
+        if let firstOverlapIndex = existingItems.prefix(upTo: matchingGapItemIndex).firstIndex(where: { insertingItemIDs.contains($0.id) }) {
+            // The inserting items have overlap with the newer existing items, so no gap. But avoid duplicates, and prefer the inserting items (they are more freshly fetched).
+            let firstNonDuplicateIndex = existingItems.suffix(from: firstOverlapIndex).firstIndex(where: { !insertingItemIDs.contains($0.id)})
             updatedItems = Array(existingItems.prefix(upTo: firstOverlapIndex))
         } else {
-            // there is a new gap
+            // There is still a gap.
             updatedItems = Array(existingItems.prefix(upTo: matchingGapItemIndex))
+            
             if let lastItemBeforeGap = updatedItems.last, let newGap = TimelineItem.gapBetween(firstInsertingItem, newerItem: lastItemBeforeGap) {
                 updatedItems.append(newGap)
             } else {
@@ -301,9 +316,18 @@ struct CacheableTimeline: CacheableFeed {
             }
         }
         
-        updatedItems = updatedItems + inserting
-        
-        updatedItems = updatedItems + existingItems.suffix(from: matchingGapItemIndex + 1)
+        // add the inserting items
+        updatedItems.append(contentsOf: inserting)
+
+        // add the existing items older than the gap
+        let firstIndexAfterGap = matchingGapItemIndex + 1
+        guard firstIndexAfterGap < existingItems.count else {
+            assertionFailure("a gap should have items on both sides of it")
+            items = updatedItems
+            return
+        }
+
+        updatedItems.append(contentsOf: existingItems.suffix(from: firstIndexAfterGap))
         
         items = updatedItems
     }

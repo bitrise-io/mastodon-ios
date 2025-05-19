@@ -18,8 +18,9 @@ public extension Notification.Name {
 extension APIService {
     
     public func homeTimeline(
-        sinceID: Mastodon.Entity.Status.ID? = nil,
-        maxID: Mastodon.Entity.Status.ID? = nil,
+        itemsNoOlderThan sinceID: Mastodon.Entity.Status.ID? = nil,
+        itemsImmediatelyAfter minID: Mastodon.Entity.Status.ID? = nil,
+        itemsImmediatelyBefore maxID: Mastodon.Entity.Status.ID? = nil,
         limit: Int = onceRequestStatusMaxCount,
         local: Bool? = nil,
         authenticationBox: MastodonAuthenticationBox
@@ -29,7 +30,7 @@ extension APIService {
         let query = Mastodon.API.Timeline.HomeTimelineQuery(
             maxID: maxID,
             sinceID: sinceID,
-            minID: nil,     // prefer sinceID
+            minID: minID,
             limit: limit,
             local: local
         )
