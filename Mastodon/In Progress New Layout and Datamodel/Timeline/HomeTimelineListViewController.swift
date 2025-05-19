@@ -18,7 +18,15 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
         viewModel.parentVcPresentScene = { (scene, transition) in
             self.sceneCoordinator?.present(scene: scene, transition: transition)
         }
+        
         setUpTimelineSelectorButton()
+        showSettingsButton(true)
+    }
+    
+    @objc private func settingBarButtonItemPressed(_ sender: UIBarButtonItem) {
+        guard let setting = SettingService.shared.currentSetting.value else { return }
+        
+        _ = self.sceneCoordinator?.present(scene: .settings(setting: setting), from: self, transition: .none)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -26,8 +34,26 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
             "init(coder:) not implemented for HomeTimelineListViewController")
     }
     
+    lazy var settingBarButtonItem: UIBarButtonItem = {
+        let barButtonItem = UIBarButtonItem()
+        barButtonItem.tintColor = Asset.Colors.Brand.blurple.color
+        barButtonItem.image = UIImage(systemName: "gear")
+        barButtonItem.accessibilityLabel = L10n.Common.Controls.Actions.settings
+        barButtonItem.target = self
+        barButtonItem.action = #selector(Self.settingBarButtonItemPressed(_:))
+        return barButtonItem
+    }()
+    
     func setUpTimelineSelectorButton() {
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: timelineSelectorButton)
+    }
+    
+    func showSettingsButton(_ show: Bool) {
+        if show {
+            self.navigationItem.rightBarButtonItem = settingBarButtonItem
+        } else {
+            self.navigationItem.rightBarButtonItem = nil
+        }
     }
     
     lazy var timelineSelectorButton = {
