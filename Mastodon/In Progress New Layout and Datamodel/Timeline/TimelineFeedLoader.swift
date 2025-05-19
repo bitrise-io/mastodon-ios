@@ -5,6 +5,13 @@ import Foundation
 import MastodonCore
 import MastodonSDK
 
+public enum MastodonTimelineType: Equatable {
+    case following
+    case local
+    case list(String)
+    case hashtag(String)
+}
+
 enum TimelineItem: Identifiable {
     case post(GenericMastodonPost)
     case missingPosts(newerThan: Mastodon.Entity.Status.ID, olderThan: Mastodon.Entity.Status.ID, timeGapDescription: String)
@@ -69,7 +76,10 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     private var accountsCache = [Mastodon.Entity.Account.ID : MastodonAccount]()
     private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
     
-    init(currentUser: MastodonAuthenticationBox) {
+    let timeline: MastodonTimelineType
+    
+    init(currentUser: MastodonAuthenticationBox, timeline: MastodonTimelineType) {
+        self.timeline = timeline
         authenticatedUser = currentUser
         authenticatedUserID = authenticatedUser.cachedAccount?.id
         if let authenticatedUserID {
@@ -82,7 +92,10 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         
         await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true) // TODO: legacy comments indicated this may not be the best place for this call
         
-        let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>
+        let itemsNoOlderThan: String?
+        let itemsImmediatelyBefore: String?
+        let itemsImmediatelyAfter: String?
+        
         switch request {
         case .newer:
             let mostRecentID = {
@@ -93,7 +106,9 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
                     return records.allRecords[1].id  // we want to allow the possibility of an overlap in order to detect gaps
                 }
             }()
-            response = try await APIService.shared.homeTimeline(itemsNoOlderThan: mostRecentID, authenticationBox: authenticatedUser)
+            itemsNoOlderThan = mostRecentID
+            itemsImmediatelyBefore = nil
+            itemsImmediatelyAfter = nil
         case .older:
             let olderThan = {
                 let count = records.allRecords.count
@@ -104,15 +119,47 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
                     return records.allRecords[count - 2].id  // we want to allow the possibility of an overlap in order to detect gaps
                 }
             }()
-            response = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: olderThan, authenticationBox: authenticatedUser)
+            itemsImmediatelyBefore = olderThan
+            itemsNoOlderThan = nil
+            itemsImmediatelyAfter = nil
         case .reload:
-            response = try await APIService.shared.homeTimeline(authenticationBox: authenticatedUser)
+            itemsNoOlderThan = nil
+            itemsImmediatelyBefore = nil
+            itemsImmediatelyAfter = nil
         case .newerThan(let id):
-            response = try await APIService.shared.homeTimeline(itemsImmediatelyAfter: id, authenticationBox: authenticatedUser)
+            itemsImmediatelyAfter = id
+            itemsImmediatelyBefore = nil
+            itemsNoOlderThan = nil
         case .olderThan(let id):
-            response = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: id, authenticationBox: authenticatedUser)
+            itemsImmediatelyBefore = id
+            itemsImmediatelyAfter = nil
+            itemsNoOlderThan = nil
         }
 
+        let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>
+        switch timeline {
+        case .following:
+            response = try await APIService.shared.homeTimeline(itemsNoOlderThan: itemsNoOlderThan, itemsImmediatelyAfter: itemsImmediatelyAfter, itemsImmediatelyBefore: itemsImmediatelyBefore, authenticationBox: authenticatedUser)
+        case .local:
+            response = try await APIService.shared.publicTimeline(
+                query: .init(local: true, maxID: itemsImmediatelyBefore, sinceID: itemsNoOlderThan, minID: itemsImmediatelyAfter),
+                authenticationBox: authenticatedUser
+            )
+        case .list(let listId):
+            response = try await APIService.shared.listTimeline(
+                id: listId,
+                query: .init(local: true, maxID: itemsImmediatelyBefore, sinceID: itemsNoOlderThan, minID: itemsImmediatelyAfter),
+                authenticationBox: authenticatedUser
+            )
+        case .hashtag(let hashtag):
+            response = try await APIService.shared.hashtagTimeline(
+                sinceID: itemsNoOlderThan,
+                maxID: itemsImmediatelyBefore,
+                hashtag: hashtag,
+                authenticationBox: authenticatedUser
+            )
+        }
+        
         let newBatch = response.value.map { status in
             let post = GenericMastodonPost.fromStatus(status)
             return TimelineItem.post(post)
