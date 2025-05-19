@@ -103,7 +103,11 @@ extension AttachmentViewModel {
             guard let result = try await itemProvider.loadVideoData() else {
                 throw AttachmentError.invalidAttachmentType
             }
-            return .video(result.url, mimeType: "video/mp4")
+            guard let type = UTType(filenameExtension: result.url.pathExtension) else {
+                throw AttachmentError.invalidAttachmentType
+            }
+            let mimeType = type.preferredMIMEType
+            return .video(result.url, mimeType: mimeType ?? "video/mp4")
         } else {
             assertionFailure()
             throw AttachmentError.invalidAttachmentType

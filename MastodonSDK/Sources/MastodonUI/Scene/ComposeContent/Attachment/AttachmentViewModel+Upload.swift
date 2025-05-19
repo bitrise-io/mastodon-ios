@@ -207,8 +207,8 @@ extension AttachmentViewModel.Output {
             case .png:      return .png(data)
             case .jpg:      return .jpeg(data)
             }
-        case .video(let url, _):
-            return .other(url, fileExtension: url.pathExtension, mimeType: "video/mp4")
+        case .video(let url, let mimeType):
+            return .other(url, fileExtension: url.pathExtension, mimeType: mimeType)
         }
     }
 }
