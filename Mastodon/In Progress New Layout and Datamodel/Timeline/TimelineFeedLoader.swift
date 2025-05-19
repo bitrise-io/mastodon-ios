@@ -65,7 +65,7 @@ public var recentlyInsertedItemIds: Set<String>?
 @MainActor
 final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeline> {
 #if DEBUG
-    private var hasLoadedOnce = false
+    private var _createArtificialGapForTesting = false
 #endif
     
     private let filterContext = Mastodon.Entity.FilterContext.home
@@ -167,8 +167,8 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         
         let newCache: CacheableTimeline
 #if DEBUG
-        if !hasLoadedOnce {
-            hasLoadedOnce = true
+        if _createArtificialGapForTesting {
+            _createArtificialGapForTesting = false
             let testingOldID = "" // insert useful postid for your purposes here
             let older = try await APIService.shared.homeTimeline(itemsImmediatelyBefore: testingOldID, authenticationBox: authenticatedUser)
             let oldBatch = older.value.map { status in
