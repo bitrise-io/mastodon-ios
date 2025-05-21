@@ -699,10 +699,7 @@ private struct HomeTimelinePostRowView: View {
                                         .frame(width: contentWidth)
                                 }
                             case .poll(let poll):
-                                HStack {
-                                    Image(systemName: "checklist")
-                                    Text("a poll")
-                                }
+                                PollView(viewModel: PollViewModel(pollEntity: poll, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
                                 .frame(width: contentWidth)
                             case .linkPreviewCard(let card):
                                 LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
@@ -867,14 +864,6 @@ private struct LinkPreviewView: View {
     }
 }
 
-private struct PollView: View {
-    let poll: Mastodon.Entity.Poll
-    
-    var body: some View {
-        Text("a poll")
-    }
-}
-
 private struct HashtagRowView: View {
     let hashtags: [String]
     
@@ -1030,6 +1019,11 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
+    func vote(poll: MastodonSDK.Mastodon.Entity.Poll, choices: [Int]) async throws {
+        guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+        let response = try await APIService.shared.vote(poll: poll, choices: choices, authenticationBox: authenticatedUser)
+    }
+    
     func showOverlay(_ overlay: MastodonTimelineOverlayView?) {
         activeOverlay = overlay
     }

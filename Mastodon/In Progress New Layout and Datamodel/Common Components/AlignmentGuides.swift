@@ -28,6 +28,10 @@ struct ButtonPadding {
     static var capsuleHorizontal: CGFloat = _eight * 2
 }
 
+struct PollPadding {
+    static var optionPadding: CGFloat = 12
+}
+
 extension HorizontalAlignment {
     enum GutterAlign: AlignmentID {
         static func defaultValue(in context: ViewDimensions) -> CGFloat {
