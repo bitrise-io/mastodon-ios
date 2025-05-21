@@ -480,10 +480,18 @@ public enum L10n {
           }
         }
         public enum Poll {
+          /// Choose one or more
+          public static let chooseOneOrMore = L10n.tr("Localizable", "Common.Controls.Status.Poll.ChooseOneOrMore", fallback: "Choose one or more")
           /// Closed
           public static let closed = L10n.tr("Localizable", "Common.Controls.Status.Poll.Closed", fallback: "Closed")
+          /// Hide Results
+          public static let hideResults = L10n.tr("Localizable", "Common.Controls.Status.Poll.HideResults", fallback: "Hide Results")
+          /// See Results
+          public static let seeResults = L10n.tr("Localizable", "Common.Controls.Status.Poll.SeeResults", fallback: "See Results")
           /// Vote
           public static let vote = L10n.tr("Localizable", "Common.Controls.Status.Poll.Vote", fallback: "Vote")
+          /// Voted
+          public static let voted = L10n.tr("Localizable", "Common.Controls.Status.Poll.Voted", fallback: "Voted")
         }
         public enum Tag {
           /// Email

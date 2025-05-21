@@ -175,7 +175,11 @@
                 "link_via_user": "%s via %s",
                 "poll": {
                     "vote": "Vote",
-                    "closed": "Closed"
+                    "voted": "Voted",
+                    "closed": "Closed",
+                    "see_results": "See Results",
+                    "hide_results": "Hide Results",
+                    "choose_one_or_more": "Choose one or more"
                 },
                 "meta_entity": {
                     "url": "Link: %s",
