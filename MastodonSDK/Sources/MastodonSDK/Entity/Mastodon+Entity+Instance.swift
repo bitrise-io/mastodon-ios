@@ -115,7 +115,37 @@ extension Mastodon.Entity.Instance {
         public typealias ID = String
 
         public let id: ID
-        public let text: String
+        public let title: String // Prior to 4.3.0, the rule. After 4.3.0, the shorter-form/headline version of the rule.
+        public let hint: String? // Longer-form description of the rule, added 4.3.0
+        public let translations: [String : RuleTranslation]? // Added 4.4.0
+        
+        public struct RuleTranslation: Codable, Hashable {
+            public let title: String
+            public let hint: String?
+            
+            enum CodingKeys: String, CodingKey {
+                case title = "text"
+                case hint
+            }
+        }
+        
+        enum CodingKeys: String, CodingKey {
+            case id
+            case title = "text"
+            case hint
+            case translations
+        }
+    }
+}
+
+extension Mastodon.Entity.Instance.Rule {
+    public var possiblyTranslatedTitle: String {
+        guard let translations, let deviceLanguage = Bundle.main.preferredLocalizations.first else { return title }
+        return translations[deviceLanguage]?.title ?? title
+    }
+    public var possiblyTranslatedDetail: String? {
+        guard let translations, let deviceLanguage = Bundle.main.preferredLocalizations.first else { return hint }
+        return translations[deviceLanguage]?.hint ?? hint
     }
 }
 

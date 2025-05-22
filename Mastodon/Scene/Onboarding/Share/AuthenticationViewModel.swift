@@ -149,7 +149,7 @@ extension AuthenticationViewModel {
             // show server rules before registering
             let serverRulesViewModel = MastodonServerRulesView.ViewModel(
                 disclaimer: LocalizedStringKey(L10n.Scene.ServerRules.subtitle(server.domain)),
-                rules: rules.map({ $0.text }),
+                rules: rules,
                 onAgree: { [weak self] in
                     let privacyViewModel = PolicyViewModel(domain: server.domain, authenticateInfo: authenticateInfo, instance: instance, applicationToken: applicationToken, didAccept: { doStartRegistration() })
                     self?.stateStreamContinuation.yield(.showingPrivacyPolicy(privacyViewModel))

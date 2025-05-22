@@ -18,11 +18,11 @@ import SwiftUI
 struct MastodonServerRulesView: View {
     class ViewModel: ObservableObject {
         let disclaimer: LocalizedStringKey?
-        let rules: [String]
+        let rules: [Mastodon.Entity.Instance.Rule]
         var onAgree: (() -> Void)?
         var onDisagree: (() -> Void)?
         
-        init(disclaimer: LocalizedStringKey?, rules: [String], onAgree: (() -> Void)?, onDisagree: (() -> Void)?) {
+        init(disclaimer: LocalizedStringKey?, rules: [Mastodon.Entity.Instance.Rule], onAgree: (() -> Void)?, onDisagree: (() -> Void)?) {
             self.disclaimer = disclaimer
             self.rules = rules
             self.onAgree = onAgree
@@ -49,8 +49,16 @@ struct MastodonServerRulesView: View {
                         Text("\(index + 1)")
                             .font(.system(size: UIFontMetrics.default.scaledValue(for: 24), weight: .bold))
                             .foregroundStyle(Asset.Colors.Brand.blurple.swiftUIColor)
-                        Text(rule)
-                            .padding(.leading, 30)
+                        VStack(alignment: .leading, spacing: tinySpacing) {
+                            Text(rule.possiblyTranslatedTitle)
+                                .padding(.leading, 30)
+                            if let detail = rule.possiblyTranslatedDetail {
+                                Text(detail)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.leading, 30)
+                            }
+                        }
                     }
                     .padding(.bottom, 30)
                 }

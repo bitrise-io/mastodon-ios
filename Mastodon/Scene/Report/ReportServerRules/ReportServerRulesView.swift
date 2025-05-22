@@ -36,7 +36,7 @@ struct ReportServerRulesView: View {
             VStack(spacing: 32) {
                 ForEach(viewModel.serverRules, id: \.self) { rule in
                     ReportServerRulesRowView(
-                        title: rule.text,
+                        rule: rule,
                         isSelect: viewModel.selectRules.contains(rule)
                     )
                     .background(
@@ -67,7 +67,7 @@ struct ReportServerRulesView: View {
 
 struct ReportServerRulesRowView: View {
     
-    var title: String
+    var rule: Mastodon.Entity.Instance.Rule
     var isSelect: Bool
     
     var body: some View {
@@ -76,9 +76,14 @@ struct ReportServerRulesRowView: View {
                 .resizable()
                 .frame(width: 28, height: 28, alignment: .center)
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(rule.possiblyTranslatedTitle)
                     .foregroundColor(Color(Asset.Colors.Label.primary.color))
                     .font(.headline)
+                if let detail = rule.possiblyTranslatedDetail {
+                    Text(detail)
+                        .foregroundColor(Color(Asset.Colors.Label.secondary.color))
+                        .font(.body)
+                }
             }
             Spacer()
         }

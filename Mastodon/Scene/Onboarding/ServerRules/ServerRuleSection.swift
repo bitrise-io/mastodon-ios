@@ -23,7 +23,8 @@ extension ServerRuleSection {
                 let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: ServerRulesTableViewCell.self), for: indexPath) as! ServerRulesTableViewCell
                 cell.indexImageView.image = UIImage(systemName: "\(index + 1).circle") ?? UIImage(systemName: "questionmark.circle")
                 cell.indexImageView.tintColor = Asset.Colors.Brand.lightBlurple.color
-                cell.ruleLabel.text = rule.text
+                cell.ruleTitleLabel.text = rule.possiblyTranslatedTitle
+                cell.ruleDetailLabel.text = rule.possiblyTranslatedDetail
                 return cell
             }
         }

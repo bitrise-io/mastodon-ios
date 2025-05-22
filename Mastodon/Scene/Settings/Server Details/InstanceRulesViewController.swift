@@ -30,7 +30,7 @@ class InstanceRulesViewController: UIHostingController<InstanceRulesView> {
     func update(with instance: Mastodon.Entity.V2.Instance) {
         self.rootView.rulesView.viewModel = .init(
             disclaimer: nil,
-            rules: instance.rules?.map({ $0.text }) ?? [],
+            rules: instance.rules ?? [],
             onAgree: self.rootView.rulesView.viewModel.onAgree,
             onDisagree: self.rootView.rulesView.viewModel.onDisagree
         )

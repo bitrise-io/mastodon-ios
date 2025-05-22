@@ -19,10 +19,18 @@ final class ServerRulesTableViewCell: UITableViewCell {
         return imageView
     }()
     
-    let ruleLabel: UILabel = {
+    let ruleTitleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .regular))
         label.textColor = Asset.Colors.Label.primary.color
+        label.numberOfLines = 0
+        return label
+    }()
+    
+    let ruleDetailLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 13, weight: .regular))
+        label.textColor = Asset.Colors.Label.secondary.color
         label.numberOfLines = 0
         return label
     }()
@@ -55,14 +63,21 @@ extension ServerRulesTableViewCell {
             indexImageView.heightAnchor.constraint(equalToConstant: 32).priority(.required - 1),
         ])
         
-        ruleLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(ruleLabel)
+        ruleTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        ruleDetailLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        let stackView = UIStackView(arrangedSubviews: [ruleTitleLabel, ruleDetailLabel])
+        stackView.axis = .vertical
+        stackView.alignment = .leading
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stackView)
+        
         NSLayoutConstraint.activate([
-            ruleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11),
-            ruleLabel.leadingAnchor.constraint(equalTo: indexImageView.trailingAnchor, constant: 14),
-            ruleLabel.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor, constant: 16),
-            contentView.bottomAnchor.constraint(greaterThanOrEqualTo: ruleLabel.bottomAnchor, constant: 11),
-            ruleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            stackView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11),
+            stackView.leadingAnchor.constraint(equalTo: indexImageView.trailingAnchor, constant: 14),
+            stackView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor, constant: 16),
+            contentView.bottomAnchor.constraint(greaterThanOrEqualTo: stackView.bottomAnchor, constant: 11),
+            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
         ])
     }
     
