@@ -1022,6 +1022,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     func vote(poll: MastodonSDK.Mastodon.Entity.Poll, choices: [Int]) async throws {
         guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
         let response = try await APIService.shared.vote(poll: poll, choices: choices, authenticationBox: authenticatedUser)
+        feedLoader?.updatePoll(response.value)
     }
     
     func showOverlay(_ overlay: MastodonTimelineOverlayView?) {

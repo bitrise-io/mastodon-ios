@@ -489,6 +489,9 @@ extension TimelineFeedLoader {
             return cached.byDeleting(postId: postID)
         }
     }
+    
+    func updatePoll(_ poll: Mastodon.Entity.Poll) {
+    }
 }
 
 // MARK: Relationships

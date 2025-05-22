@@ -318,6 +318,7 @@ class PollViewModel: ObservableObject {
     
     func submitVote() {
         if case let .selecting(selectionState) = votingState, !selectionState.selectedIndexes.isEmpty {
+            votingState = .submittingVote(selectionState)
             Task {
                 do {
                     try await actionHandler.vote(poll: entity, choices: selectionState.selectedIndexes)
