@@ -600,6 +600,8 @@ extension TimelineFeedLoader {
             }
         }
         
+        guard !needToFetch.isEmpty else { return }
+        
         let relationships = try await APIService.shared.relationship(forAccountIds: needToFetch, authenticationBox: authenticatedUser).value
         let currentTimestamp = Date.now
         for relationshipEntity in relationships {
