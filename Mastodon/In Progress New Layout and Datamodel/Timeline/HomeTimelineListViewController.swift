@@ -698,9 +698,16 @@ private struct HomeTimelinePostRowView: View {
                                     MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
                                         .frame(width: contentWidth)
                                 }
-                            case .poll(let poll):
-                                PollView(viewModel: PollViewModel(pollEntity: poll, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
-                                .frame(width: contentWidth)
+                            case .poll(let pollID):
+                                if let poll = viewModel.actionHandler.poll(id: pollID) {
+                                    let optionTranslations: [String]? = {
+                                        guard viewModel.isShowingTranslation == true else { return nil }
+                                        guard let translation = viewModel.translation else { return nil }
+                                        return translation.poll?.options.map { $0.title }
+                                    }()
+                                    PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: optionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                        .frame(width: contentWidth)
+                                }
                             case .linkPreviewCard(let card):
                                 LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
                                     viewModel.actionHandler.presentScene(scene, transition: transition)
@@ -1019,10 +1026,15 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
-    func vote(poll: MastodonSDK.Mastodon.Entity.Poll, choices: [Int]) async throws {
+    func poll(id: MastodonSDK.Mastodon.Entity.Poll.ID) -> MastodonSDK.Mastodon.Entity.Poll? {
+        return feedLoader?.poll(id)
+    }
+    
+    func vote(poll: MastodonSDK.Mastodon.Entity.Poll, choices: [Int]) async throws -> Mastodon.Entity.Poll {
         guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
         let response = try await APIService.shared.vote(poll: poll, choices: choices, authenticationBox: authenticatedUser)
         feedLoader?.updatePoll(response.value)
+        return response.value
     }
     
     func showOverlay(_ overlay: MastodonTimelineOverlayView?) {
@@ -1191,7 +1203,15 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
             // MARK: DELETE
                 case .deletePost:
                     guard let postID = post.actionablePost?.id else { throw PostActionFailure.noActionablePostId }
-                    await deletePost(postID, askFirst: UserDefaults.shared.askBeforeDeletingAPost)
+                    let pollID: Mastodon.Entity.Poll.ID? = {
+                        switch post.actionablePost?.content.attachment {
+                        case .poll(let pollID):
+                            return pollID
+                        default:
+                            return nil
+                        }
+                    }()
+                    await deletePost(postID, pollID: pollID, askFirst: UserDefaults.shared.askBeforeDeletingAPost)
                 }
             } catch {
                 // TODO: handle error in a way the user can see it
@@ -1352,18 +1372,18 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
         isPerformingAccountAction = nil
     }
     
-    func deletePost(_ postID: Mastodon.Entity.Status.ID, askFirst: Bool) async {
+    func deletePost(_ postID: Mastodon.Entity.Status.ID, pollID: Mastodon.Entity.Poll.ID?, askFirst: Bool) async {
         do {
             if askFirst {
                 activeAlert = .confirmDeleteOfPost(didConfirm: {
                     Task {
-                        await self.deletePost(postID, askFirst: false)
+                        await self.deletePost(postID, pollID: pollID, askFirst: false)
                     }
                 })
             } else {
                 guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
                 let deletedStatus = try await APIService.shared.deleteContentPost(postID, authenticationBox: authenticatedUser)
-                feedLoader?.didDeletePost(deletedStatus.id)
+                feedLoader?.didDeletePost(deletedStatus.id, pollID: pollID)
                 self.clearPendingActions()
             }
         } catch {

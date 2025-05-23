@@ -11,6 +11,7 @@ enum TextViewWithCustomEmoji {
     case authorHeader(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
     case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
+    case pollOption(html: String, emojis: Emojis)
 }
 
 extension TextViewWithCustomEmoji: View {
@@ -24,6 +25,8 @@ extension TextViewWithCustomEmoji: View {
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: isPrivate ? .socialContextHeaderPrivate : .socialContextHeader))
         case .linkPreviewCardAuthorButton(let html, let emojis):
             Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .linkPreviewCardAuthor))
+        case .pollOption(let html, let emojis):
+            Text(attributedString(fromHtml: html, emojis: mapEmojiShortcodeToEmojis(emojis), withFormat: .pollOption))
         }
     }
 }

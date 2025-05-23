@@ -17,6 +17,7 @@ struct HtmlFormattingOptions {
         case socialContextHeader
         case socialContextHeaderPrivate
         case linkPreviewCardAuthor
+        case pollOption
     }
     
     let format: Format
@@ -25,7 +26,7 @@ struct HtmlFormattingOptions {
         switch format {
         case .inlinePostPreview:
             10
-        case .fullPost, .authorHeader:
+        case .fullPost, .authorHeader, .pollOption:
             17
         case .socialContextHeader, .socialContextHeaderPrivate:
             13
@@ -41,6 +42,11 @@ struct HtmlFormattingOptions {
         case .fullPost:
             [
                 .font : UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .regular)),
+                .foregroundColor : UIColor.label,
+            ]
+        case .pollOption:
+            [
+                .font : UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
                 .foregroundColor : UIColor.label,
             ]
         case .authorHeader:
@@ -70,7 +76,7 @@ struct HtmlFormattingOptions {
         switch format {
         case .inlinePostPreview:
             [:]
-        case .fullPost:
+        case .fullPost, .pollOption:
             [
                 .font: UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: baseFontSize, weight: .semibold)),
                 .foregroundColor: UIColor.link,

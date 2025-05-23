@@ -85,10 +85,8 @@ struct PollView: View {
                             .frame(width: standardPadding)
                     }
                     
-                    Text(option.text) // TODO: emoji
+                    TextViewWithCustomEmoji.pollOption(html: option.text, emojis: option.emojis)
                         .multilineTextAlignment(.leading)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                     
                     if viewModel.viewingResults {
@@ -301,14 +299,16 @@ class PollViewModel: ObservableObject {
     @Published var votingState: VotingState
     @Published var viewingResults: Bool
     
-    private let entity: Mastodon.Entity.Poll
+    private var entity: Mastodon.Entity.Poll
+    private let optionTranslations: [String]?
     private let actionHandler: MastodonPostMenuActionHandler
     
-    init(pollEntity: Mastodon.Entity.Poll, actionHandler: MastodonPostMenuActionHandler) {
+    init(pollEntity: Mastodon.Entity.Poll, optionTranslations: [String]?, actionHandler: MastodonPostMenuActionHandler) {
         entity = pollEntity
+        self.optionTranslations = optionTranslations
         self.actionHandler = actionHandler
         options = pollEntity.options.enumerated().map { (index, entityOption) in
-            Option(index: index, text: entityOption.title)
+            Option(index: index, text: optionTranslations?[index] ?? entityOption.title, emojis: entityOption.emojis ?? [])
         }
 
         let votingState = VotingState.fromEntity(pollEntity)
@@ -319,9 +319,12 @@ class PollViewModel: ObservableObject {
     func submitVote() {
         if case let .selecting(selectionState) = votingState, !selectionState.selectedIndexes.isEmpty {
             votingState = .submittingVote(selectionState)
-            Task {
+            Task { @MainActor in
                 do {
-                    try await actionHandler.vote(poll: entity, choices: selectionState.selectedIndexes)
+                    let updatedPoll = try await actionHandler.vote(poll: entity, choices: selectionState.selectedIndexes)
+                    entity = updatedPoll
+                    votingState = VotingState.fromEntity(updatedPoll)
+                    viewingResults = true
                 } catch {
                     votingState = .error(selectionState, error)
                 }
@@ -372,6 +375,7 @@ class PollViewModel: ObservableObject {
     struct Option: Identifiable {
         let index: Int
         let text: String
+        let emojis: [Mastodon.Entity.Emoji]
         
         var id: Int {
             return index

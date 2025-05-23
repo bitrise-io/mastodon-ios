@@ -61,7 +61,7 @@ extension GenericMastodonPost {
     
     enum PostAttachment: Codable {
         case media([Mastodon.Entity.Attachment])
-        case poll(Mastodon.Entity.Poll)
+        case poll(Mastodon.Entity.Poll.ID)
         case linkPreviewCard(Mastodon.Entity.Card)
     }
 }
@@ -143,7 +143,7 @@ extension GenericMastodonPost.PostAttachment: FromStatusEntityDerivableOptional
 {
     static func fromStatus(_ status: Mastodon.Entity.Status) -> Self? {
         if let attachedPoll = status.poll {
-            return .poll(attachedPoll)
+            return .poll(attachedPoll.id)
         } else if let card = status.card {
             return .linkPreviewCard(card)
         } else if let media = status.mediaAttachments, !media.isEmpty {
