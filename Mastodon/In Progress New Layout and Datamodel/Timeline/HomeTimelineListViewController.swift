@@ -700,13 +700,13 @@ private struct HomeTimelinePostRowView: View {
                                 }
                             case .poll(let pollID):
                                 if let poll = viewModel.actionHandler.poll(id: pollID) {
-                                    let optionTranslations: [String]? = {
-                                        guard viewModel.isShowingTranslation == true else { return nil }
-                                        guard let translation = viewModel.translation else { return nil }
-                                        return translation.poll?.options.map { $0.title }
-                                    }()
-                                    PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: optionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
-                                        .frame(width: contentWidth)
+                                    if viewModel.isShowingTranslation == true {
+                                        PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: viewModel.pollOptionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                            .frame(width: contentWidth)
+                                    } else {
+                                        PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                            .frame(width: contentWidth)
+                                    }
                                 }
                             case .linkPreviewCard(let card):
                                 LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
@@ -983,6 +983,12 @@ struct MastodonPostViewModel {
             partialResult[attachment.id] = attachment.description
         }
         return dictionary
+    }
+    
+    var pollOptionTranslations: [String]? {
+        guard isShowingTranslation == true else { return nil }
+        guard let pollTranslation = translation?.poll else { return nil }
+        return pollTranslation.options.map { $0.title }
     }
 }
 
