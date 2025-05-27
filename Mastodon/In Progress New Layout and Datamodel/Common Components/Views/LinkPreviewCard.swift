@@ -231,7 +231,7 @@ struct LinkPreviewCard: View {
     }
     
     @ViewBuilder var publisherAttributionMolecule: some View {
-        if let providerName = cardEntity.providerName {
+        if let providerName = cardEntity.providerName, !providerName.isEmpty {
             HStack(spacing: 2) {
                 Text(providerName)
                     .lineLimit(1)
@@ -255,16 +255,18 @@ struct LinkPreviewCard: View {
                 .multilineTextAlignment(.leading)
             switch cardEntity.layout {
             case .noPreviewVisual, .large:
-                Spacer()
-                    .frame(maxHeight: tinySpacing)
-                Text(cardEntity.description)
-                    .font(.subheadline)
-                    .lineLimit(2)
+                if !cardEntity.description.isEmpty {
+                    Spacer()
+                        .frame(maxHeight: tinySpacing)
+                    Text(cardEntity.description)
+                        .font(.subheadline)
+                        .lineLimit(2)
+                }
             case .compact:
                 EmptyView()
             }
         }
-        .padding(EdgeInsets(top: doublePadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
+        .padding(EdgeInsets(top: standardPadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
     }
 }
 
