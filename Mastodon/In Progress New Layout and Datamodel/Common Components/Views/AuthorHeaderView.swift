@@ -10,7 +10,7 @@ struct AuthorHeaderView: View {
     @ObservedObject var timestamper: TimestampUpdater
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack (alignment: .top) {
                 TextViewWithCustomEmoji.authorHeader(html: author.displayInfo.displayName, emojis: author.displayInfo.emojis)
                     .frame(maxWidth: .infinity, alignment: .leading)
