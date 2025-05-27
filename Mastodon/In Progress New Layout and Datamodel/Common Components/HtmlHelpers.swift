@@ -6,24 +6,32 @@ import MastodonMeta
 import MetaTextKit
 import MastodonCore
 import UIKit
+import SwiftUI
 
-struct HtmlFormattingOptions {
-    typealias AttributeDictionary = [NSAttributedString.Key: Any]
+
+typealias AttributeDictionary = [NSAttributedString.Key: Any]
+
+enum MastodonHtmlFormat {
+    case inlinePostPreview
+    case fullPost
+    case authorHeader
+    case socialContextHeader
+    case socialContextHeaderPrivate
+    case linkPreviewCardAuthor
+    case pollOption
+}
     
-    enum Format: CaseIterable {
-        case inlinePostPreview
-        case fullPost
-        case authorHeader
-        case socialContextHeader
-        case socialContextHeaderPrivate
-        case linkPreviewCardAuthor
-        case pollOption
+extension MastodonHtmlFormat {
+    
+    public var metaText: MetaText {
+        let meta = MetaText()
+        meta.textAttributes = self.textAttributes
+        meta.linkAttributes = self.linkAttributes
+        return meta
     }
     
-    let format: Format
-    
-    var baseFontSize: CGFloat {
-        switch format {
+    private var baseFontSize: CGFloat {
+        switch self {
         case .inlinePostPreview:
             10
         case .fullPost, .authorHeader, .pollOption:
@@ -35,8 +43,8 @@ struct HtmlFormattingOptions {
         }
     }
     
-    var textAttributes: AttributeDictionary {
-        switch format {
+    private var textAttributes: AttributeDictionary {
+        switch self {
         case .inlinePostPreview:
             [:]
         case .fullPost:
@@ -72,8 +80,8 @@ struct HtmlFormattingOptions {
         }
     }
     
-    var linkAttributes: AttributeDictionary {
-        switch format {
+    private var linkAttributes: AttributeDictionary {
+        switch self {
         case .inlinePostPreview:
             [:]
         case .fullPost, .pollOption:
@@ -89,30 +97,18 @@ struct HtmlFormattingOptions {
     }
     
     
-    static var nilOptions: AttributeDictionary {
+    private var nilOptions: AttributeDictionary {
         return [:]
     }
 }
 
-fileprivate func metaTextForHtmlToAttributedStringConversion(options: HtmlFormattingOptions) -> MetaText {
-    let meta = MetaText()
-    meta.textAttributes = options.textAttributes
-    meta.linkAttributes = options.linkAttributes
-    return meta
-}
 
-fileprivate let metaTextsForConversion: [ HtmlFormattingOptions.Format : MetaText ] = {
-    var dict = [ HtmlFormattingOptions.Format : MetaText ]()
-    return HtmlFormattingOptions.Format.allCases.reduce(into: dict) { partialResult, format in
-        partialResult[format] = metaTextForHtmlToAttributedStringConversion(options: HtmlFormattingOptions(format: format))
-    }
-}()
-
+@available(*, deprecated, message: "SwiftUI cannot display custom emojis. Prefer the MetaText wrapper MetaTextViewSwiftUI.") // TODO: implement option on TextViewWithCustomEmoji to bold a substring
 func attributedString(
-    fromHtml html: String, emojis: [MastodonContent.Shortcode: String], withFormat format: HtmlFormattingOptions.Format? = .inlinePostPreview
+    fromHtml html: String, emojis: [MastodonContent.Shortcode: String], withFormat format: MastodonHtmlFormat? = .inlinePostPreview
 ) -> AttributedString {
     let content = MastodonContent(content: html, emojis: emojis)
-    let metaText = metaTextsForConversion[format!]!
+    let metaText = format!.metaText
     metaText.reset()
     do {
         let metaContent = try MastodonMetaContent.convert(document: content)

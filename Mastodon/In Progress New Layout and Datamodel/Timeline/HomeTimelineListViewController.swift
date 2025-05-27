@@ -7,6 +7,7 @@ import MastodonLocalization
 import MastodonSDK
 import Combine
 import MastodonUI
+import Meta
 
 class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
 {
@@ -699,12 +700,13 @@ private struct HomeTimelinePostRowView: View {
                                         .frame(width: contentWidth)
                                 }
                             case .poll(let pollID):
+                                let emojis = viewModel.post.actionablePost?.content.htmlWithEntities?.emojis
                                 if let poll = viewModel.actionHandler.poll(id: pollID) {
                                     if viewModel.isShowingTranslation == true {
-                                        PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: viewModel.pollOptionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                        PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: viewModel.pollOptionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
                                             .frame(width: contentWidth)
                                     } else {
-                                        PollView(viewModel: PollViewModel(pollEntity: poll, optionTranslations: nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                        PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
                                             .frame(width: contentWidth)
                                     }
                                 }
@@ -826,16 +828,7 @@ private struct HomeTimelinePostRowView: View {
     }
     
     func goToProfile(_ account: MastodonAccount) {
-        switch viewModel.myRelationshipToAuthor {
-        case .isMe:
-            let profile: ProfileViewController.ProfileType = .me(account._legacyEntity)
-            viewModel.actionHandler.presentScene(.profile(profile), transition: .show)
-        case .isNotMe(let info):
-            if let info, let me = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount {
-                let profile: ProfileViewController.ProfileType = .notMe(me: me, displayAccount: account._legacyEntity, relationship: info._legacyEntity)
-                viewModel.actionHandler.presentScene(.profile(profile), transition: .show)
-            }
-        }
+        viewModel.goToProfile(account)
     }
 }
 
@@ -990,6 +983,69 @@ struct MastodonPostViewModel {
         guard let pollTranslation = translation?.poll else { return nil }
         return pollTranslation.options.map { $0.title }
     }
+    
+    func didSelect(meta: Meta) {
+        switch meta {
+            // note:
+            // some server mark the normal url as "u-url" class. highlighted content is a URL
+        case .url(_, _, let url, _),
+                .mention(_, let url, _) where url.lowercased().hasPrefix("http"):
+            // fix non-ascii character URL link can not open issue
+            guard let url = URL(string: url) ?? URL(string: url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? url) else {
+                assertionFailure()
+                return
+            }
+            actionHandler.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
+            
+        case .hashtag(_, let hashtag, _):
+            guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+            let hashtagTimelineViewModel = HashtagTimelineViewModel(authenticationBox: currentUser, hashtag: hashtag)
+            actionHandler.presentScene(.hashtagTimeline(viewModel: hashtagTimelineViewModel), transition: .show)
+            
+        case .mention(_, let mention, let userInfo):
+            guard
+                let href = userInfo?["href"] as? String,
+                let url = URL(string: href)
+            else {
+                return
+            }
+            let mentions = post.actionablePost?.content.htmlWithEntities?.mentions
+            guard let mention = mentions?.first(where: { $0.url == href }) else {
+                actionHandler.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
+                return
+            }
+            goToProfile(mention)
+        default:
+            assertionFailure()
+            break
+        }
+    }
+    
+    func goToProfile(_ account: MastodonAccount) {
+        switch myRelationshipToAuthor {
+        case .isMe:
+            let profile: ProfileViewController.ProfileType = .me(account._legacyEntity)
+            actionHandler.presentScene(.profile(profile), transition: .show)
+        case .isNotMe(let info):
+            if let info, let me = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount {
+                let profile: ProfileViewController.ProfileType = .notMe(me: me, displayAccount: account._legacyEntity, relationship: info._legacyEntity)
+                actionHandler.presentScene(.profile(profile), transition: .show)
+            }
+        }
+    }
+    
+    func goToProfile(_ mention: Mastodon.Entity.Mention) {
+        Task {
+            guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+            let account = try await APIService.shared.accountInfo(
+                domain: currentUser.domain,
+                userID:
+                    mention.id,
+                authorization: currentUser.userAuthorization
+            )
+            goToProfile(MastodonAccount.fromEntity(account))
+        }
+    }
 }
 
 fileprivate extension MastodonPostViewModel {
@@ -1014,15 +1070,15 @@ fileprivate extension MastodonPostViewModel {
     }
 
     var textContentView: TextViewWithCustomEmoji {
-        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(html: "", emojis: TextViewWithCustomEmoji.Emojis())
+        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(html: "", emojis: TextViewWithCustomEmoji.Emojis(), didSelect: { meta in didSelect(meta: meta) })
         
         guard let actionablePost = post.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
         let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         
         if isShowingTranslation == true, let translation = actionHandler.translation(forContentPostId: actionablePost.id)?.content {
-            return .timelinePost(html: translation, emojis: emojis)
+            return .timelinePost(html: translation, emojis: emojis, didSelect: { meta in didSelect(meta: meta) })
         } else {
-            return .timelinePost(html: untranslatedContent, emojis: emojis)
+            return .timelinePost(html: untranslatedContent, emojis: emojis, didSelect: { meta in didSelect(meta: meta) })
         }
     }
 

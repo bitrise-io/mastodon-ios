@@ -303,12 +303,12 @@ class PollViewModel: ObservableObject {
     private let optionTranslations: [String]?
     private let actionHandler: MastodonPostMenuActionHandler
     
-    init(pollEntity: Mastodon.Entity.Poll, optionTranslations: [String]?, actionHandler: MastodonPostMenuActionHandler) {
+    init(pollEntity: Mastodon.Entity.Poll, emojis: [Mastodon.Entity.Emoji]?, optionTranslations: [String]?, actionHandler: MastodonPostMenuActionHandler) {
         entity = pollEntity
         self.optionTranslations = optionTranslations
         self.actionHandler = actionHandler
         options = pollEntity.options.enumerated().map { (index, entityOption) in
-            Option(index: index, text: optionTranslations?[index] ?? entityOption.title, emojis: entityOption.emojis ?? [])
+            Option(index: index, text: optionTranslations?[index] ?? entityOption.title, emojis: emojis ?? [])
         }
 
         let votingState = VotingState.fromEntity(pollEntity)

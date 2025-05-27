@@ -62,12 +62,10 @@ extension Mastodon.Entity.Poll {
         public let title: String
         /// nil if results are not published yet
         public let votesCount: Int?
-        public let emojis: [Mastodon.Entity.Emoji]?
 
         enum CodingKeys: String, CodingKey {
             case title
             case votesCount = "votes_count"
-            case emojis
         }
     }
 }
