@@ -17,11 +17,9 @@ class MediaPreviewImageViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
     let item: ImagePreviewItem
     
-    init(context: AppContext, item: ImagePreviewItem) {
-        self.context = context
+    init(item: ImagePreviewItem) {
         self.item = item
     }
     

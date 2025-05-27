@@ -22,7 +22,6 @@ final class MediaPreviewViewModel: NSObject {
     weak var mediaPreviewImageViewControllerDelegate: MediaPreviewImageViewControllerDelegate?
 
     // input
-    let context: AppContext
     let item: PreviewItem
     let transitionItem: MediaPreviewTransitionItem
     
@@ -36,11 +35,9 @@ final class MediaPreviewViewModel: NSObject {
     private var disposeBag: Set<AnyCancellable> = []
     
     init(
-        context: AppContext,
         item: PreviewItem,
         transitionItem: MediaPreviewTransitionItem
     ) {
-        self.context = context
         self.item = item
         var currentPage = 0
         var viewControllers: [MediaPreviewPage] = []
@@ -55,7 +52,6 @@ final class MediaPreviewViewModel: NSObject {
                 case .image:
                     let viewController = MediaPreviewImageViewController()
                     let viewModel = MediaPreviewImageViewModel(
-                        context: context,
                         item: .init(
                             assetURL: attachment.assetURL.flatMap { URL(string: $0) },
                             thumbnail: previewContext.thumbnail(at: i),
@@ -67,7 +63,6 @@ final class MediaPreviewViewModel: NSObject {
                 case .gifv:
                     let viewController = MediaPreviewVideoViewController()
                     let viewModel = MediaPreviewVideoViewModel(
-                        context: context,
                         item: .gif(.init(
                             assetURL: attachment.assetURL.flatMap { URL(string: $0) },
                             previewURL: attachment.previewURL.flatMap { URL(string: $0) },
@@ -79,7 +74,6 @@ final class MediaPreviewViewModel: NSObject {
                 case .video, .audio:
                     let viewController = MediaPreviewVideoViewController()
                     let viewModel = MediaPreviewVideoViewModel(
-                        context: context,
                         item: .video(.init(
                             assetURL: attachment.assetURL.flatMap { URL(string: $0) },
                             previewURL: attachment.previewURL.flatMap { URL(string: $0) },
@@ -93,7 +87,6 @@ final class MediaPreviewViewModel: NSObject {
         case .profileAvatar(let previewContext):
             let viewController = MediaPreviewImageViewController()
             let viewModel = MediaPreviewImageViewModel(
-                context: context,
                 item: .init(
                     assetURL: previewContext.assetURL.flatMap { URL(string: $0) },
                     thumbnail: previewContext.thumbnail,
@@ -105,7 +98,6 @@ final class MediaPreviewViewModel: NSObject {
         case .profileBanner(let previewContext):
             let viewController = MediaPreviewImageViewController()
             let viewModel = MediaPreviewImageViewModel(
-                context: context,
                 item: .init(
                     assetURL: previewContext.assetURL.flatMap { URL(string: $0) },
                     thumbnail: previewContext.thumbnail,

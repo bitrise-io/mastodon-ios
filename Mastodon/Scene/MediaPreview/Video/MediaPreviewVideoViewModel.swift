@@ -16,7 +16,6 @@ final class MediaPreviewVideoViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
     let item: Item
     
     // output
@@ -24,8 +23,7 @@ final class MediaPreviewVideoViewModel {
     private var playerLooper: AVPlayerLooper?
     @Published var playbackState = PlaybackState.unknown
     
-    init(context: AppContext, item: Item) {
-        self.context = context
+    init(item: Item) {
         self.item = item
         // end init
 

@@ -21,7 +21,6 @@ extension DataSourceFacade {
         mediaPreviewTransitionItem: MediaPreviewTransitionItem
     ) {
         let mediaPreviewViewModel = MediaPreviewViewModel(
-            context: AppContext.shared,
             item: mediaPreviewItem,
             transitionItem: mediaPreviewTransitionItem
         )
