@@ -24,6 +24,15 @@ enum Tab: Int, CaseIterable {
         case .me:               return L10n.Common.Controls.Tabs.profile
         }
     }
+    
+    var shouldDisplayTitle: Bool {
+        switch self {
+        case .home:
+            return false
+        default:
+            return true
+        }
+    }
 
     var inputLabels: [String]? {
         switch self {
@@ -59,7 +68,7 @@ enum Tab: Int, CaseIterable {
 
 extension UIViewController {
     func configureTabBarItem(with tab: Tab) {
-        title = tab.title
+        title = tab.shouldDisplayTitle ? tab.title : ""
         tabBarItem.tag = tab.tag
         tabBarItem.title = tab.title     // needs for acessiblity large content label
         tabBarItem.image = tab.image.imageWithoutBaseline()
