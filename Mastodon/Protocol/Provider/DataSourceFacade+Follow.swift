@@ -27,19 +27,23 @@ extension DataSourceFacade {
                 let performAction = {
                     FeedbackGenerator.shared.generate(.selectionChanged)
 
-                    let response = try await APIService.shared.toggleFollow(
-                        account: account,
-                        authenticationBox: dependency.authenticationBox
-                    ).value
-
-                    AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
-                    
-
-                    NotificationCenter.default.post(name: .relationshipChanged, object: nil, userInfo: [
-                        UserInfoKey.relationship: response
-                    ])
-                    
-                    continuation.resume(returning: response)
+                    do {
+                        let response = try await APIService.shared.toggleFollow(
+                            account: account,
+                            authenticationBox: dependency.authenticationBox
+                        ).value
+                        
+                        AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+                        
+                        
+                        NotificationCenter.default.post(name: .relationshipChanged, object: nil, userInfo: [
+                            UserInfoKey.relationship: response
+                        ])
+                        
+                        continuation.resume(returning: response)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 }
 
                 if relationship?.following == true {
@@ -62,13 +66,13 @@ extension DataSourceFacade {
                     alert.addAction(cancel)
                     let unfollow = UIAlertAction(title: L10n.Common.Alerts.UnfollowUser.unfollow, style: .destructive) { _ in
                         Task {
-                            try await performAction()
+                            await performAction()
                         }
                     }
                     alert.addAction(unfollow)
                     dependency.present(alert, animated: true)
                 } else {
-                    try await performAction()
+                    await performAction()
                 }
             }
         }
