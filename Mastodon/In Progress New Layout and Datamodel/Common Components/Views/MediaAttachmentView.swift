@@ -174,7 +174,7 @@ extension MediaAttachment {
             Image(systemName: "questionmark.square.dashed")
         case .images(let attachments, let altTextTranslations):
             ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
-                ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler), transitionController: actionHandler.mediaPreviewableViewController?.mediaPreviewTransitionController)
+                ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler), mediaPreviewableViewController: actionHandler.mediaPreviewableViewController)
             }
         case .audio, .gifv, .video:
             ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
@@ -233,7 +233,7 @@ struct ConcealableMediaAttachmentView<Content: View>: View {
 
 struct ImageGridView: View {
     @ObservedObject var viewModel: ImageGalleryViewModel
-    let transitionController: MediaPreviewTransitionController?
+    let mediaPreviewableViewController: MediaPreviewableViewController?
     
     var body: some View {
         // The images
@@ -245,6 +245,14 @@ struct ImageGridView: View {
                         .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
                         .onTapGesture {
                             showImageGallery(focusing: img.id)
+                        }
+                        .background {
+                            GeometryReader { geo in  // necessary to trigger read of updated frames after scrolling
+                                FrameReader(frame: geo.frame(in: .global)) { updatedFrames in
+                                    viewModel.updateFrames(updatedFrames, forID: img.basicData.id)
+                                }
+                                .frame(width: geo.size.width, height: geo.size.height)
+                            }
                         }
                     
                     if let altText = img.basicData.altText, altText.isNotEmpty {
@@ -280,33 +288,24 @@ struct ImageGridView: View {
     func showImageGallery(focusing: Mastodon.Entity.Attachment.ID) {
         guard let presentingViewController = viewModel.actionHandler.mediaPreviewableViewController else { return }
         
-        let images: [(Mastodon.Entity.Attachment.ID, URL)] = viewModel.imageAttachments.compactMap { img in
-            if let url = img.basicData.fullsizeUrl {
-                return (img.id, url)
-            } else {
-                return nil
-            }
-        }
-        let blurhashes = viewModel.blurhashes
-        let altText = viewModel.imageAttachments.reduce(into: [String : String]()) { partialResult, img in
-            partialResult[img.id] = img.basicData.altText
-        }
-        let altTextTranslations = viewModel.altTextTranslations
-        let imageViewModel = ImageGalleryViewModel(imageAttachments: viewModel.imageAttachments, contentConcealViewModel: .alwaysShow, altTextTranslations: altTextTranslations, actionHandler: viewModel.actionHandler)
-        
         let focusedIndex = viewModel.imageAttachments.firstIndex { $0.id == focusing }
+        
+        let altTextTranslations = viewModel.altTextTranslations
         let altTexts = viewModel.imageAttachments.map { altTextTranslations?[$0.id] ?? $0.basicData.altText }
+       
         let previewItem: MediaPreviewViewModel.PreviewItem = .attachments(viewModel.imageAttachments.map{ $0._legacyEntity }, initialIndex: focusedIndex, altTexts: altTexts)
         let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
             let item = MediaPreviewTransitionItem(source: .swiftUI, previewableViewController: presentingViewController)
             
-            item.initialContainerFrame = {
-                let initialFrame = CGRect(x: 50, y: 50, width: 50, height: 50) //mediaView.superview!.convert(mediaView.frame, to: nil)
+            item.initialClippingFrame = {
+                // this is the current frame of the image view
+                let initialFrame = viewModel.frames(forID: focusing)?.clippingFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
                 assert(initialFrame != .zero)
                 return initialFrame
             }()
-            item.initialFrame = {
-                let initialFrame = CGRect(x: 50, y: 50, width: 50, height: 50)//mediaView.contentView().frame
+            item.initialimageFrame = {
+                // this is the current frame of the image in the view, accounting for focus point if cropping
+                let initialFrame = viewModel.frames(forID: focusing)?.imageFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
                 assert(initialFrame != .zero)
                 return initialFrame
             }()
@@ -315,11 +314,12 @@ struct ImageGridView: View {
             
             item.aspectRatio = {
                 guard let focusedIndex else { return nil }
-                return imageViewModel.imageAttachments[focusedIndex].imageDetails.originalSize
+                return viewModel.imageAttachments[focusedIndex].imageDetails.originalSize
             }()
             
             return item
         }()
+        
         let mediaPreviewViewModel = MediaPreviewViewModel(
             item: previewItem,
             transitionItem: mediaPreviewTransitionItem)
@@ -372,6 +372,7 @@ struct BlurhashImageView: View {
 
 class ImageGalleryViewModel: ObservableObject {
     let imageAttachments: [MastodonImageAttachment]
+    private var frames = [Mastodon.Entity.Attachment.ID : FrameReader.AnimationFrames]()
     let altTextTranslations: [String : String]?
     @Published var blurhashes = [ Mastodon.Entity.Attachment.ID : UIImage ]()
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
@@ -406,6 +407,14 @@ class ImageGalleryViewModel: ObservableObject {
         case .concealAll(_, let showAnyway), .concealMediaOnly(let showAnyway):
             return !showAnyway
         }
+    }
+    
+    func frames(forID id: Mastodon.Entity.Attachment.ID) -> FrameReader.AnimationFrames? {
+        return frames[id]
+    }
+    
+    func updateFrames(_ newFrames: FrameReader.AnimationFrames, forID id: Mastodon.Entity.Attachment.ID) {
+        frames[id] = newFrames
     }
 }
 

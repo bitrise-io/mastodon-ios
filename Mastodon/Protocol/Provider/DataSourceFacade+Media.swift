@@ -91,12 +91,12 @@ extension DataSourceFacade {
             
             let mediaView = previewContext.mediaView
 
-            item.initialContainerFrame = {
+            item.initialClippingFrame = {
                 let initialFrame = mediaView.superview!.convert(mediaView.frame, to: nil)
                 assert(initialFrame != .zero)
                 return initialFrame
             }()
-            item.initialFrame = {
+            item.initialimageFrame = {
                 let initialFrame = mediaView.contentView().frame
                 assert(initialFrame != .zero)
                 return initialFrame
@@ -174,7 +174,7 @@ extension DataSourceFacade {
         )
 
         let imageView = previewContext.imageView
-        mediaPreviewTransitionItem.initialFrame = imageView.superview?.convert(imageView.frame, to: nil)
+        mediaPreviewTransitionItem.initialimageFrame = imageView.superview?.convert(imageView.frame, to: nil)
         mediaPreviewTransitionItem.image = thumbnail
         mediaPreviewTransitionItem.aspectRatio = thumbnail?.size ?? CGSize(width: 100, height: 100)
         mediaPreviewTransitionItem.sourceImageViewCornerRadius = {
