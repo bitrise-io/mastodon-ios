@@ -295,11 +295,14 @@ struct ImageGridView: View {
        
         let previewItem: MediaPreviewViewModel.PreviewItem = .attachments(viewModel.imageAttachments.map{ $0._legacyEntity }, initialIndex: focusedIndex, altTexts: altTexts)
         let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
-            let item = MediaPreviewTransitionItem(source: .swiftUI, previewableViewController: presentingViewController)
+            func clippingFrame(forID id: Mastodon.Entity.Attachment.ID) -> CGRect { viewModel.frames(forID: id)?.clippingFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
+            }
+            let clippingFrames = viewModel.imageAttachments.map { clippingFrame(forID: $0.basicData.id) }
+            let item = MediaPreviewTransitionItem(source: .swiftUI(sourceFramesInScreenCoordinates: clippingFrames), previewableViewController: presentingViewController)
             
             item.initialClippingFrame = {
                 // this is the current frame of the image view
-                let initialFrame = viewModel.frames(forID: focusing)?.clippingFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
+                let initialFrame = clippingFrame(forID: focusing)
                 assert(initialFrame != .zero)
                 return initialFrame
             }()

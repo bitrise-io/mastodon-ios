@@ -55,7 +55,7 @@ extension MediaPreviewTransitionItem {
         case attachments(MediaGridContainerView)
         case profileAvatar(ProfileHeaderView)
         case profileBanner(ProfileHeaderView)
-        case swiftUI
+        case swiftUI(sourceFramesInScreenCoordinates: [CGRect])
         
         func updateAppearance(position: UIViewAnimatingPosition, index: Int?) {
             let alpha: CGFloat = position == .end ? 1 : 0
