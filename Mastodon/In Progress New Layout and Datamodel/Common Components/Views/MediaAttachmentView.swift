@@ -22,10 +22,12 @@ class GenericMastodonAttachment: Identifiable {
 
 class MastodonImageAttachment: GenericMastodonAttachment {
     let imageDetails: ImageAttachmentDetails
+    let _legacyEntity: Mastodon.Entity.Attachment
     
     init?(_ entity: Mastodon.Entity.Attachment) {
         guard let meta = entity.meta else { return nil }
         imageDetails = ImageAttachmentDetails(meta)
+        _legacyEntity = entity
         super.init(entity: entity)
     }
 }
@@ -275,6 +277,8 @@ struct ImageGridView: View {
     }
     
     func showImageGallery(focusing: Mastodon.Entity.Attachment.ID) {
+        guard let presentingViewController = viewModel.actionHandler.mediaPreviewableViewController else { return }
+        
         let images: [(Mastodon.Entity.Attachment.ID, URL)] = viewModel.imageAttachments.compactMap { img in
             if let url = img.basicData.fullsizeUrl {
                 return (img.id, url)
@@ -288,7 +292,39 @@ struct ImageGridView: View {
         }
         let altTextTranslations = viewModel.altTextTranslations
         let imageViewModel = ImageGalleryViewModel(imageAttachments: viewModel.imageAttachments, contentConcealViewModel: .alwaysShow, altTextTranslations: altTextTranslations, actionHandler: viewModel.actionHandler)
-        viewModel.actionHandler.showOverlay(.images(focusedImage: focusing, imageViewModel))
+        
+        let focusedIndex = viewModel.imageAttachments.firstIndex { $0.id == focusing }
+        let altTexts = viewModel.imageAttachments.map { altTextTranslations?[$0.id] ?? $0.basicData.altText }
+        let previewItem: MediaPreviewViewModel.PreviewItem = .attachments(viewModel.imageAttachments.map{ $0._legacyEntity }, initialIndex: focusedIndex, altTexts: altTexts)
+        let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
+            let item = MediaPreviewTransitionItem(source: .swiftUI, previewableViewController: presentingViewController)
+            
+            item.initialContainerFrame = {
+                let initialFrame = CGRect(x: 50, y: 50, width: 50, height: 50) //mediaView.superview!.convert(mediaView.frame, to: nil)
+                assert(initialFrame != .zero)
+                return initialFrame
+            }()
+            item.initialFrame = {
+                let initialFrame = CGRect(x: 50, y: 50, width: 50, height: 50)//mediaView.contentView().frame
+                assert(initialFrame != .zero)
+                return initialFrame
+            }()
+            
+            item.image = viewModel.blurhashes[focusing]
+            
+            item.aspectRatio = {
+                guard let focusedIndex else { return nil }
+                return imageViewModel.imageAttachments[focusedIndex].imageDetails.originalSize
+            }()
+            
+            return item
+        }()
+        let mediaPreviewViewModel = MediaPreviewViewModel(
+            item: previewItem,
+            transitionItem: mediaPreviewTransitionItem)
+        viewModel.actionHandler.presentScene(.mediaPreview(viewModel: mediaPreviewViewModel),
+                                             transition: .custom(transitioningDelegate: MediaPreviewTransitionController())
+        )
     }
 }
 

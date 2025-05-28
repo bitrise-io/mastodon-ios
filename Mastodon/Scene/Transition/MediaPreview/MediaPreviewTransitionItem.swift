@@ -55,6 +55,7 @@ extension MediaPreviewTransitionItem {
         case attachments(MediaGridContainerView)
         case profileAvatar(ProfileHeaderView)
         case profileBanner(ProfileHeaderView)
+        case swiftUI
         
         func updateAppearance(position: UIViewAnimatingPosition, index: Int?) {
             let alpha: CGFloat = position == .end ? 1 : 0
@@ -71,6 +72,8 @@ extension MediaPreviewTransitionItem {
                 profileHeaderView.avatarButton.alpha = alpha
             case .profileBanner:
                 break    // keep source
+            case .swiftUI:
+                break
             }
         }
     }

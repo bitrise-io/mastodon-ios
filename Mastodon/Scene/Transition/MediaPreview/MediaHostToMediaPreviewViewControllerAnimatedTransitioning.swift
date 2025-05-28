@@ -262,7 +262,7 @@ extension MediaHostToMediaPreviewViewControllerAnimatedTransitioning {
             }
             
             // calculate transition mask
-            let maskLayerToRect: CGRect? = {
+            let maskLayerToRect: CGRect? = { () -> CGRect? in
                 guard case .attachments = transitionItem.source else { return nil }
                 guard let navigationBar = toVC.navigationController?.navigationBar, let navigationBarSuperView = navigationBar.superview else { return nil }
                 let navigationBarFrameInWindow = navigationBarSuperView.convert(navigationBar.frame, to: nil)
@@ -420,7 +420,7 @@ extension MediaHostToMediaPreviewViewControllerAnimatedTransitioning {
             let toVC = transitionItem.previewableViewController
             
             var needsMaskWithAnimation = true
-            let maskLayerToRect: CGRect? = {
+            let maskLayerToRect: CGRect? = { ()->CGRect? in
                 guard case .attachments = transitionItem.source else { return nil }
                 guard let navigationBar = toVC.navigationController?.navigationBar, let navigationBarSuperView = navigationBar.superview else { return nil }
                 let navigationBarFrameInWindow = navigationBarSuperView.convert(navigationBar.frame, to: nil)

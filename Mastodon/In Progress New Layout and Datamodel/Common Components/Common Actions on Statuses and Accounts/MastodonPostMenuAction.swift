@@ -27,6 +27,7 @@ protocol MastodonPostMenuActionHandler {
     func showOverlay(_ modalView: MastodonTimelineOverlayView?)
     func vote(poll: Mastodon.Entity.Poll, choices: [Int]) async throws -> Mastodon.Entity.Poll
     func poll(id: Mastodon.Entity.Poll.ID) -> Mastodon.Entity.Poll?
+    var mediaPreviewableViewController: MediaPreviewableViewController? { get }
 }
 
 

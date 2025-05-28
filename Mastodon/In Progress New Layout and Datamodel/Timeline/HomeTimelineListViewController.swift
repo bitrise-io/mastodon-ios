@@ -12,6 +12,7 @@ import Meta
 class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
 {
     private let viewModel = HomeTimelineListViewModel(timeline: .following)
+    private let _mediaPreviewTransitionController = MediaPreviewTransitionController()
     
     init() {
         let root = HomeTimelineListView(viewModel: viewModel)
@@ -19,6 +20,7 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
         viewModel.parentVcPresentScene = { (scene, transition) in
             self.sceneCoordinator?.present(scene: scene, transition: transition)
         }
+        viewModel.hostingViewController = self
         
         setUpTimelineSelectorButton()
         showSettingsButton(true)
@@ -219,6 +221,12 @@ class HomeTimelineListViewController: UIHostingController<HomeTimelineListView>
     }
 }
 
+extension HomeTimelineListViewController: MediaPreviewableViewController {
+    var mediaPreviewTransitionController: MediaPreviewTransitionController {
+        return _mediaPreviewTransitionController
+    }
+}
+
 extension MastodonPostMenuAction {
     enum AlertType {
         case noAlert
@@ -298,6 +306,7 @@ private class HomeTimelineListViewModel: ObservableObject {
     public var parentVcPresentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> ())?
     private var authenticatedUser: MastodonAuthenticationBox?
     private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
+    var hostingViewController: MediaPreviewableViewController?
     
     var activeAlert: MastodonPostMenuAction.AlertType = .noAlert {
         didSet {
@@ -1088,6 +1097,10 @@ fileprivate extension MastodonPostViewModel {
 }
 
 extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
+    var mediaPreviewableViewController: (any MediaPreviewableViewController)? {
+        return hostingViewController
+    }
+    
     func poll(id: MastodonSDK.Mastodon.Entity.Poll.ID) -> MastodonSDK.Mastodon.Entity.Poll? {
         return feedLoader?.poll(id)
     }

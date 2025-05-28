@@ -51,6 +51,8 @@ extension MediaPreviewableViewController {
                     containerSourceFrame: rect, contentSourceFrame: nil
                 )
             }
+        case .swiftUI:
+            sourceFrameProvider = SourceFrameProvider(containerSourceFrame: CGRect(x: 0, y: 0, width: 50, height: 50), contentSourceFrame: CGRect(x: 0, y: 0, width: 50, height: 50))
         }
 
         return sourceFrameProvider

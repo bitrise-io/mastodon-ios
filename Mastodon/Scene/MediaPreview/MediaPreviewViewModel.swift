@@ -84,6 +84,51 @@ final class MediaPreviewViewModel: NSObject {
                     viewControllers.append(viewController)
                 }   // end switch attachment.kind { … }
             }   // end for … in …
+        case .attachments(let attachments, let initialIndex, let altTexts):
+            getAltText = { altTexts[$0] }
+            
+            currentPage = initialIndex ?? 0
+            for (i, attachment) in attachments.enumerated() {
+                switch attachment.type {
+                case .image:
+                    let viewController = MediaPreviewImageViewController()
+                    let viewModel = MediaPreviewImageViewModel(
+                        item: .init(
+                            assetURL: attachment.url.flatMap { URL(string: $0) },
+                            thumbnail: nil,
+                            altText: altTexts[i]
+                        )
+                    )
+                    viewController.viewModel = viewModel
+                    viewControllers.append(viewController)
+                case .gifv:
+                    let viewController = MediaPreviewVideoViewController()
+                    let viewModel = MediaPreviewVideoViewModel(
+                        item: .gif(.init(
+                            assetURL: attachment.url.flatMap { URL(string: $0) },
+                            previewURL: attachment.previewURL.flatMap { URL(string: $0) },
+                            altText: altTexts[i]
+                        ))
+                    )
+                    viewController.viewModel = viewModel
+                    viewControllers.append(viewController)
+                case .video, .audio:
+                    let viewController = MediaPreviewVideoViewController()
+                    let viewModel = MediaPreviewVideoViewModel(
+                        item: .video(.init(
+                            assetURL: attachment.url.flatMap { URL(string: $0) },
+                            previewURL: attachment.previewURL.flatMap { URL(string: $0) },
+                            altText: altTexts[i]
+                        ))
+                    )
+                    viewController.viewModel = viewModel
+                    viewControllers.append(viewController)
+                case .unknown:
+                    break
+                case ._other(_):
+                    break
+                }   // end switch attachment.kind { … }
+            }   // end for … in …
         case .profileAvatar(let previewContext):
             let viewController = MediaPreviewImageViewController()
             let viewModel = MediaPreviewImageViewModel(
@@ -135,10 +180,11 @@ extension MediaPreviewViewModel {
         case profileAvatar(ProfileAvatarPreviewContext)
         case profileBanner(ProfileBannerPreviewContext)
 //        case local(LocalImagePreviewMeta)
+        case attachments([Mastodon.Entity.Attachment], initialIndex: Int?, altTexts: [String?])
         
         var isAssetURLValid: Bool {
             switch self {
-            case .attachment:
+            case .attachment, .attachments:
                 return true     // default valid
             case .profileAvatar:
                 return true     // default valid
