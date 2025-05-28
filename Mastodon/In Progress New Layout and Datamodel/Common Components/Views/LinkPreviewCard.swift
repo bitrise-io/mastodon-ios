@@ -170,7 +170,7 @@ struct LinkPreviewCard: View {
             if let blurhashString = cardEntity.blurhash, let width = cardEntity.width, let height = cardEntity.height {
                 blurhash = try? await BlurhashImageCacheService.shared.image(
                     blurhash: blurhashString,
-                    size: CGSize(width: width, height: height),
+                    size: CGSize(width: max(1, width), height: max(1, height)),
                     url: cardEntity.url
                 ).singleOutput()
             }
