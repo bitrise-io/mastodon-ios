@@ -174,7 +174,7 @@ extension MediaAttachment {
             Image(systemName: "questionmark.square.dashed")
         case .images(let attachments, let altTextTranslations):
             ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
-                ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler))
+                ImageGridView(viewModel: ImageGalleryViewModel(imageAttachments: attachments, contentConcealViewModel: contentConceal, altTextTranslations: altTextTranslations, actionHandler: actionHandler), transitionController: actionHandler.mediaPreviewableViewController?.mediaPreviewTransitionController)
             }
         case .audio, .gifv, .video:
             ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
@@ -233,6 +233,7 @@ struct ConcealableMediaAttachmentView<Content: View>: View {
 
 struct ImageGridView: View {
     @ObservedObject var viewModel: ImageGalleryViewModel
+    let transitionController: MediaPreviewTransitionController?
     
     var body: some View {
         // The images
@@ -323,7 +324,7 @@ struct ImageGridView: View {
             item: previewItem,
             transitionItem: mediaPreviewTransitionItem)
         viewModel.actionHandler.presentScene(.mediaPreview(viewModel: mediaPreviewViewModel),
-                                             transition: .custom(transitioningDelegate: MediaPreviewTransitionController())
+                                             transition: .custom(transitioningDelegate: presentingViewController.mediaPreviewTransitionController)
         )
     }
 }
