@@ -13,21 +13,21 @@ let maxHeightForHiddenMedia: CGFloat = 100
 class GenericMastodonAttachment: Identifiable {
     let id: Mastodon.Entity.Attachment.ID
     let basicData: MastodonAttachmentBasicData
+    let _legacyEntity: Mastodon.Entity.Attachment
     
     init(entity: Mastodon.Entity.Attachment) {
         id = entity.id
         basicData = MastodonAttachmentBasicData(entity)
+        _legacyEntity = entity
     }
 }
 
 class MastodonImageAttachment: GenericMastodonAttachment {
     let imageDetails: ImageAttachmentDetails
-    let _legacyEntity: Mastodon.Entity.Attachment
     
     init?(_ entity: Mastodon.Entity.Attachment) {
         guard let meta = entity.meta else { return nil }
         imageDetails = ImageAttachmentDetails(meta)
-        _legacyEntity = entity
         super.init(entity: entity)
     }
 }
@@ -178,7 +178,7 @@ extension MediaAttachment {
             }
         case .audio, .gifv, .video:
             ConcealableMediaAttachmentView(contentConcealViewModel: contentConceal) {
-                PlayerView(media: self, contentConcealViewModel: contentConceal)
+                PlayerView(media: self, contentConcealViewModel: contentConceal, actionHandler: actionHandler)
             }
         case .notYetImplemented(let string):
             Text("Needs Implementation (\(string))")
@@ -426,10 +426,12 @@ struct PlayerView: View {
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
     @StateObject var playerObserver = VideoPlayerObserver()
     let player: AVPlayer?
+    let actionHandler: MastodonPostMenuActionHandler
     
-    init(media: MediaAttachment, contentConcealViewModel: ContentConcealViewModel) {
+    init(media: MediaAttachment, contentConcealViewModel: ContentConcealViewModel, actionHandler: MastodonPostMenuActionHandler) {
         self.media = media
         self.contentConcealViewModel = contentConcealViewModel
+        self.actionHandler = actionHandler
         
         if let attachmentInfo = media.attachmentInfo, let url = attachmentInfo.url {
             self.player = AVPlayer(url: url)
@@ -447,20 +449,38 @@ struct PlayerView: View {
             }
             
             VideoPlayer(player: playerObserver.player)
-            
-            if shouldShowPlayButton && !playerObserver.isPlaying {
-                Button {
-                    playerObserver.player?.play()
-                } label: {
-                    Image(systemName: "play.fill")
-                        .font(.title2)
-                        .padding(EdgeInsets(top: standardPadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
-                        .background() {
-                            Capsule()
-                                .fill(.ultraThinMaterial)
+                .background {
+                    GeometryReader { geo in
+                        FrameReader(frame: geo.frame(in: .global)) { frames in
+                            playerObserver.mostRecentFrameInScreenCoordinates = frames.clippingFrame
                         }
+                    }
+                }
+        }
+        .overlay {
+            ZStack {
+                Button {
+                    showFullSize()
+                } label: {
+                    Rectangle().fill(.clear)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .buttonStyle(.borderless)
+                
+                if shouldShowPlayButton && !playerObserver.isPlaying {
+                    Button {
+                        playerObserver.player?.play()
+                    } label: {
+                        Image(systemName: "play.fill")
+                            .font(.title2)
+                            .padding(EdgeInsets(top: standardPadding, leading: doublePadding, bottom: standardPadding, trailing: doublePadding))
+                            .background() {
+                                Capsule()
+                                    .fill(.ultraThinMaterial)
+                            }
+                    }
+                    .buttonStyle(.borderless)
+                }
             }
         }
         .onAppear() {
@@ -495,6 +515,35 @@ struct PlayerView: View {
             return false
         }
     }
+    
+    func showFullSize() {
+        guard let _legacyEntity = media.attachmentInfo?._legacyEntity, let previewableViewController = actionHandler.mediaPreviewableViewController else { return }
+        let previewItem: MediaPreviewViewModel.PreviewItem = .attachments([_legacyEntity], initialIndex: 0, altTexts: [media.attachmentInfo?.basicData.altText ?? ""])
+        let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
+            let item = MediaPreviewTransitionItem(source: .swiftUI(sourceFramesInScreenCoordinates: [playerObserver.mostRecentFrameInScreenCoordinates]), previewableViewController: previewableViewController)
+            
+            item.initialClippingFrame = {
+                // this is the current frame of the player
+                let initialFrame = playerObserver.mostRecentFrameInScreenCoordinates
+                assert(initialFrame != .zero)
+                return initialFrame
+            }()
+            item.initialimageFrame = CGRect(x: 0, y: 0, width: item.initialClippingFrame?.width ?? 1, height: item.initialimageFrame?.height ?? 1)
+            
+            item.image = playerObserver.blurImage
+            
+            item.aspectRatio = item.initialClippingFrame?.size
+            
+            return item
+        }()
+        
+        let mediaPreviewViewModel = MediaPreviewViewModel(
+            item: previewItem,
+            transitionItem: mediaPreviewTransitionItem)
+        actionHandler.presentScene(.mediaPreview(viewModel: mediaPreviewViewModel),
+                                   transition: .custom(transitioningDelegate: previewableViewController.mediaPreviewTransitionController)
+        )
+    }
 }
 
 extension MediaAttachment {
@@ -513,6 +562,7 @@ class VideoPlayerObserver: ObservableObject {
     @Published private(set) var player: AVPlayer?
     @Published var blurImage: UIImage? = nil
     private var cancellable: AnyCancellable?
+    var mostRecentFrameInScreenCoordinates = CGRect(x: 50, y: 50, width: 50, height: 50)
     
     func startObserving(player: AVPlayer, shouldLoop: Bool) {
         self.cancellable?.cancel()
