@@ -239,8 +239,15 @@ extension MediaPreviewViewModel: PageboyViewControllerDataSource {
     }
     
     func defaultPage(for pageboyViewController: PageboyViewController) -> PageboyViewController.Page? {
-        guard case let .attachment(previewContext) = item else { return nil }
-        return .at(index: previewContext.initialIndex)
+        switch item {
+        case .attachment(let previewContext):
+            return .at(index: previewContext.initialIndex)
+        case .attachments(_, let initialIndex, _):
+            let index = initialIndex ?? 0
+            return .at(index: index)
+        default:
+            return nil
+        }
     }
     
 }
