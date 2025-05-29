@@ -8,7 +8,7 @@ import SwiftUI
 public enum TextViewWithCustomEmoji {
     public typealias Emojis = [Mastodon.Entity.Emoji]
     
-    case timelinePost(html: String, emojis: Emojis, didSelect: (Meta)->())
+    case timelinePost(html: String, emojis: Emojis, didSelect: (Meta?)->())
     case authorHeader(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
     case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
@@ -46,7 +46,7 @@ struct MetaTextViewSwiftUI: UIViewRepresentable {
     let metaText: MetaText
     let metaTapHandler: MetaTapHandler?
     
-    init(html: String, emojis: [Mastodon.Entity.Emoji], format: MastodonHtmlFormat, didSelectMeta: ((Meta)->())? = nil) {
+    init(html: String, emojis: [Mastodon.Entity.Emoji], format: MastodonHtmlFormat, didSelectMeta: ((Meta?)->())? = nil) {
         self.html = html
         self.emojis = emojis
         self.format = format
@@ -92,13 +92,17 @@ struct MetaTextViewSwiftUI: UIViewRepresentable {
 }
 
 class MetaTapHandler: MetaTextViewDelegate {
-    let onTap: (Meta)->()
+    let onTap: (Meta?)->()
     
-    init(onTap: @escaping (Meta) -> Void) {
+    init(onTap: @escaping (Meta?) -> Void) {
         self.onTap = onTap
     }
     
     func metaTextView(_ metaTextView: MetaTextKit.MetaTextView, didSelectMeta meta: Meta) {
         onTap(meta)
+    }
+    
+    func metaTextViewDidTapNonEntity(_ metaTextView: MetaTextKit.MetaTextView) {
+        onTap(nil)
     }
 }

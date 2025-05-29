@@ -687,19 +687,6 @@ private struct HomeTimelinePostRowView: View {
                         }
                         viewModel.textContentView
                             .frame(width: contentWidth, alignment: .leading)
-                            .onTapGesture {
-                                guard let actionablePost = viewModel.post.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
-                                viewModel.actionHandler.presentScene(
-                                .thread(
-                                    viewModel: ThreadViewModel(
-                                        authenticationBox: currentUser,
-                                        optionalRoot: .root(
-                                            context: .init(
-                                                status: MastodonStatus(
-                                                    entity: actionablePost._legacyEntity,
-                                                    showDespiteContentWarning:
-                                                        false))))), transition: .show)
-                            }
                         
                         if let attachment = viewModel.post.actionablePost?.content.attachment {
                             switch attachment {
@@ -993,12 +980,27 @@ struct MastodonPostViewModel {
         return pollTranslation.options.map { $0.title }
     }
     
-    func didSelect(meta: Meta) {
+    func didSelect(meta: Meta?) {
         switch meta {
-            // note:
-            // some server mark the normal url as "u-url" class. highlighted content is a URL
+        case .none:
+            guard let actionablePost = post.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+            actionHandler.presentScene(
+                .thread(
+                    viewModel: ThreadViewModel(
+                        authenticationBox: currentUser,
+                        optionalRoot: .root(
+                            context: .init(
+                                status: MastodonStatus(
+                                    entity: actionablePost._legacyEntity,
+                                    showDespiteContentWarning:
+                                        false))))), transition: .show)
+
+ 
         case .url(_, _, let url, _),
                 .mention(_, let url, _) where url.lowercased().hasPrefix("http"):
+            // note:
+            // some server mark the normal url as "u-url" class. highlighted content is a URL
+            
             // fix non-ascii character URL link can not open issue
             guard let url = URL(string: url) ?? URL(string: url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? url) else {
                 assertionFailure()
