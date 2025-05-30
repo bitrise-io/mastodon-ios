@@ -183,7 +183,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
             newCache = CacheableTimeline(older: [], newer: newBatch, polls: associatedPolls)
         }
 #else
-        newCache = CacheableTimeline(older: [], newer: newBatch)
+        newCache = CacheableTimeline(older: [], newer: newBatch, polls: associatedPolls)
 #endif
 
         createContentConcealViewModels(newCache)
