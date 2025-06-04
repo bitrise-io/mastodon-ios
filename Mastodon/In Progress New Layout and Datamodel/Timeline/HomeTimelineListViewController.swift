@@ -469,59 +469,57 @@ struct HomeTimelineListView: View {
         GeometryReader { geo in
             ZStack { // to show ALT text when needed
                 ScrollViewReader { proxy in
-                    List {
-                        ForEach(viewModel.timelineItems, id: \.self) { item in // without explicit id, scrollTo(:) does not work
-                            switch item {
-                            case let .missingPosts(newerThan, olderThan, timeGapDescription):
-                                GapLoaderView(newerThan: newerThan, olderThan: olderThan, gapDescription: timeGapDescription,
-                                              loadFromTop: {
-                                    viewModel.requestLoad(.olderThan(olderThan))
-                                }, loadFromBottom: {
-                                    viewModel.requestLoad(.newerThan(newerThan))
-                                })
-                            case .loadingIndicator:
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                    Spacer()
-                                }
-                            case .post(let post):
-                                let usableWidth =
-                                geo.size.width - geo.safeAreaInsets.leading
-                                - geo.safeAreaInsets.trailing
-                                let contentWidth = max(1, usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
-                                
-                                let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
-                                HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
-                                                        contentConcealModel: viewModel.contentConcelModel(forPost: post),
-                                                        contentWidth: contentWidth)
-                                .padding(spacingBetweenGutterAndContent)
-                                .listRowInsets(
-                                    EdgeInsets(
-                                        top: 0, leading: 0, bottom: 0, trailing: 0)
-                                )
-                                .frame(width: usableWidth)
-                                .onAppear {
-                                    viewModel.didAppear(item.id)
-                                }
-#if DEBUG
-                                .background {
-                                    if recentlyInsertedItemIds?.contains(post.id) == true {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(.blue.opacity(0.2))
+                    ScrollView {
+                        LazyVStack {
+                            ForEach(viewModel.timelineItems, id: \.self) { item in
+                                switch item {
+                                case let .missingPosts(newerThan, olderThan, timeGapDescription):
+                                    GapLoaderView(newerThan: newerThan, olderThan: olderThan, gapDescription: timeGapDescription,
+                                                  loadFromTop: {
+                                        viewModel.requestLoad(.olderThan(olderThan))
+                                    }, loadFromBottom: {
+                                        viewModel.requestLoad(.newerThan(newerThan))
+                                    })
+                                case .loadingIndicator:
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                        Spacer()
                                     }
-                                }
+                                case .post(let post):
+                                    let usableWidth =
+                                    geo.size.width - geo.safeAreaInsets.leading
+                                    - geo.safeAreaInsets.trailing
+                                    let contentWidth = max(1, usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
+                                    
+                                    let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
+                                    HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
+                                                            contentConcealModel: viewModel.contentConcelModel(forPost: post),
+                                                            contentWidth: contentWidth)
+                                    .padding(spacingBetweenGutterAndContent)
+                                    .frame(width: usableWidth)
+                                    .onAppear {
+                                        viewModel.didAppear(item.id)
+                                    }
+#if DEBUG
+                                    .background {
+                                        if recentlyInsertedItemIds?.contains(post.id) == true {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(.blue.opacity(0.2))
+                                        }
+                                    }
 #endif
+                                }
                             }
                         }
-                    }
-                    .listStyle(.plain)
-                    .refreshable {
-                        await viewModel.refreshFeedFromTop()
-                    }
-                    .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                        viewModel.requestLoad(.newer)
+                        .listStyle(.plain)
+                        .refreshable {
+                            await viewModel.refreshFeedFromTop()
+                        }
+                        .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
+                            viewModel.requestLoad(.newer)
+                        }
                     }
                 }
             }
@@ -691,20 +689,13 @@ private struct HomeTimelinePostRowView: View {
                         if let attachment = viewModel.post.actionablePost?.content.attachment {
                             switch attachment {
                             case .media(let array):
-                                if contentConcealModel.currentMode.isShowingContent {
-                                    MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
-                                        .frame(width: contentWidth)
-                                }
+                                MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
+                                    .frame(width: contentWidth)
                             case .poll(let pollID):
                                 let emojis = viewModel.post.actionablePost?.content.htmlWithEntities?.emojis
                                 if let poll = viewModel.actionHandler.poll(id: pollID) {
-                                    if viewModel.isShowingTranslation == true {
-                                        PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: viewModel.pollOptionTranslations, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
-                                            .frame(width: contentWidth)
-                                    } else {
-                                        PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
-                                            .frame(width: contentWidth)
-                                    }
+                                    PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: viewModel.isShowingTranslation == true ? viewModel.pollOptionTranslations : nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                        .frame(width: contentWidth)
                                 }
                             case .linkPreviewCard(let card):
                                 LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
@@ -715,7 +706,7 @@ private struct HomeTimelinePostRowView: View {
                         }
                     }
                     
-#if DEBUG
+#if DEBUG && false
                     VStack {
                         Text(viewModel.post.id)
                         if let actionableID = viewModel.post.actionablePost?.id, actionableID != viewModel.post.id {
