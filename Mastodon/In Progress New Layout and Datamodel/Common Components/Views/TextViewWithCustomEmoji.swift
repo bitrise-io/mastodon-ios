@@ -8,7 +8,7 @@ import SwiftUI
 public enum TextViewWithCustomEmoji {
     public typealias Emojis = [Mastodon.Entity.Emoji]
     
-    case timelinePost(html: String, emojis: Emojis, didSelect: (Meta?)->())
+    case timelinePost(heightCacheID: String, html: String, emojis: Emojis, didSelect: (Meta?)->())
     case authorHeader(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
     case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
@@ -18,8 +18,8 @@ public enum TextViewWithCustomEmoji {
 extension TextViewWithCustomEmoji: View {
     public var body: some View {
         switch self {
-        case .timelinePost(let html, let emojis, let didSelect):
-            MetaTextViewSwiftUI(html: html, emojis: emojis, format: .fullPost, didSelectMeta: didSelect)
+        case .timelinePost(let id, let html, let emojis, let didSelect):
+            MetaTextViewSwiftUI(id: id, html: html, emojis: emojis, format: .fullPost, didSelectMeta: didSelect)
         case .authorHeader(let html, let emojis):
             MetaTextViewSwiftUI(html: html, emojis: emojis, format: .authorHeader)
         case .socialContextHeader(let html, let emojis, let isPrivate):
@@ -38,15 +38,48 @@ func mapEmojiShortcodeToEmojis(_ emojis: TextViewWithCustomEmoji.Emojis) -> [Mas
     }
 }
 
+class CalculatedHeightCache {
+    var cache = NSCache<NSString, NSNumber>()
+    var lastProposedWidth: Int = 0 {
+        didSet {
+            cache.removeAllObjects()
+        }
+    }
+    func cachedHeight(for id: String, withProposedWidth proposedWidth: CGFloat) -> CGFloat? {
+        let intWidth = Int(proposedWidth)
+        guard lastProposedWidth == intWidth else {
+            lastProposedWidth = intWidth
+            return nil
+        }
+        let key = NSString(string: id)
+        if let object = cache.object(forKey: key) {
+            return object.doubleValue
+        } else {
+            return nil
+        }
+    }
+    func cache(height: CGFloat, forProposedWidth proposedWidth: CGFloat, forID id: String) {
+        let intWidth = Int(proposedWidth)
+        if lastProposedWidth != intWidth {
+            lastProposedWidth = intWidth
+        }
+        cache.setObject(NSNumber(floatLiteral: height), forKey: NSString(string: id))
+    }
+}
+
+let heightCache = CalculatedHeightCache()
+
 struct MetaTextViewSwiftUI: UIViewRepresentable {
     
+    let id: String?
     let html: String
     let emojis: [Mastodon.Entity.Emoji]
     let format: MastodonHtmlFormat
     let metaText: MetaText
     let metaTapHandler: MetaTapHandler?
     
-    init(html: String, emojis: [Mastodon.Entity.Emoji], format: MastodonHtmlFormat, didSelectMeta: ((Meta?)->())? = nil) {
+    init(id: String? = nil, html: String, emojis: [Mastodon.Entity.Emoji], format: MastodonHtmlFormat, didSelectMeta: ((Meta?)->())? = nil) {
+        self.id = id
         self.html = html
         self.emojis = emojis
         self.format = format
@@ -87,7 +120,16 @@ struct MetaTextViewSwiftUI: UIViewRepresentable {
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MetaTextView, context: Context) -> CGSize? {
-        uiView.sizeThatFits(.init(width: proposal.width ?? .infinity, height: proposal.height ?? .infinity))
+        guard let width = proposal.width else { return nil }
+        if let id, let cachedHeight = heightCache.cachedHeight(for: id, withProposedWidth: width) {
+            return CGSize(width: width, height: cachedHeight)
+        } else {
+            let size = uiView.sizeThatFits(.init(width: width, height: proposal.height ?? .infinity))
+            if let id {
+                heightCache.cache(height: size.height, forProposedWidth: width, forID: id)
+            }
+            return size
+        }
     }
 }
 
