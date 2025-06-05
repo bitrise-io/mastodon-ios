@@ -234,6 +234,7 @@ struct ConcealableMediaAttachmentView<Content: View>: View {
 struct ImageGridView: View {
     @ObservedObject var viewModel: ImageGalleryViewModel
     let mediaPreviewableViewController: MediaPreviewableViewController?
+    @State var waitingToShowFullSize: String? = nil
     
     var body: some View {
         // The images
@@ -244,14 +245,19 @@ struct ImageGridView: View {
                         .clipped()
                         .accessibilityLabel(viewModel.altTextTranslations?[img.id] ?? img.basicData.altText ?? "")
                         .onTapGesture {
-                            showImageGallery(focusing: img.id)
+                            waitingToShowFullSize = img.id
                         }
                         .background {
-                            GeometryReader { geo in  // necessary to trigger read of updated frames after scrolling
-                                FrameReader(frame: geo.frame(in: .global)) { updatedFrames in
-                                    viewModel.updateFrames(updatedFrames, forID: img.basicData.id)
+                            if waitingToShowFullSize != nil {
+                                FrameReader() { updatedFrame in
+                                    viewModel.updateFrame(updatedFrame, forID: img.basicData.id)
+                                    if waitingToShowFullSize == img.id {
+                                        waitingToShowFullSize = nil
+                                        Task { @MainActor in
+                                            showImageGallery(focusing: img.id)
+                                        }
+                                    }
                                 }
-                                .frame(width: geo.size.width, height: geo.size.height)
                             }
                         }
                     
@@ -295,7 +301,7 @@ struct ImageGridView: View {
        
         let previewItem: MediaPreviewViewModel.PreviewItem = .attachments(viewModel.imageAttachments.map{ $0._legacyEntity }, initialIndex: focusedIndex, altTexts: altTexts)
         let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
-            func clippingFrame(forID id: Mastodon.Entity.Attachment.ID) -> CGRect { viewModel.frames(forID: id)?.clippingFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
+            func clippingFrame(forID id: Mastodon.Entity.Attachment.ID) -> CGRect { viewModel.frame(forID: id) ?? CGRect(x: 50, y: 50, width: 50, height: 50)
             }
             let clippingFrames = viewModel.imageAttachments.map { clippingFrame(forID: $0.basicData.id) }
             let item = MediaPreviewTransitionItem(source: .swiftUI(sourceFramesInScreenCoordinates: clippingFrames), previewableViewController: presentingViewController)
@@ -308,7 +314,7 @@ struct ImageGridView: View {
             }()
             item.initialimageFrame = {
                 // this is the current frame of the image in the view, accounting for focus point if cropping
-                let initialFrame = viewModel.frames(forID: focusing)?.imageFrame ?? CGRect(x: 50, y: 50, width: 50, height: 50)
+                let initialFrame = viewModel.frame(forID: focusing) ?? CGRect(x: 50, y: 50, width: 50, height: 50)
                 assert(initialFrame != .zero)
                 return initialFrame
             }()
@@ -375,7 +381,7 @@ struct BlurhashImageView: View {
 
 class ImageGalleryViewModel: ObservableObject {
     let imageAttachments: [MastodonImageAttachment]
-    private var frames = [Mastodon.Entity.Attachment.ID : FrameReader.AnimationFrames]()
+    private var frames = [Mastodon.Entity.Attachment.ID : CGRect]()
     let altTextTranslations: [String : String]?
     @Published var blurhashes = [ Mastodon.Entity.Attachment.ID : UIImage ]()
     @ObservedObject var contentConcealViewModel: ContentConcealViewModel
@@ -412,12 +418,12 @@ class ImageGalleryViewModel: ObservableObject {
         }
     }
     
-    func frames(forID id: Mastodon.Entity.Attachment.ID) -> FrameReader.AnimationFrames? {
+    func frame(forID id: Mastodon.Entity.Attachment.ID) -> CGRect? {
         return frames[id]
     }
     
-    func updateFrames(_ newFrames: FrameReader.AnimationFrames, forID id: Mastodon.Entity.Attachment.ID) {
-        frames[id] = newFrames
+    func updateFrame(_ newFrame: CGRect, forID id: Mastodon.Entity.Attachment.ID) {
+        frames[id] = newFrame
     }
 }
 
@@ -427,6 +433,7 @@ struct PlayerView: View {
     @StateObject var playerObserver = VideoPlayerObserver()
     let player: AVPlayer?
     let actionHandler: MastodonPostMenuActionHandler
+    @State var waitingToShowFullSize = false
     
     init(media: MediaAttachment, contentConcealViewModel: ContentConcealViewModel, actionHandler: MastodonPostMenuActionHandler) {
         self.media = media
@@ -450,9 +457,11 @@ struct PlayerView: View {
             
             VideoPlayer(player: playerObserver.player)
                 .background {
-                    GeometryReader { geo in
-                        FrameReader(frame: geo.frame(in: .global)) { frames in
-                            playerObserver.mostRecentFrameInScreenCoordinates = frames.clippingFrame
+                    if waitingToShowFullSize {
+                        FrameReader() { frame in
+                            playerObserver.mostRecentFrameInScreenCoordinates = frame
+                            showFullSize()
+                            waitingToShowFullSize = false
                         }
                     }
                 }
@@ -460,7 +469,7 @@ struct PlayerView: View {
         .overlay {
             ZStack {
                 Button {
-                    showFullSize()
+                    waitingToShowFullSize = true
                 } label: {
                     Rectangle().fill(.clear)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

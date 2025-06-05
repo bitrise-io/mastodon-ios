@@ -72,23 +72,17 @@ extension Array<PositionValue> {
 }
 
 struct FrameReader: UIViewRepresentable {
-    var frame: CGRect // this is ignored, but necessary to trigger frame updates when scrolling
-    
-    struct AnimationFrames {
-        let clippingFrame: CGRect
-        let imageFrame: CGRect
-        
-        static func forView(_ uiView: UIView) -> Self? {
-            guard let window = uiView.window else { return nil }
-            let frameInWindow = uiView.convert(uiView.bounds, to: window).integral
-            return AnimationFrames(clippingFrame: frameInWindow, imageFrame: CGRect(x: 0, y: 0, width: frameInWindow.width, height: frameInWindow.height).integral)
-        }
+   
+    static func frame(ofView uiView: UIView) -> CGRect? {
+        guard let window = uiView.window else { return nil }
+        let frameInWindow = uiView.convert(uiView.bounds, to: window).integral
+        return frameInWindow
     }
-    
-    var frameDidUpdate: (AnimationFrames)->()
+
+    var frameDidUpdate: (CGRect)->()
     
     class Coordinator: NSObject {
-        var frameDidUpdate: ((AnimationFrames)->())?
+        var frameDidUpdate: ((CGRect)->())?
     }
     
     func makeCoordinator() -> Coordinator {
@@ -100,8 +94,8 @@ struct FrameReader: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         DispatchQueue.main.async {
-            if let frames = AnimationFrames.forView(view) {
-                context.coordinator.frameDidUpdate?(frames)
+            if let frame = FrameReader.frame(ofView: view) {
+                context.coordinator.frameDidUpdate?(frame)
             }
         }
         return view
@@ -109,8 +103,8 @@ struct FrameReader: UIViewRepresentable {
     
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
-            if let frames = AnimationFrames.forView(uiView) {
-                context.coordinator.frameDidUpdate?(frames)
+            if let frame = FrameReader.frame(ofView: uiView) {
+                context.coordinator.frameDidUpdate?(frame)
             }
         }
     }
