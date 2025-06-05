@@ -88,12 +88,13 @@ struct LinkPreviewCard: View {
         case .noPreviewVisual:
                 return .zero
         case .compact:
-            guard let previewWidth = cardEntity.width, let previewHeight = cardEntity.height else { return .zero }
+            guard let previewWidth = cardEntity.width, let previewHeight = cardEntity.height, previewHeight > 0 else { return .zero }
             let height: CGFloat = compactPreviewHeight
             let aspectRatio = CGFloat(previewWidth) / CGFloat(previewHeight)
             let width = floor(height * aspectRatio)
             return CGSize(width: width, height: height)
         case .large(let aspectRatio):
+            guard aspectRatio > 0 else { return .zero }
             return CGSize(width: fittingWidth, height: fittingWidth / aspectRatio)
         }
     }
