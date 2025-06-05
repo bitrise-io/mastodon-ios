@@ -648,7 +648,7 @@ extension MastodonTimelineOverlayView {
 
 private struct HomeTimelinePostRowView: View {
 
-    let viewModel: MastodonPostViewModel
+    @ObservedObject var viewModel: MastodonPostViewModel
     @ObservedObject var contentConcealModel: ContentConcealViewModel
     let contentWidth: CGFloat
     
@@ -683,7 +683,7 @@ private struct HomeTimelinePostRowView: View {
                             )
                             .frame(width: contentWidth, alignment: .leading)
                         }
-                        viewModel.textContentView
+                        viewModel.textContentView()
                             .frame(width: contentWidth, alignment: .leading)
                         
                         if let attachment = viewModel.post.actionablePost?.content.attachment {
@@ -925,7 +925,7 @@ private enum PostViewComponent {
 }
 
 @MainActor
-struct MastodonPostViewModel {
+class MastodonPostViewModel: ObservableObject {
     
     let actionHandler: MastodonPostMenuActionHandler
     let post: GenericMastodonPost
@@ -1071,16 +1071,16 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
 
-    var textContentView: TextViewWithCustomEmoji {
-        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis(), didSelect: { meta in didSelect(meta: meta) })
+    func textContentView() -> TextViewWithCustomEmoji {
+        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis(), didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
         
         guard let actionablePost = post.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
         let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         
         if isShowingTranslation == true, let translation = actionHandler.translation(forContentPostId: actionablePost.id)?.content {
-            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis, didSelect: { meta in didSelect(meta: meta) })
+            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
         } else {
-            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis, didSelect: { meta in didSelect(meta: meta) })
+            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
         }
     }
 
