@@ -190,7 +190,7 @@ extension GenericMastodonPost.PrivacyLevel: FromStatusEntityDerivableOptional {
         case .direct:
             return .mentionedOnly
         case ._other(let string):
-            assertionFailure("unexpected privacy level")
+            assertionFailure("unexpected privacy level \(string)")
             return nil
         case .none:
             return nil
