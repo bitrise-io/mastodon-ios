@@ -518,7 +518,7 @@ struct PlayerView: View {
     
     var shouldShowPlayButton: Bool {
         switch media {
-        case .gifv:
+        case .gifv, .video, .audio:
             return true
         default:
             return false
