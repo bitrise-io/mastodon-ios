@@ -13,18 +13,18 @@ struct ReferencePointReader: View {
     }
     
     var body: some View {
-        GeometryReader { metrics in
+        GeometryReader { geo in
             let position =  {
                 switch referencePoint {
                 case .trailingCenter:
                     CGPoint(
-                        x: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).maxX,
-                        y: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).midY
+                        x: geo.frame(in: .named(ReferencePointReader.referenceSpace)).maxX,
+                        y: geo.frame(in: .named(ReferencePointReader.referenceSpace)).midY
                     )
                 case .leadingTop:
                     CGPoint(
-                        x: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).minX,
-                        y: metrics.frame(in: .named(ReferencePointReader.referenceSpace)).minY
+                        x: geo.frame(in: .named(ReferencePointReader.referenceSpace)).minX,
+                        y: geo.frame(in: .named(ReferencePointReader.referenceSpace)).minY
                     )
                 }
                
