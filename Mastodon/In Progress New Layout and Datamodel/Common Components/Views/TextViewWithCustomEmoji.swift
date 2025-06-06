@@ -125,6 +125,7 @@ struct MetaTextViewSwiftUI: UIViewRepresentable {
             return CGSize(width: width, height: cachedHeight)
         } else {
             let size = uiView.sizeThatFits(.init(width: width, height: proposal.height ?? .infinity))
+            guard size.width > 0, size.width < .greatestFiniteMagnitude, size.height > 0, size.height < .greatestFiniteMagnitude else { return .zero }
             if let id {
                 heightCache.cache(height: size.height, forProposedWidth: width, forID: id)
             }

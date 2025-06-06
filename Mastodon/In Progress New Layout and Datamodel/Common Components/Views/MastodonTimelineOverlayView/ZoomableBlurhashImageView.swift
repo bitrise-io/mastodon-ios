@@ -9,7 +9,7 @@ struct ZoomableBlurhashImageView: View {
    
     var body: some View {
         let originalSize = image.imageDetails.originalSize ?? frameSize
-        let aspectRatio = CGFloat(originalSize.height) > 0 ? CGFloat(originalSize.width) / CGFloat(originalSize.height) : 1
+        let aspectRatio = CGFloat(originalSize.height) > 0 ? CGFloat(originalSize.width) / CGFloat(max(0.1, originalSize.height)) : 1
         let baseSize = sizeThatFits(aspectRatio: aspectRatio, in: frameSize)
         GeometryReader { geo in
             ZoomableScrollView {
