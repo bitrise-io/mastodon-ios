@@ -513,13 +513,12 @@ struct HomeTimelineListView: View {
                                 }
                             }
                         }
-                        .listStyle(.plain)
-                        .refreshable {
-                            await viewModel.refreshFeedFromTop()
-                        }
-                        .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                            viewModel.requestLoad(.newer)
-                        }
+                    }
+                    .refreshable {
+                        await viewModel.refreshFeedFromTop()
+                    }
+                    .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
+                        viewModel.requestLoad(.newer)
                     }
                 }
             }
