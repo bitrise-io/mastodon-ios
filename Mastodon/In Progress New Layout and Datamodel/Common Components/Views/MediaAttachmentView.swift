@@ -460,8 +460,12 @@ struct PlayerView: View {
                     if waitingToShowFullSize {
                         FrameReader() { frame in
                             playerObserver.mostRecentFrameInScreenCoordinates = frame
-                            showFullSize()
-                            waitingToShowFullSize = false
+                            if waitingToShowFullSize {
+                                waitingToShowFullSize = false
+                                Task { @MainActor in
+                                    showFullSize()
+                                }
+                            }
                         }
                     }
                 }
