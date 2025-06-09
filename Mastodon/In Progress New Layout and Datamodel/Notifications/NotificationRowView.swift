@@ -567,7 +567,7 @@ struct NotificationRowView: View {
                         NotificationIconView(systemName: name, color: color)
                     case .avatar:
                         if let author = viewModel.notification.sourceAccounts.primaryAuthorAccount {
-                            AvatarView(size: .large, author: author, goToProfile: viewModel.navigateToProfile(_:))
+                            AvatarView(size: .large, authorAvatarUrl: author.avatarURL, goToProfile: { try await viewModel.navigateToProfile(author) } )
                         }
                     }
                     Spacer().frame(maxHeight: .infinity)
@@ -677,7 +677,7 @@ struct NotificationRowView: View {
                     ForEach(
                         accountInfo.accounts.prefix(maxAvatarCount), id: \.self.id
                     ) { account in
-                        AvatarView(size: .small, author: account, goToProfile: viewModel.navigateToProfile(_:))
+                        AvatarView(size: .small, authorAvatarUrl: account.avatarURL, goToProfile: { try await viewModel.navigateToProfile(account) })
                             .onTapGesture {
                                 Task {
                                     try await viewModel.navigateToProfile(account)

@@ -203,7 +203,7 @@ struct LinkPreviewCard: View {
                     navigateToScene(.profile(profileType), .show)
                 } label: {
                     HStack(spacing: tinySpacing) {
-                        AvatarView(size: .tiny, author: account, goToProfile: nil)
+                        AvatarView(size: .tiny, authorAvatarUrl: account.avatarURL, goToProfile: nil)
                         TextViewWithCustomEmoji.linkPreviewCardAuthorButton(html: account.displayNameWithFallback, emojis: account.emojis)
                             .lineLimit(1)
                     }

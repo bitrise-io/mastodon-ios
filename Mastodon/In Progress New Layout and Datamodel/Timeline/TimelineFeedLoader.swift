@@ -12,17 +12,30 @@ public enum MastodonTimelineType: Equatable {
     case hashtag(String)
 }
 
+extension GenericMastodonPost {
+    struct InitialDisplayInfo: Codable {
+        let id: Mastodon.Entity.Status.ID
+        let actionablePostID: Mastodon.Entity.Status.ID
+        let shouldFilterOut: Bool
+        let actionableAuthorStaticAvatar: URL?
+        let actionableAuthorHandle: String
+        let actionableAuthorDisplayName: String
+        let actionableVisibility: GenericMastodonPost.PrivacyLevel
+        let actionableCreatedAt: Date
+    }
+}
+
 enum TimelineItem: Identifiable {
-    case post(GenericMastodonPost)
-    case missingPosts(newerThan: Mastodon.Entity.Status.ID, olderThan: Mastodon.Entity.Status.ID, timeGapDescription: String)
+    case post(MastodonPostViewModel)
+    case missingPosts(newerThan: Mastodon.Entity.Status.ID, olderThan: Mastodon.Entity.Status.ID)
     case loadingIndicator
     
     var id: String {
         switch self {
-        case .post(let post):
-            return post.id
-        case .missingPosts(let newerThan, let olderThan, let gapDescription):
-            return "\(newerThan)-\(olderThan) (\(gapDescription))"
+        case .post(let postViewModel):
+            return postViewModel.initialDisplayInfo.id
+        case .missingPosts(let newerThan, let olderThan):
+            return "\(newerThan)-\(olderThan)"
         case .loadingIndicator:
             return "loading..."
         }
@@ -30,14 +43,11 @@ enum TimelineItem: Identifiable {
     
     static func gapBetween(_ olderItem: TimelineItem?, newerItem: TimelineItem?) -> TimelineItem? {
         switch (olderItem, newerItem) {
-        case (.post(let olderPost), .post(let newerPost)):
-            assert(olderPost.id < newerPost.id)
-            if newerPost.metaData.createdAt.timeIntervalSince(olderPost.metaData.createdAt) < 120 {
-                return .missingPosts(newerThan: olderPost.id, olderThan: newerPost.id, timeGapDescription: "")
-            } else {
-                let gapDescription = olderPost.metaData.createdAt.localizedExtremelyAbbreviatedTimeElapsedUntil(now: newerPost.metaData.createdAt)
-                return .missingPosts(newerThan: olderPost.id, olderThan: newerPost.id, timeGapDescription: gapDescription)
-            }
+        case (.post(let olderViewModel), .post(let newerViewModel)):
+            let olderID = olderViewModel.initialDisplayInfo.id
+            let newerID = newerViewModel.initialDisplayInfo.id
+            assert(olderID < newerID)
+            return .missingPosts(newerThan: olderID, olderThan: newerID)
         default:
             return nil
         }
@@ -75,6 +85,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
     private var accountsCache = [Mastodon.Entity.Account.ID : MastodonAccount]()
     private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
+    private var timestamper = TimestampUpdater(TimeInterval(30))
     
     let timeline: MastodonTimelineType
     
@@ -162,13 +173,14 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         
         let newBatch = response.value.map { status in
             let post = GenericMastodonPost.fromStatus(status)
-            return TimelineItem.post(post)
+            let initialDisplayInfo = post.initialDisplayInfo
+            return TimelineItem.post(MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper))
         }
         
         let associatedPolls = polls(response.value)
         
         let newCache: CacheableTimeline
-#if DEBUG
+#if DEBUG && false
         if _createArtificialGapForTesting {
             _createArtificialGapForTesting = false
             let testingOldID = "" // insert useful postid for your purposes here
@@ -216,19 +228,19 @@ struct CacheableTimeline: CacheableFeed {
     let items: [TimelineItem]
     let polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]
     
+    @MainActor
     var filteredPosts: [TimelineItem] {
         return items.filter { item in
             switch item {
             case .missingPosts, .loadingIndicator:
                 return true
-            case .post(let post):
-                if let contentPost = post as? MastodonContentPost {
+            case .post(let postViewModel):
+                if let contentPost = postViewModel.fullPost as? MastodonContentPost {
                     return !contentPost.content.shouldBeRemovedFromFeed
-                } else if let boost = post as? MastodonBoostPost {
+                } else if let boost = postViewModel.fullPost as? MastodonBoostPost {
                     return !boost.boostedPost.content.shouldBeRemovedFromFeed
                 } else {
-                    assertionFailure("unexpected post type")
-                    return true
+                    return !postViewModel.initialDisplayInfo.shouldFilterOut
                 }
             }
         }
@@ -287,7 +299,7 @@ struct CacheableTimeline: CacheableFeed {
             switch item {
             case .loadingIndicator, .post:
                 return false
-            case .missingPosts(_, let olderThan, _):
+            case .missingPosts(_, let olderThan):
                 return olderThan == asOlderThan
             }
         }
@@ -354,7 +366,7 @@ struct CacheableTimeline: CacheableFeed {
             switch item {
             case .loadingIndicator, .post:
                 return false
-            case .missingPosts(let newerThan, _, _):
+            case .missingPosts(let newerThan, _):
                 return newerThan == asNewerThan
             }
         }
@@ -403,6 +415,7 @@ struct CacheableTimeline: CacheableFeed {
         items = updatedItems
     }
     
+    @MainActor
     func byUpdating(post updated: GenericMastodonPost) -> CacheableTimeline {
         guard let actionableUpdatedId = updated.actionablePost?.id else { return self }
         
@@ -410,20 +423,9 @@ struct CacheableTimeline: CacheableFeed {
             switch item {
             case .loadingIndicator, .missingPosts:
                 return item
-            case .post(let existing):
-                if existing.id == actionableUpdatedId {
-                    return .post(updated)
-                } else if existing.actionablePost?.id == actionableUpdatedId {
-                    do {
-                        let updated = try existing.byReplacingActionablePost(with: updated)
-                        return .post(updated)
-                    } catch {
-                        assertionFailure("Trying to update a boost post?  byReplacingActionablePost(with:) will need to handle that")
-                        return item
-                    }
-                } else {
-                    return item
-                }
+            case .post(let existingViewModel):
+                let newViewModel = existingViewModel.byReplacingActionablePost(with: updated)
+                return .post(newViewModel)
             }
         }
         
@@ -447,13 +449,14 @@ struct CacheableTimeline: CacheableFeed {
         return CacheableTimeline(older: items, newer: [], polls: updatedPolls)
     }
     
+    @MainActor
     func byDeleting(postId: Mastodon.Entity.Status.ID, pollID: Mastodon.Entity.Poll.ID?) -> CacheableTimeline {
         let newItems = items.filter { item in
             switch item {
             case .loadingIndicator, .missingPosts:
                 return true
-            case .post(let post):
-                return post.actionablePost?.id != postId
+            case .post(let postViewModel):
+                return postViewModel.fullPost?.actionablePost?.id != postId
             }
         }
         
@@ -576,37 +579,6 @@ extension TimelineFeedLoader {
     }
     
     private func fetchRelationships(_ timeline: CacheableTimeline) async throws {
-        let needToFetch: [Mastodon.Entity.Account.ID] = timeline.filteredPosts.compactMap { item -> Mastodon.Entity.Account.ID? in
-            switch item {
-            case .loadingIndicator, .missingPosts:
-                return nil
-            case .post(let post):
-                if let actionableRelationshipAccountID = post.actionablePost?.metaData.author.id {
-                    switch self.cachedRelationships[actionableRelationshipAccountID] {
-                    case .isMe:
-                        return nil
-                    case .isNotMe(let info):
-                        if let lastFetched = info?.fetchedAt {
-                            return (lastFetched.timeIntervalSinceNow < relationshipStaleThreshold) ? nil : actionableRelationshipAccountID
-                        } else {
-                            return actionableRelationshipAccountID
-                        }
-                    case .none:
-                        return actionableRelationshipAccountID
-                    }
-                } else {
-                    return nil
-                }
-            }
-        }
-        
-        guard !needToFetch.isEmpty else { return }
-        
-        let relationships = try await APIService.shared.relationship(forAccountIds: needToFetch, authenticationBox: authenticatedUser).value
-        let currentTimestamp = Date.now
-        for relationshipEntity in relationships {
-            cachedRelationships[relationshipEntity.id] = MastodonAccount.Relationship.isNotMe(MastodonAccount.RelationshipInfo(relationshipEntity, fetchedAt: currentTimestamp))
-        }
     }
 }
 
@@ -617,36 +589,6 @@ extension TimelineFeedLoader {
     }
     
     private func fetchReplyTos(_ timeline: CacheableTimeline) async throws {
-        for item in timeline.items {
-            switch item {
-            case .loadingIndicator, .missingPosts:
-                break
-            case .post(let post):
-                accountsCache[post.metaData.author.id] = post.metaData.author
-                if let contentPost = post.actionablePost, contentPost.id != post.id {
-                    accountsCache[post.metaData.author.id] = post.metaData.author
-                }
-            }
-        }
-        let needToFetch: [Mastodon.Entity.Account.ID] = timeline.filteredPosts.compactMap { item -> Mastodon.Entity.Account.ID? in
-            switch item {
-            case .loadingIndicator, .missingPosts:
-                return nil
-            case .post(let post):
-                guard let basicPost = post as? MastodonBasicPost, let inReplyTo = basicPost.inReplyTo?.accountID else { return nil }
-                if let alreadyCached = accountsCache[inReplyTo] {
-                    return nil
-                } else {
-                    return inReplyTo
-                }
-            }
-        }
-        
-        let accounts = try await APIService.shared.accountsInfo(userIDs: needToFetch, authenticationBox: authenticatedUser)
-        for account in accounts {
-            accountsCache[account.id] = MastodonAccount.fromEntity(account)
-        }
-        // TODO: handle servers < 4.3.0 by looking up each account individually?
     }
 }
 
@@ -657,16 +599,23 @@ extension TimelineFeedLoader {
             switch item {
             case .loadingIndicator, .missingPosts:
                 break
-            case .post(let post):
-                if let contentPost = post.actionablePost, contentConcealViewModels[contentPost.id] == nil {
+            case .post(let postViewModel):
+                if let contentPost = postViewModel.fullPost?.actionablePost, contentConcealViewModels[contentPost.id] == nil {
                     contentConcealViewModels[contentPost.id] = ContentConcealViewModel(contentPost: contentPost, context: filterContext)
                 }
             }
         }
     }
     
-    public func contentConcealViewModel(forContentPost contentPost: MastodonContentPost?) -> ContentConcealViewModel? {
+    public func contentConcealViewModel(forContentPost contentPost: Mastodon.Entity.Status.ID?) -> ContentConcealViewModel? {
         guard let contentPost else { return nil }
-        return contentConcealViewModels[contentPost.id]
+        return contentConcealViewModels[contentPost]
+    }
+}
+
+extension GenericMastodonPost {
+    var initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo {
+        let author = actionablePost?.metaData.author ?? metaData.author
+        return GenericMastodonPost.InitialDisplayInfo(id: id, actionablePostID: actionablePost?.id ?? id, shouldFilterOut: actionablePost?.content.shouldBeRemovedFromFeed ?? false, actionableAuthorStaticAvatar: author.displayInfo.avatarUrl, actionableAuthorHandle: author.handle, actionableAuthorDisplayName: author.displayName(whenViewedBy: nil)?.plainString ?? "", actionableVisibility: actionablePost?.metaData.privacyLevel ?? metaData.privacyLevel ?? .loudPublic, actionableCreatedAt: actionablePost?.metaData.createdAt ?? metaData.createdAt)
     }
 }

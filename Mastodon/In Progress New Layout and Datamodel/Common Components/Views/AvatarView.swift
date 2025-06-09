@@ -29,8 +29,8 @@ struct AvatarView: View {
     }
     
     let size: Size
-    let author: AccountInfo
-    let goToProfile: ((AccountInfo) async throws -> ())?
+    let authorAvatarUrl: URL?
+    let goToProfile: (() async throws -> ())?
     
     private var viewDimension: CGFloat {
         switch size {
@@ -42,22 +42,28 @@ struct AvatarView: View {
     
     var body: some View {
         ZStack {
-            AsyncImage(
-                url: author.avatarURL,
-                content: { image in
-                    image.resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .clipShape(avatarShape)
-                        .overlay {
-                            avatarShape.stroke(.separator)
-                        }
-                },
-                placeholder: {
-                    avatarShape
-                        .foregroundStyle(
-                            Color(UIColor.secondarySystemFill))
-                }
-            )
+            if let authorAvatarUrl {
+                AsyncImage(
+                    url: authorAvatarUrl,
+                    content: { image in
+                        image.resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .clipShape(avatarShape)
+                            .overlay {
+                                avatarShape.stroke(.separator)
+                            }
+                    },
+                    placeholder: {
+                        avatarShape
+                            .foregroundStyle(
+                                Color(UIColor.secondarySystemFill))
+                    }
+                )
+            } else {
+                avatarShape
+                    .foregroundStyle(
+                        Color(UIColor.secondarySystemFill))
+            }
             
             if isNavigating {
                 ProgressView()
@@ -71,7 +77,7 @@ struct AvatarView: View {
                 Task {
                     do {
                         isNavigating = true
-                        try await goToProfile(author)
+                        try await goToProfile()
                     } catch {
                     }
                     isNavigating = false

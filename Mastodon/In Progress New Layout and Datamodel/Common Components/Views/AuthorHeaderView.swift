@@ -4,23 +4,48 @@ import MastodonSDK
 import SwiftUI
 
 struct AuthorHeaderView: View {
-    let author: MastodonAccount
-    let visibility: GenericMastodonPost.PrivacyLevel
-    let postedDate: Date
+    
+    @ObservedObject var postViewModel: MastodonPostViewModel
     @ObservedObject var timestamper: TimestampUpdater
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack (alignment: .top) {
-                TextViewWithCustomEmoji.authorHeader(html: author.displayInfo.displayName, emojis: author.displayInfo.emojis)
+                authorDisplayName
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .alignmentGuide(.gutterAlign) { d in
                         return d[HorizontalAlignment.leading]
                     }
-                VisibilityAndTimestamp(timestamper: timestamper, referenceDate: postedDate, visibility: visibility)
+                VisibilityAndTimestamp(timestamper: timestamper, referenceDate: postedDate, visibility: postViewModel.fullPost?.actionablePost?.metaData.privacyLevel ?? postViewModel.initialDisplayInfo.actionableVisibility)
             }
-            textComponent("@\(author.displayInfo.handle)", fontWeight: .light)
+            textComponent("@\(authorHandle)", fontWeight: .light)
         }
+    }
+    
+    @ViewBuilder var authorDisplayName: some View {
+        if let actionablePost = postViewModel.fullPost?.actionablePost {
+            let author = actionablePost.metaData.author
+            TextViewWithCustomEmoji.authorHeader(html: author.displayInfo.displayName, emojis: author.displayInfo.emojis)
+        } else {
+            Text(postViewModel.initialDisplayInfo.actionableAuthorDisplayName)
+        }
+    }
+    
+    var authorHandle: String {
+        if let actionablePost = postViewModel.fullPost?.actionablePost {
+            let author = actionablePost.metaData.author
+            return author.displayInfo.handle
+        } else {
+            return postViewModel.initialDisplayInfo.actionableAuthorHandle
+        }
+    }
+    
+    var visibility: GenericMastodonPost.PrivacyLevel? {
+        return postViewModel.fullPost?.actionablePost?.metaData.privacyLevel ?? postViewModel.initialDisplayInfo.actionableVisibility
+    }
+    
+    var postedDate: Date {
+        return postViewModel.fullPost?.actionablePost?.metaData.createdAt ?? postViewModel.initialDisplayInfo.actionableCreatedAt
     }
 }
 

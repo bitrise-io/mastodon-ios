@@ -302,7 +302,6 @@ enum MastodonTimelineOverlayView {
 
 @MainActor
 private class HomeTimelineListViewModel: ObservableObject {
-    private var timestamper = TimestampUpdater(TimeInterval(30))
     public var parentVcPresentScene: ((SceneCoordinator.Scene, SceneCoordinator.Transition) -> ())?
     private var authenticatedUser: MastodonAuthenticationBox?
     private var instanceConfiguration: MastodonAuthentication.InstanceConfiguration?
@@ -415,44 +414,9 @@ private class HomeTimelineListViewModel: ObservableObject {
         return feedLoader?.myRelationship(to: account.id) ?? .isNotMe(nil)
     }
     
-    func rowViewModel(for post: GenericMastodonPost, translationsToShow: Set<Mastodon.Entity.Status.ID>, isPerformingAction: MastodonPostMenuAction?) -> MastodonPostViewModel {
-        let actionablePost = post.actionablePost
-        let actionableAuthor = actionablePost?.metaData.author
-        let relationship = myRelationship(to: actionableAuthor)
-        let isDoingAction: MastodonPostMenuAction? = {
-            if let isPerformingPostAction {
-                guard actionablePost?.id == isPerformingPostAction.post.id else { return nil }
-                return isPerformingPostAction.action
-            } else if let isPerformingAccountAction {
-                guard actionableAuthor?.id == isPerformingAccountAction.account.id else { return nil }
-                return isPerformingAccountAction.action
-            } else {
-                return nil
-            }
-        }()
-        let isShowingTranslation: Bool? = { () -> Bool? in
-            guard let actionablePost else { return nil }
-            guard canTranslate(post: actionablePost) else { return nil }
-            return translationsToShow.contains(actionablePost.id)
-        }()
-        let translation: Mastodon.Entity.Translation? = {
-            guard let actionablePost else { return nil }
-            return translations[actionablePost.id]
-        }()
-        let rowViewModel = MastodonPostViewModel(post: post,
-                                                 timestamper: timestamper,
-                                                 isShowingTranslation: isShowingTranslation, translation: translation,
-                                                 myRelationshipToAuthor: relationship,
-                                                 isDoingAction: isDoingAction,
-                                                 actionHandler: self)
-        return rowViewModel
-    }
     
-    func contentConcelModel(forPost post: GenericMastodonPost) -> ContentConcealViewModel {
-        
-        guard let actionablePost = post.actionablePost else { return .alwaysShow }
-        return feedLoader?.contentConcealViewModel(forContentPost: actionablePost)
-        ?? .alwaysShow
+    func contentConcealModel(forActionablePost post: Mastodon.Entity.Status.ID) -> ContentConcealViewModel {
+        return feedLoader?.contentConcealViewModel(forContentPost: post) ?? .alwaysShow
     }
 }
 
@@ -473,8 +437,8 @@ struct HomeTimelineListView: View {
                         LazyVStack {
                             ForEach(viewModel.timelineItems, id: \.self) { item in
                                 switch item {
-                                case let .missingPosts(newerThan, olderThan, timeGapDescription):
-                                    GapLoaderView(newerThan: newerThan, olderThan: olderThan, gapDescription: timeGapDescription,
+                                case let .missingPosts(newerThan, olderThan):
+                                    GapLoaderView(newerThan: newerThan, olderThan: olderThan, gapDescription: "",
                                                   loadFromTop: {
                                         viewModel.requestLoad(.olderThan(olderThan))
                                     }, loadFromBottom: {
@@ -487,24 +451,23 @@ struct HomeTimelineListView: View {
                                             .progressViewStyle(.circular)
                                         Spacer()
                                     }
-                                case .post(let post):
+                                case .post(let postViewModel):
                                     let usableWidth =
                                     geo.size.width - geo.safeAreaInsets.leading
                                     - geo.safeAreaInsets.trailing
                                     let contentWidth = max(1, usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
                                     
-                                    let currentAction = viewModel.isPerformingPostAction?.action ?? viewModel.isPerformingAccountAction?.action
-                                    HomeTimelinePostRowView(viewModel: viewModel.rowViewModel(for: post, translationsToShow: viewModel.translationsShowing, isPerformingAction: currentAction),
-                                                            contentConcealModel: viewModel.contentConcelModel(forPost: post),
+                                    HomeTimelinePostRowView(viewModel: postViewModel,
+                                                            contentConcealModel: viewModel.contentConcealModel(forActionablePost: postViewModel.initialDisplayInfo.actionablePostID),
                                                             contentWidth: contentWidth)
                                     .padding(spacingBetweenGutterAndContent)
                                     .frame(width: usableWidth)
                                     .onAppear {
                                         viewModel.didAppear(item.id)
                                     }
-#if DEBUG
+#if DEBUG && false
                                     .background {
-                                        if recentlyInsertedItemIds?.contains(post.id) == true {
+                                        if recentlyInsertedItemIds?.contains(postViewModel.initialDisplayInfo.id) == true {
                                             RoundedRectangle(cornerRadius: 8)
                                                 .fill(.blue.opacity(0.2))
                                         }
@@ -654,10 +617,8 @@ private struct HomeTimelinePostRowView: View {
     let distanceFromAvatarLeadingEdgeToContentLeadingEdge: CGFloat = spacingBetweenGutterAndContent + AvatarSize.large
     
     var body: some View {
-        let actionablePost = viewModel.post.actionablePost
-        let author = actionablePost?.metaData.author ?? viewModel.post.metaData.author
-        let visibility = actionablePost?.metaData.privacyLevel ?? viewModel.post.metaData.privacyLevel ?? .loudPublic
-        let postedDate = actionablePost?.metaData.createdAt ?? viewModel.post.metaData.createdAt
+        let actionablePost = viewModel.fullPost?.actionablePost
+        let author = actionablePost?.metaData.author ?? viewModel.fullPost?.metaData.author
         
         VStack(alignment: .gutterAlign, spacing: spacingBetweenGutterAndContent) {
             
@@ -665,40 +626,40 @@ private struct HomeTimelinePostRowView: View {
             
             HStack(alignment: .top) {
             
-                AvatarView(size: .large, author: author, goToProfile: { _ in
+                AvatarView(size: .large, authorAvatarUrl: author?.avatarURL ?? viewModel.initialDisplayInfo.actionableAuthorStaticAvatar, goToProfile: {
                     goToProfile(author)
                 })
                 
                 VStack(spacing: spacingBetweenGutterAndContent) {
-                    AuthorHeaderView(author: author, visibility: visibility, postedDate: postedDate, timestamper: viewModel.timestamper)
+                    AuthorHeaderView(postViewModel: viewModel, timestamper: viewModel.timestamper)
                     
                     contentConcealLozenge
                         .frame(width: contentWidth)
                         .fixedSize(horizontal: false, vertical: true)
                     
-                    if contentConcealModel.currentMode.isShowingContent {
-                        if viewModel.isShowingTranslation == true, let translatablePost = viewModel.post.actionablePost, let translation = viewModel.actionHandler.translation(forContentPostId: translatablePost.id) {
-                            TranslationInfoView(translationInfo: translation, showOriginal: { viewModel.actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
+                    if contentConcealModel.currentMode.isShowingContent, let actionHandler = viewModel.actionHandler {
+                        if viewModel.isShowingTranslation == true, let translatablePost = viewModel.fullPost?.actionablePost, let translation = actionHandler.translation(forContentPostId: translatablePost.id) {
+                            TranslationInfoView(translationInfo: translation, showOriginal: { actionHandler.doAction(.showOriginalLanguage, forPost: translatablePost) }
                             )
                             .frame(width: contentWidth, alignment: .leading)
                         }
                         viewModel.textContentView()
                             .frame(width: contentWidth, alignment: .leading)
                         
-                        if let attachment = viewModel.post.actionablePost?.content.attachment {
+                        if let attachment = viewModel.fullPost?.actionablePost?.content.attachment {
                             switch attachment {
                             case .media(let array):
-                                MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: viewModel.actionHandler)
+                                MediaAttachment(array, altTextTranslations: viewModel.altTextTranslations).view(withContentConcealModel: contentConcealModel, actionHandler: actionHandler)
                                     .frame(width: contentWidth)
                             case .poll(let pollID):
-                                let emojis = viewModel.post.actionablePost?.content.htmlWithEntities?.emojis
-                                if let poll = viewModel.actionHandler.poll(id: pollID) {
-                                    PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: viewModel.isShowingTranslation == true ? viewModel.pollOptionTranslations : nil, actionHandler: viewModel.actionHandler), contentWidth: contentWidth)
+                                let emojis = viewModel.fullPost?.actionablePost?.content.htmlWithEntities?.emojis
+                                if let poll = actionHandler.poll(id: pollID) {
+                                    PollView(viewModel: PollViewModel(pollEntity: poll, emojis: emojis, optionTranslations: viewModel.isShowingTranslation == true ? viewModel.pollOptionTranslations : nil, actionHandler: actionHandler), contentWidth: contentWidth)
                                         .frame(width: contentWidth)
                                 }
                             case .linkPreviewCard(let card):
                                 LinkPreviewCard(cardEntity: card, fittingWidth: contentWidth, navigateToScene: { (scene, transition) in
-                                    viewModel.actionHandler.presentScene(scene, transition: transition)
+                                    actionHandler.presentScene(scene, transition: transition)
                                 })
                                 .frame(width: contentWidth)
                             }
@@ -716,8 +677,8 @@ private struct HomeTimelinePostRowView: View {
                     .font(.footnote)
 #endif
                     
-                    if let actionablePost = viewModel.post.actionablePost {
-                        ActionBar(viewModel: actionBarViewModel(forActionablePost: actionablePost))
+                    if let actionablePost = viewModel.fullPost?.actionablePost, let actionHandler = viewModel.actionHandler, let actionBarViewModel = actionBarViewModel(forActionablePost: actionablePost, actionHandler: actionHandler) {
+                        ActionBar(viewModel: actionBarViewModel)
                             .frame(width: contentWidth, alignment: .leading)
                     }
                 }
@@ -725,16 +686,17 @@ private struct HomeTimelinePostRowView: View {
         }
     }
     
-    func actionBarViewModel(forActionablePost actionablePost: MastodonContentPost) -> ActionBar.ViewModel {
+    func actionBarViewModel(forActionablePost actionablePost: MastodonContentPost?, actionHandler: MastodonPostMenuActionHandler?) -> ActionBar.ViewModel? {
+        guard let actionablePost, let actionHandler, let relationship = viewModel.myRelationshipToAuthor else { return nil }
         return .init(post: actionablePost,
-                     actionHandler: viewModel.actionHandler,
+                     actionHandler: actionHandler,
                      replies: actionButtonViewModel(forPost: actionablePost, action: .reply),
                      boosts: actionButtonViewModel(forPost: actionablePost, action: .boost),
                      favourites: actionButtonViewModel(forPost: actionablePost, action: .favourite),
                      bookmark: actionButtonViewModel(forPost: actionablePost, action: .bookmark),
                      isShowingTranslation: viewModel.isShowingTranslation,
                      isDoingAction: viewModel.isDoingAction,
-                     myRelationshipToAuthor: viewModel.myRelationshipToAuthor)
+                     myRelationshipToAuthor: relationship)
     }
     
     func overrideState(for postAction: PostAction, of actionablePost: MastodonContentPost) -> AsyncBool? {
@@ -760,7 +722,7 @@ private struct HomeTimelinePostRowView: View {
             return StatefulCountedActionViewModel(type: .reply, displayDetails: .init(count: metrics.replyCount, isSelected: state), doAction: {
                 switch state {
                 case .isFalse:
-                    viewModel.actionHandler.doAction(.reply, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.reply, forPost: actionablePost)
                 default:
                     break
                 }
@@ -770,9 +732,9 @@ private struct HomeTimelinePostRowView: View {
             return StatefulCountedActionViewModel(type: .boost, displayDetails: .init(count: metrics.boostCount, isSelected: state), doAction: {
                 switch state {
                 case .isFalse:
-                    viewModel.actionHandler.doAction(.boost, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.boost, forPost: actionablePost)
                 case .isTrue:
-                    viewModel.actionHandler.doAction(.unboost, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.unboost, forPost: actionablePost)
                 default:
                     break
                 }
@@ -782,9 +744,9 @@ private struct HomeTimelinePostRowView: View {
             return StatefulCountedActionViewModel(type: .favourite, displayDetails: .init(count: metrics.favoriteCount, isSelected: state), doAction: {
                 switch state {
                 case .isFalse:
-                    viewModel.actionHandler.doAction(.favourite, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.favourite, forPost: actionablePost)
                 case .isTrue:
-                    viewModel.actionHandler.doAction(.unfavourite, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.unfavourite, forPost: actionablePost)
                 default:
                     break
                 }
@@ -794,9 +756,9 @@ private struct HomeTimelinePostRowView: View {
             return StatefulCountedActionViewModel(type: .bookmark, displayDetails: .init(count: nil, isSelected: state), doAction: {
                 switch state {
                 case .isFalse:
-                    viewModel.actionHandler.doAction(.bookmark, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.bookmark, forPost: actionablePost)
                 case .isTrue:
-                    viewModel.actionHandler.doAction(.unbookmark, forPost: actionablePost)
+                    viewModel.actionHandler?.doAction(.unbookmark, forPost: actionablePost)
                 default:
                     break
                 }
@@ -813,7 +775,8 @@ private struct HomeTimelinePostRowView: View {
         }
     }
     
-    func goToProfile(_ account: MastodonAccount) {
+    func goToProfile(_ account: MastodonAccount?) {
+        guard let account else { return }
         viewModel.goToProfile(account)
     }
 }
@@ -926,25 +889,44 @@ private enum PostViewComponent {
 @MainActor
 class MastodonPostViewModel: ObservableObject {
     
-    let actionHandler: MastodonPostMenuActionHandler
-    let post: GenericMastodonPost
-    let isShowingTranslation: Bool?
-    let translation: Mastodon.Entity.Translation?
-    let isDoingAction: MastodonPostMenuAction?
-    let myRelationshipToAuthor: MastodonAccount.Relationship
+    let initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo
     let timestamper: TimestampUpdater
+    
+    @Published var fullPost: GenericMastodonPost? = nil
+    @Published var isShowingTranslation: Bool? = nil
+    @Published var isDoingAction: MastodonPostMenuAction? = nil
+    @Published var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
+    
+    private(set) var actionHandler: MastodonPostMenuActionHandler? = nil
+    private(set) var translation: Mastodon.Entity.Translation? = nil
+    
+    init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, timestamper: TimestampUpdater) {
+        self.initialDisplayInfo = initialDisplay
+        self.timestamper = timestamper
+    }
+    
+    private init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, timestamper: TimestampUpdater, fullPost: GenericMastodonPost? = nil, isShowingTranslation: Bool? = nil, isDoingAction: MastodonPostMenuAction? = nil, myRelationshipToAuthor: MastodonAccount.Relationship? = nil, actionHandler: MastodonPostMenuActionHandler? = nil, translation: Mastodon.Entity.Translation? = nil) {
+        self.initialDisplayInfo = initialDisplay
+        self.timestamper = timestamper
+    }
+    
+    func byReplacingActionablePost(with actionablePost: GenericMastodonPost) -> MastodonPostViewModel {
+        if let updatedFullPost = try? fullPost?.byReplacingActionablePost(with: actionablePost) {
+            return MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper, fullPost: updatedFullPost, isShowingTranslation: isShowingTranslation, isDoingAction: isDoingAction, myRelationshipToAuthor: myRelationshipToAuthor, actionHandler: actionHandler, translation: translation)
+        } else {
+            return self
+        }
+    }
 
-    init(
+    func prepareForDisplay(
         post: GenericMastodonPost,
-        timestamper: TimestampUpdater,
         isShowingTranslation: Bool?,
         translation: Mastodon.Entity.Translation?,
         myRelationshipToAuthor: MastodonAccount.Relationship,
         isDoingAction: MastodonPostMenuAction?,
         actionHandler: MastodonPostMenuActionHandler
     ) {
-        self.post = post
-        self.timestamper = timestamper
+        self.fullPost = post
         self.isShowingTranslation = isShowingTranslation
         self.translation = translation
         self.myRelationshipToAuthor = myRelationshipToAuthor
@@ -973,8 +955,8 @@ class MastodonPostViewModel: ObservableObject {
     func didSelect(meta: Meta?) {
         switch meta {
         case .none:
-            guard let actionablePost = post.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
-            actionHandler.presentScene(
+            guard let actionablePost = fullPost?.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+            actionHandler?.presentScene(
                 .thread(
                     viewModel: ThreadViewModel(
                         authenticationBox: currentUser,
@@ -996,12 +978,12 @@ class MastodonPostViewModel: ObservableObject {
                 assertionFailure()
                 return
             }
-            actionHandler.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
+            actionHandler?.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
             
         case .hashtag(_, let hashtag, _):
             guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
             let hashtagTimelineViewModel = HashtagTimelineViewModel(authenticationBox: currentUser, hashtag: hashtag)
-            actionHandler.presentScene(.hashtagTimeline(viewModel: hashtagTimelineViewModel), transition: .show)
+            actionHandler?.presentScene(.hashtagTimeline(viewModel: hashtagTimelineViewModel), transition: .show)
             
         case .mention(_, let mention, let userInfo):
             guard
@@ -1010,9 +992,9 @@ class MastodonPostViewModel: ObservableObject {
             else {
                 return
             }
-            let mentions = post.actionablePost?.content.htmlWithEntities?.mentions
+            let mentions = fullPost?.actionablePost?.content.htmlWithEntities?.mentions
             guard let mention = mentions?.first(where: { $0.url == href }) else {
-                actionHandler.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
+                actionHandler?.presentScene(.safari(url: url), transition: .safariPresent(animated: true, completion: nil))
                 return
             }
             goToProfile(mention)
@@ -1023,14 +1005,15 @@ class MastodonPostViewModel: ObservableObject {
     }
     
     func goToProfile(_ account: MastodonAccount) {
+        guard let myRelationshipToAuthor else { return }
         switch myRelationshipToAuthor {
         case .isMe:
             let profile: ProfileViewController.ProfileType = .me(account._legacyEntity)
-            actionHandler.presentScene(.profile(profile), transition: .show)
+            actionHandler?.presentScene(.profile(profile), transition: .show)
         case .isNotMe(let info):
             if let info, let me = AuthenticationServiceProvider.shared.currentActiveUser.value?.cachedAccount {
                 let profile: ProfileViewController.ProfileType = .notMe(me: me, displayAccount: account._legacyEntity, relationship: info._legacyEntity)
-                actionHandler.presentScene(.profile(profile), transition: .show)
+                actionHandler?.presentScene(.profile(profile), transition: .show)
             }
         }
     }
@@ -1052,16 +1035,16 @@ class MastodonPostViewModel: ObservableObject {
 fileprivate extension MastodonPostViewModel {
     
     var socialContextHeader: SocialContextHeader? {
-
-        if post is MastodonBoostPost {
+        guard let fullPost else { return nil }
+        if fullPost is MastodonBoostPost {
             // BOOSTED BY
-            return .boosted(by: post.metaData.author.displayInfo.displayName, emojis: post.metaData.author.displayInfo.emojis)
-        } else if let basicPost = post as? MastodonBasicPost {
+            return .boosted(by: fullPost.metaData.author.displayInfo.displayName, emojis: fullPost.metaData.author.displayInfo.emojis)
+        } else if let basicPost = fullPost as? MastodonBasicPost {
             // REPLIED and/or PRIVATE MENTION
             let isPrivate = basicPost.metaData.privacyLevel == .mentionedOnly
             let replyInfo = basicPost.inReplyTo
             if let replyInfo {
-                let replyToAccount = actionHandler.account(replyInfo.accountID)
+                let replyToAccount = actionHandler?.account(replyInfo.accountID)
                 return .reply(to: replyToAccount?.displayInfo.displayName ?? "unknown", isPrivate: isPrivate, isNotification: false, emojis: replyToAccount?.displayInfo.emojis ?? [])
             } else if isPrivate {
                 return .mention(isPrivate: true)
@@ -1073,10 +1056,10 @@ fileprivate extension MastodonPostViewModel {
     func textContentView() -> TextViewWithCustomEmoji {
         let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis(), didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
         
-        guard let actionablePost = post.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
+        guard let actionablePost = fullPost?.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
         let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         
-        if isShowingTranslation == true, let translation = actionHandler.translation(forContentPostId: actionablePost.id)?.content {
+        if isShowingTranslation == true, let translation = actionHandler?.translation(forContentPostId: actionablePost.id)?.content {
             return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
         } else {
             return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
