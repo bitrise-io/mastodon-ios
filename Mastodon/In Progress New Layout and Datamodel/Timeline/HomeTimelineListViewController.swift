@@ -334,7 +334,11 @@ private class HomeTimelineListViewModel: ObservableObject {
     private var feedLoader: TimelineFeedLoader?
     private var feedLoaderResultsSubscription: AnyCancellable?
     private var feedLoaderErrorSubscription: AnyCancellable?
+    
     private var tailItemIds = [String]()
+    private let displayPrepBatchSize = 10
+    private var currentlyPreparingForDisplay: [Mastodon.Entity.Status.ID]?
+    private var displayPrepRequested: [MastodonPostViewModel]? // only keep the latest batch requested, to avoid getting bogged down while fast scrolling
     
     // Translations
     private var translations = [ Mastodon.Entity.Status.ID : Mastodon.Entity.Translation]()
@@ -394,17 +398,20 @@ private class HomeTimelineListViewModel: ObservableObject {
         }
     }
     
-    func didAppear(_ itemID: String) {
+    func didAppear(_ postViewModel: MastodonPostViewModel, contentWidth: CGFloat) {
         guard feedLoader?.records.canLoadOlder == true else {
 #if DEBUG
             print("nothing left to load")
 #endif
             return
         }
-        if tailItemIds.contains(itemID) {
+        
+        if tailItemIds.contains(postViewModel.initialDisplayInfo.id) {
             tailItemIds = []
             requestLoad(.older)
         }
+        
+        prepareForDisplay(including: postViewModel, withContentWidth: contentWidth)
     }
 
     func myRelationship(to account: MastodonAccount?)
@@ -417,6 +424,101 @@ private class HomeTimelineListViewModel: ObservableObject {
     
     func contentConcealModel(forActionablePost post: Mastodon.Entity.Status.ID) -> ContentConcealViewModel {
         return feedLoader?.contentConcealViewModel(forContentPost: post) ?? .alwaysShow
+    }
+}
+
+extension HomeTimelineListViewModel {
+    func prepareForDisplay(including anchorItem: MastodonPostViewModel, withContentWidth contentWidth: CGFloat) {
+        let thisItemID = anchorItem.initialDisplayInfo.id
+        
+        let isCurrentlyPreparing = currentlyPreparingForDisplay?.contains(thisItemID) == true
+        let isAlreadyRequested = displayPrepRequested?.contains(where: { $0.initialDisplayInfo.id == thisItemID}) == true
+        guard !isCurrentlyPreparing && !isAlreadyRequested else { return }
+        switch anchorItem.displayPrepStatus {
+        case .unprepared:
+            // prep a new batch (or request it)
+            guard let anchorItemIndex = feedLoader?.records.allRecords.firstIndex(where: { $0.id == thisItemID }) else { return }
+            guard let batch = createPrepBatch(anchoredAt: anchorItemIndex) else { return }
+            if currentlyPreparingForDisplay == nil {
+                doPrepareForDisplay(batch, contentWidth: contentWidth)
+            } else {
+                displayPrepRequested = batch
+            }
+        case .donePreparing:
+            guard displayPrepRequested == nil else { return }
+            guard let thisItemIndex = feedLoader?.records.allRecords.firstIndex(where: { $0.id == thisItemID }) else { return }
+            // check if a neighboring batch could use preparing
+            if let nextBatch = createPrepBatch(anchoredAt: thisItemIndex + displayPrepBatchSize) ?? createPrepBatch(anchoredAt: thisItemIndex - displayPrepBatchSize) {
+                if currentlyPreparingForDisplay == nil {
+                    doPrepareForDisplay(nextBatch, contentWidth: contentWidth)
+                } else {
+                    displayPrepRequested = nextBatch
+                }
+            }
+        }
+    }
+
+    private func createPrepBatch(anchoredAt anchorIndex: Int) -> [MastodonPostViewModel]? {
+        guard let feedLoaderRecords = feedLoader?.records.allRecords else { return nil }
+        let batchStart = max(0, anchorIndex - displayPrepBatchSize / 2)
+        guard batchStart < feedLoaderRecords.count else { return nil }
+        let batchItems = feedLoaderRecords[batchStart...].prefix(displayPrepBatchSize).compactMap { item -> MastodonPostViewModel? in
+            switch item {
+            case .loadingIndicator, .missingPosts:
+                return nil
+            case .post(let postViewModel):
+                // not donePreparing, not included in currently preparing (inclusion in requested does not matter, because this batch may replace the current requested batch)
+                guard postViewModel.displayPrepStatus == .unprepared && currentlyPreparingForDisplay?.contains(postViewModel.initialDisplayInfo.id) != true else { return nil }
+                return postViewModel
+            }
+        }
+        
+        guard !batchItems.isEmpty else { return nil }
+        return batchItems
+    }
+    
+    private func doPrepareForDisplay(_ batch: [MastodonPostViewModel], contentWidth: CGFloat) {
+        guard let feedLoader else { return }
+        guard currentlyPreparingForDisplay == nil else { assertionFailure(); return }
+        currentlyPreparingForDisplay = batch.map { $0.initialDisplayInfo.id }
+        
+        Task {
+            var needsRelationshipFetch = [GenericMastodonPost]()
+            var needsHtmlProcessing = [MastodonPostViewModel]()
+            for postModel in batch {
+                if let fullPost = postModel.fullPost, postModel.myRelationshipToAuthor == nil {
+                    needsRelationshipFetch.append(fullPost)
+                }
+                
+                if !postModel.hasCalculatedForWidth(contentWidth) {
+                    needsHtmlProcessing.append(postModel)
+                }
+
+                let needsRelationshipFetch = needsRelationshipFetch
+                async let relationshipFetchTask = {
+                    try await feedLoader.fetchRelationships(needsRelationshipFetch)
+                }
+                async let htmlProcessingTask = {
+                }
+                
+                let (_,_) = await(relationshipFetchTask, htmlProcessingTask)
+                for postModel in batch {
+                    if postModel.myRelationshipToAuthor == nil {
+                        postModel.myRelationshipToAuthor = feedLoader.myRelationship(to: postModel.initialDisplayInfo.actionableAuthorId)
+                    }
+                    if postModel.actionHandler == nil {
+                        postModel.actionHandler = self
+                    }
+                    postModel.displayPrepStatus = .donePreparing
+                }
+                
+                currentlyPreparingForDisplay = nil
+                if let displayPrepRequested = self.displayPrepRequested {
+                    self.displayPrepRequested = nil
+                    doPrepareForDisplay(displayPrepRequested, contentWidth: contentWidth)
+                }
+            }
+        }
     }
 }
 
@@ -463,7 +565,7 @@ struct HomeTimelineListView: View {
                                     .padding(spacingBetweenGutterAndContent)
                                     .frame(width: usableWidth)
                                     .onAppear {
-                                        viewModel.didAppear(item.id)
+                                        viewModel.didAppear(postViewModel, contentWidth: contentWidth)
                                     }
 #if DEBUG && false
                                     .background {
@@ -886,18 +988,36 @@ private enum PostViewComponent {
     case hashtags([String])
 }
 
+struct AttributedStringDisplayInfo {
+    let attributedString: AttributedString
+    let layoutSizes: [CGSize]
+    
+    func hasCalculatedForWidth(_ width: CGFloat) -> Bool {
+        return layoutSizes.contains(where: { $0.width == floor(width)})
+    }
+}
+
 @MainActor
 class MastodonPostViewModel: ObservableObject {
+    
+    enum DisplayPrepStatus {
+        case unprepared
+        case donePreparing
+    }
     
     let initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo
     let timestamper: TimestampUpdater
     
     @Published var fullPost: GenericMastodonPost? = nil
+    @Published var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
+    @Published var originalContentDisplayInfo: AttributedStringDisplayInfo?
+    @Published var translatedContentDisplayInfo: AttributedStringDisplayInfo?
+
+    @Published var displayPrepStatus: DisplayPrepStatus = .unprepared
     @Published var isShowingTranslation: Bool? = nil
     @Published var isDoingAction: MastodonPostMenuAction? = nil
-    @Published var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
     
-    private(set) var actionHandler: MastodonPostMenuActionHandler? = nil
+    var actionHandler: MastodonPostMenuActionHandler? = nil
     private(set) var translation: Mastodon.Entity.Translation? = nil
     
     init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, timestamper: TimestampUpdater) {
@@ -917,23 +1037,12 @@ class MastodonPostViewModel: ObservableObject {
             return self
         }
     }
-
-    func prepareForDisplay(
-        post: GenericMastodonPost,
-        isShowingTranslation: Bool?,
-        translation: Mastodon.Entity.Translation?,
-        myRelationshipToAuthor: MastodonAccount.Relationship,
-        isDoingAction: MastodonPostMenuAction?,
-        actionHandler: MastodonPostMenuActionHandler
-    ) {
-        self.fullPost = post
-        self.isShowingTranslation = isShowingTranslation
-        self.translation = translation
-        self.myRelationshipToAuthor = myRelationshipToAuthor
-        self.isDoingAction = isDoingAction
-        self.actionHandler = actionHandler
-        
-        assert(post.actionablePost != nil, "unexpected post type")
+    
+    func hasCalculatedForWidth(_ width: CGFloat) -> Bool {
+        if (isShowingTranslation != true) {
+         return originalContentDisplayInfo?.hasCalculatedForWidth(width) == true
+        }
+        return translatedContentDisplayInfo?.hasCalculatedForWidth(width) == true
     }
     
     var altTextTranslations: [String : String]? {

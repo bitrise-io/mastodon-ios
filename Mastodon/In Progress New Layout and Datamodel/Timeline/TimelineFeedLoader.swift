@@ -17,6 +17,7 @@ extension GenericMastodonPost {
         let id: Mastodon.Entity.Status.ID
         let actionablePostID: Mastodon.Entity.Status.ID
         let shouldFilterOut: Bool
+        let actionableAuthorId: String
         let actionableAuthorStaticAvatar: URL?
         let actionableAuthorHandle: String
         let actionableAuthorDisplayName: String
@@ -81,21 +82,19 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     private let filterContext = Mastodon.Entity.FilterContext.home
     
     private let authenticatedUser: MastodonAuthenticationBox
-    private let authenticatedUserID: Mastodon.Entity.Account.ID?
     private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
     private var accountsCache = [Mastodon.Entity.Account.ID : MastodonAccount]()
     private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
     private var timestamper = TimestampUpdater(TimeInterval(30))
+    
+    private let myAccountID: Mastodon.Entity.Account.ID?
     
     let timeline: MastodonTimelineType
     
     init(currentUser: MastodonAuthenticationBox, timeline: MastodonTimelineType) {
         self.timeline = timeline
         authenticatedUser = currentUser
-        authenticatedUserID = authenticatedUser.cachedAccount?.id
-        if let authenticatedUserID {
-            cachedRelationships[authenticatedUserID] = .isMe
-        }
+        myAccountID = authenticatedUser.cachedAccount?.id
         super.init(TimelineCacheManager(currentUser: currentUser))
     }
 
@@ -174,7 +173,9 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         let newBatch = response.value.map { status in
             let post = GenericMastodonPost.fromStatus(status)
             let initialDisplayInfo = post.initialDisplayInfo
-            return TimelineItem.post(MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper))
+            let viewModel = MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper)
+            viewModel.fullPost = post
+            return TimelineItem.post(viewModel)
         }
         
         let associatedPolls = polls(response.value)
@@ -199,7 +200,6 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
 #endif
 
         createContentConcealViewModels(newCache)
-        try await fetchRelationships(newCache)
         try? await fetchReplyTos(newCache)
         
         return newCache
@@ -557,20 +557,10 @@ extension TimelineFeedLoader {
 // MARK: Relationships
 extension TimelineFeedLoader {
     func myRelationship(to accountID: Mastodon.Entity.Account.ID) -> MastodonAccount.Relationship {
-        if accountID == authenticatedUserID {
+        if accountID == myAccountID {
             return .isMe
         } else {
             return cachedRelationships[accountID] ?? .isNotMe(nil)
-        }
-    }
-    
-    func refetchAllRelationships() async throws {
-        cachedRelationships.removeAll()
-        if let authenticatedUserID {
-            cachedRelationships[authenticatedUserID] = .isMe
-        }
-        if let currentTimeline = cacheManager.currentResults() {
-            try await fetchRelationships(currentTimeline)
         }
     }
     
@@ -578,7 +568,35 @@ extension TimelineFeedLoader {
         cachedRelationships[accountID] = relationship
     }
     
-    private func fetchRelationships(_ timeline: CacheableTimeline) async throws {
+    func fetchRelationships(_ batch: [GenericMastodonPost]) async throws {
+        let needToFetch: [Mastodon.Entity.Account.ID] = batch.compactMap { post -> Mastodon.Entity.Account.ID? in
+            if let actionableRelationshipAccountID = post.actionablePost?.metaData.author.id {
+                guard actionableRelationshipAccountID != myAccountID else { return nil }
+                switch self.cachedRelationships[actionableRelationshipAccountID] {
+                case .isMe:
+                    assertionFailure()
+                    return nil
+                case .isNotMe(let info):
+                    if let lastFetched = info?.fetchedAt {
+                        return (lastFetched.timeIntervalSinceNow < relationshipStaleThreshold) ? nil : actionableRelationshipAccountID
+                    } else {
+                        return actionableRelationshipAccountID
+                    }
+                case .none:
+                    return actionableRelationshipAccountID
+                }
+            } else {
+                return nil
+            }
+        }
+            
+        guard !needToFetch.isEmpty else { return }
+        
+        let relationships = try await APIService.shared.relationship(forAccountIds: needToFetch, authenticationBox: authenticatedUser).value
+        let currentTimestamp = Date.now
+        for relationshipEntity in relationships {
+            cachedRelationships[relationshipEntity.id] = MastodonAccount.Relationship.isNotMe(MastodonAccount.RelationshipInfo(relationshipEntity, fetchedAt: currentTimestamp))
+        }
     }
 }
 
@@ -616,6 +634,6 @@ extension TimelineFeedLoader {
 extension GenericMastodonPost {
     var initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo {
         let author = actionablePost?.metaData.author ?? metaData.author
-        return GenericMastodonPost.InitialDisplayInfo(id: id, actionablePostID: actionablePost?.id ?? id, shouldFilterOut: actionablePost?.content.shouldBeRemovedFromFeed ?? false, actionableAuthorStaticAvatar: author.displayInfo.avatarUrl, actionableAuthorHandle: author.handle, actionableAuthorDisplayName: author.displayName(whenViewedBy: nil)?.plainString ?? "", actionableVisibility: actionablePost?.metaData.privacyLevel ?? metaData.privacyLevel ?? .loudPublic, actionableCreatedAt: actionablePost?.metaData.createdAt ?? metaData.createdAt)
+        return GenericMastodonPost.InitialDisplayInfo(id: id, actionablePostID: actionablePost?.id ?? id, shouldFilterOut: actionablePost?.content.shouldBeRemovedFromFeed ?? false, actionableAuthorId: author.id, actionableAuthorStaticAvatar: author.displayInfo.avatarUrl, actionableAuthorHandle: author.handle, actionableAuthorDisplayName: author.displayName(whenViewedBy: nil)?.plainString ?? "", actionableVisibility: actionablePost?.metaData.privacyLevel ?? metaData.privacyLevel ?? .loudPublic, actionableCreatedAt: actionablePost?.metaData.createdAt ?? metaData.createdAt)
     }
 }

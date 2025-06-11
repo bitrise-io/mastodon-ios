@@ -7,7 +7,7 @@ import MetaTextKit
 import MastodonCore
 import UIKit
 import SwiftUI
-
+import MastodonSDK
 
 typealias AttributeDictionary = [NSAttributedString.Key: Any]
 
