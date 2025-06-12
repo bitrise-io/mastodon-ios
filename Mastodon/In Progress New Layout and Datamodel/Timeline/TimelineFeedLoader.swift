@@ -342,7 +342,7 @@ struct CacheableTimeline: CacheableFeed {
             return
         }
         
-        if let firstDuplicateIndex = existingItems.suffix(from: firstIndexAfterGap).firstIndex(where: { alreadySeen.contains($0.id) }) {
+        if existingItems.suffix(from: firstIndexAfterGap).firstIndex(where: { alreadySeen.contains($0.id) }) != nil {
             // There is an overlap, so no need to include a gap, but we also don't want to include duplicates
             if let firstNonDuplicateIndex = existingItems.suffix(from: firstIndexAfterGap).firstIndex(where: { !alreadySeen.contains($0.id) }) {
                 
@@ -391,7 +391,7 @@ struct CacheableTimeline: CacheableFeed {
         // start with the existing items newer than the gap (possibly truncated), and any remaining gap
         if let firstOverlapIndex = existingItems.prefix(upTo: matchingGapItemIndex).firstIndex(where: { insertingItemIDs.contains($0.id) }) {
             // The inserting items have overlap with the newer existing items, so no gap. But avoid duplicates, and prefer the inserting items (they are more freshly fetched).
-            let firstNonDuplicateIndex = existingItems.suffix(from: firstOverlapIndex).firstIndex(where: { !insertingItemIDs.contains($0.id)})
+            _ = existingItems.suffix(from: firstOverlapIndex).firstIndex(where: { !insertingItemIDs.contains($0.id)})
             updatedItems = Array(existingItems.prefix(upTo: firstOverlapIndex))
         } else {
             // There is still a gap.
