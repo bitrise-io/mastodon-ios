@@ -41,6 +41,17 @@ class MastodonContentPost: GenericMastodonPost {
         self.content = content
         super.init(id: id, metaData: metaData, _legacyEntity: _legacyEntity)
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case content
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let content = try container.decode(GenericMastodonPost.PostContent.self, forKey: .content)
+        self.content = content
+        try super.init(from: decoder)
+    }
 }
 
 class MastodonBasicPost: MastodonContentPost {
@@ -52,6 +63,20 @@ class MastodonBasicPost: MastodonContentPost {
         self.attachment = attachment
         super.init(id: id, metaData: metaData, content: content, _legacyEntity: _legacyEntity)
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case inReplyTo
+        case attachment
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let inReplyTo = try container.decode(GenericMastodonPost.InReplyToDetails.self, forKey: .inReplyTo)
+        let attachment = try container.decode(GenericMastodonPost.PostAttachment.self, forKey: .attachment)
+        self.inReplyTo = inReplyTo
+        self.attachment = attachment
+        try super.init(from: decoder)
+    }
 }
 
 class MastodonBoostPost: GenericMastodonPost {
@@ -61,6 +86,17 @@ class MastodonBoostPost: GenericMastodonPost {
         self.boostedPost = boostedPost
         super.init(id: id, metaData: metaData, _legacyEntity: _legacyEntity)
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case boostedPost
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let boostedPost = try container.decode(MastodonContentPost.self, forKey: .boostedPost)
+        self.boostedPost = boostedPost
+        try super.init(from: decoder)
+    }
 }
 
 class MastodonQuotePost: MastodonContentPost {
@@ -69,5 +105,16 @@ class MastodonQuotePost: MastodonContentPost {
     init(id: Mastodon.Entity.Status.ID, content: GenericMastodonPost.PostContent, metaData: GenericMastodonPost.PostMetadata, quotedPost: MastodonBasicPost, _legacyEntity: Mastodon.Entity.Status) {
         self.quotedPost = quotedPost
         super.init(id: id, metaData: metaData, content: content, _legacyEntity: _legacyEntity)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case quotedPost
+    }
+    
+    required init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let quotedPost = try container.decode(MastodonBasicPost.self, forKey: .quotedPost)
+        self.quotedPost = quotedPost
+        try super.init(from: decoder)
     }
 }

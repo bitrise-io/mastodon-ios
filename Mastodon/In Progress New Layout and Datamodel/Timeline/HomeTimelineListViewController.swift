@@ -353,6 +353,12 @@ private class HomeTimelineListViewModel: ObservableObject {
         }
     }
     
+    func commitToCache() {
+        Task {
+            await feedLoader?.commitToCache()
+        }
+    }
+    
     public var timeline: MastodonTimelineType {
         didSet {
             guard feedLoader?.timeline != timeline else { return }
@@ -483,9 +489,19 @@ extension HomeTimelineListViewModel {
         currentlyPreparingForDisplay = batch.map { $0.initialDisplayInfo.id }
         
         Task {
+            // make sure we have the full posts to work with (if we are working from a cached timeline)
+            let needsCacheFetch = batch.compactMap { postModel in
+                return postModel.fullPost == nil ? postModel.initialDisplayInfo.id : nil
+            }
+            let cachedPosts = await feedLoader.fetchCachedPosts(needsCacheFetch)
+            
             var needsRelationshipFetch = [GenericMastodonPost]()
             var needsHtmlProcessing = [MastodonPostViewModel]()
             for postModel in batch {
+                if let cachedPost = cachedPosts[postModel.initialDisplayInfo.id] {
+                    postModel.fullPost = cachedPost
+                }
+
                 if let fullPost = postModel.fullPost, postModel.myRelationshipToAuthor == nil {
                     needsRelationshipFetch.append(fullPost)
                 }
@@ -590,6 +606,9 @@ struct HomeTimelineListView: View {
         }
         .onAppear() {
             viewModel.clearPendingActions()
+        }
+        .onDisappear() {
+            viewModel.commitToCache()
         }
         .alert(viewModel.activeAlert.title, isPresented: $viewModel.isPresentingAlert, presenting: viewModel.activeAlert) { alert in
             alertContents(alert)
@@ -1005,8 +1024,7 @@ class MastodonPostViewModel: ObservableObject {
         case donePreparing
     }
     
-    let initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo
-    let timestamper: TimestampUpdater
+    nonisolated let initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo
     
     @Published var fullPost: GenericMastodonPost? = nil
     @Published var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
@@ -1018,21 +1036,22 @@ class MastodonPostViewModel: ObservableObject {
     @Published var isDoingAction: MastodonPostMenuAction? = nil
     
     var actionHandler: MastodonPostMenuActionHandler? = nil
+    let timestamper: TimestampUpdater = TimestampUpdater.timestamper(withInterval: 30)
+    
     private(set) var translation: Mastodon.Entity.Translation? = nil
     
-    init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, timestamper: TimestampUpdater) {
+    nonisolated
+    init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo) {
         self.initialDisplayInfo = initialDisplay
-        self.timestamper = timestamper
     }
     
-    private init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, timestamper: TimestampUpdater, fullPost: GenericMastodonPost? = nil, isShowingTranslation: Bool? = nil, isDoingAction: MastodonPostMenuAction? = nil, myRelationshipToAuthor: MastodonAccount.Relationship? = nil, actionHandler: MastodonPostMenuActionHandler? = nil, translation: Mastodon.Entity.Translation? = nil) {
+    private init(_ initialDisplay: GenericMastodonPost.InitialDisplayInfo, fullPost: GenericMastodonPost? = nil, isShowingTranslation: Bool? = nil, isDoingAction: MastodonPostMenuAction? = nil, myRelationshipToAuthor: MastodonAccount.Relationship? = nil, actionHandler: MastodonPostMenuActionHandler? = nil, translation: Mastodon.Entity.Translation? = nil) {
         self.initialDisplayInfo = initialDisplay
-        self.timestamper = timestamper
     }
     
     func byReplacingActionablePost(with actionablePost: GenericMastodonPost) -> MastodonPostViewModel {
         if let updatedFullPost = try? fullPost?.byReplacingActionablePost(with: actionablePost) {
-            return MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper, fullPost: updatedFullPost, isShowingTranslation: isShowingTranslation, isDoingAction: isDoingAction, myRelationshipToAuthor: myRelationshipToAuthor, actionHandler: actionHandler, translation: translation)
+            return MastodonPostViewModel(initialDisplayInfo, fullPost: updatedFullPost, isShowingTranslation: isShowingTranslation, isDoingAction: isDoingAction, myRelationshipToAuthor: myRelationshipToAuthor, actionHandler: actionHandler, translation: translation)
         } else {
             return self
         }

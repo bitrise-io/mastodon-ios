@@ -85,7 +85,6 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     private var cachedRelationships = [Mastodon.Entity.Account.ID : MastodonAccount.Relationship]()
     private var accountsCache = [Mastodon.Entity.Account.ID : MastodonAccount]()
     private var contentConcealViewModels = [Mastodon.Entity.Status.ID : ContentConcealViewModel]()
-    private var timestamper = TimestampUpdater(TimeInterval(30))
     
     private let myAccountID: Mastodon.Entity.Account.ID?
     
@@ -173,7 +172,7 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         let newBatch = response.value.map { status in
             let post = GenericMastodonPost.fromStatus(status)
             let initialDisplayInfo = post.initialDisplayInfo
-            let viewModel = MastodonPostViewModel(initialDisplayInfo, timestamper: timestamper)
+            let viewModel = MastodonPostViewModel(initialDisplayInfo)
             viewModel.fullPost = post
             return TimelineItem.post(viewModel)
         }
@@ -211,6 +210,12 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
     
     func poll(_ id: Mastodon.Entity.Poll.ID) -> Mastodon.Entity.Poll? {
         return cacheManager.currentResults()?.polls[id]
+    }
+}
+
+extension TimelineFeedLoader {
+    func fetchCachedPosts(_ postIds: [Mastodon.Entity.Status.ID]) async -> [Mastodon.Entity.Status.ID : GenericMastodonPost] {
+        return await BodegaPersistence.cachedPosts(postIds, forUser: authenticatedUser)
     }
 }
 
@@ -477,12 +482,22 @@ class TimelineCacheManager: MastodonFeedCacheManager {
     
     init(currentUser: MastodonAuthenticationBox) {
         self.currentUser = currentUser
+        Task {
+            let timeline = BodegaPersistence.cachedTimeline(forUser: currentUser)
+            self.staleResults = CacheableTimeline(older: [], newer: timeline, polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]())
+        }
     }
     
     func currentResults() -> CacheableTimeline? {
-        return mostRecentlyFetchedResults
+        if let mostRecentlyFetchedResults {
+            return mostRecentlyFetchedResults
+        } else if let staleResults {
+            return staleResults
+        }
+        return nil
     }
     
+    private var staleResults: CacheableTimeline?
     var mostRecentlyFetchedResults: CacheableTimeline?
     
     func updateByInserting(newlyFetched: CacheableTimeline, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
@@ -517,7 +532,9 @@ class TimelineCacheManager: MastodonFeedCacheManager {
     }
     
     func commitToCache() async {
-        // TODO: implement
+        if let items = currentResults()?.items {
+            BodegaPersistence.cacheTimeline(items, forUser: currentUser)
+        }
     }
 }
 

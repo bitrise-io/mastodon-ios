@@ -367,7 +367,7 @@ private class NotificationListViewModel: ObservableObject {
     }
     @Published var notificationItems = [NotificationListItem]()
     
-    private let timestampUpdater = TimestampUpdater(TimeInterval(30))
+    private let timestampUpdater = TimestampUpdater.timestamper(withInterval: 30)
     
     private var firstUnreadItem: NotificationListItem? {
         guard let marker =  groupedFeedLoader?.lastReadMarker ?? ungroupedFeedLoader?.lastReadMarker else { return nil }
@@ -730,11 +730,23 @@ class TimestampUpdater: ObservableObject {
     @Published var timestamp: Date = .now
     private var timer: Timer?
     
-    init(_ interval: TimeInterval) {
+    private init(_ interval: TimeInterval) {
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true, block: { [weak self] _ in
             Task { @MainActor in
                 self?.timestamp = .now
             }
         })
+    }
+    
+    private static var instances = [TimeInterval : TimestampUpdater]()
+
+    public static func timestamper(withInterval interval: TimeInterval) -> TimestampUpdater {
+        if let existing = instances[interval] {
+            return existing
+        } else {
+            let fresh = TimestampUpdater(interval)
+            instances[interval] = fresh
+            return fresh
+        }
     }
 }

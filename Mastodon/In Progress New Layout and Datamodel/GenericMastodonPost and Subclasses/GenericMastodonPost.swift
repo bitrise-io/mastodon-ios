@@ -3,7 +3,7 @@
 import Foundation
 import MastodonSDK
 
-class GenericMastodonPost {
+class GenericMastodonPost: Codable {
     let id: Mastodon.Entity.Status.ID
     let metaData: PostMetadata
     let _legacyEntity: Mastodon.Entity.Status
