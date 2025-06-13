@@ -575,9 +575,9 @@ struct HomeTimelineListView: View {
                                     - geo.safeAreaInsets.trailing
                                     let contentWidth = max(1, usableWidth - (spacingBetweenGutterAndContent * 3) - avatarSize)
                                     
-                                    HomeTimelinePostRowView(viewModel: postViewModel,
-                                                            contentConcealModel: viewModel.contentConcealModel(forActionablePost: postViewModel.initialDisplayInfo.actionablePostID),
+                                    HomeTimelinePostRowView(contentConcealModel: viewModel.contentConcealModel(forActionablePost: postViewModel.initialDisplayInfo.actionablePostID),
                                                             contentWidth: contentWidth)
+                                    .environment(postViewModel)
                                     .padding(spacingBetweenGutterAndContent)
                                     .frame(width: usableWidth)
                                     .onAppear {
@@ -731,7 +731,7 @@ extension MastodonTimelineOverlayView {
 
 private struct HomeTimelinePostRowView: View {
 
-    @ObservedObject var viewModel: MastodonPostViewModel
+    @Environment(MastodonPostViewModel.self) private var viewModel
     @ObservedObject var contentConcealModel: ContentConcealViewModel
     let contentWidth: CGFloat
     
@@ -752,7 +752,8 @@ private struct HomeTimelinePostRowView: View {
                 })
                 
                 VStack(spacing: spacingBetweenGutterAndContent) {
-                    AuthorHeaderView(postViewModel: viewModel, timestamper: viewModel.timestamper)
+                    AuthorHeaderView(timestamper: viewModel.timestamper)
+                        .environment(viewModel)
                     
                     contentConcealLozenge
                         .frame(width: contentWidth)
@@ -1015,7 +1016,7 @@ struct AttributedStringDisplayInfo {
 }
 
 @MainActor
-class MastodonPostViewModel: ObservableObject {
+@Observable class MastodonPostViewModel {
     
     enum DisplayPrepStatus {
         case unprepared
@@ -1024,14 +1025,14 @@ class MastodonPostViewModel: ObservableObject {
     
     nonisolated let initialDisplayInfo: GenericMastodonPost.InitialDisplayInfo
     
-    @Published var fullPost: GenericMastodonPost? = nil
-    @Published var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
-    @Published var originalContentDisplayInfo: AttributedStringDisplayInfo?
-    @Published var translatedContentDisplayInfo: AttributedStringDisplayInfo?
+    var fullPost: GenericMastodonPost? = nil
+    var myRelationshipToAuthor: MastodonAccount.Relationship? = nil
+    var originalContentDisplayInfo: AttributedStringDisplayInfo?
+    var translatedContentDisplayInfo: AttributedStringDisplayInfo?
 
-    @Published var displayPrepStatus: DisplayPrepStatus = .unprepared
-    @Published var isShowingTranslation: Bool? = nil
-    @Published var isDoingAction: MastodonPostMenuAction? = nil
+    var displayPrepStatus: DisplayPrepStatus = .unprepared
+    var isShowingTranslation: Bool? = nil
+    var isDoingAction: MastodonPostMenuAction? = nil
     
     var actionHandler: MastodonPostMenuActionHandler? = nil
     let timestamper: TimestampUpdater = TimestampUpdater.timestamper(withInterval: 30)

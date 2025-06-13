@@ -5,7 +5,7 @@ import SwiftUI
 
 struct AuthorHeaderView: View {
     
-    @ObservedObject var postViewModel: MastodonPostViewModel
+    @Environment(MastodonPostViewModel.self) private var postViewModel
     @ObservedObject var timestamper: TimestampUpdater
     
     var body: some View {
