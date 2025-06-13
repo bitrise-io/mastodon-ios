@@ -190,12 +190,12 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
                 return TimelineItem.post(post)
             }
             let associatedPollsPlus = polls(older.value, addedTo: associatedPolls)
-            newCache = CacheableTimeline(older: oldBatch, newer: newBatch, polls: associatedPollsPlus)
+            newCache = CacheableTimeline(older: oldBatch, newer: newBatch)
         } else {
-            newCache = CacheableTimeline(older: [], newer: newBatch, polls: associatedPolls)
+            newCache = CacheableTimeline(older: [], newer: newBatch)
         }
 #else
-        newCache = CacheableTimeline(older: [], newer: newBatch, polls: associatedPolls)
+        newCache = CacheableTimeline(older: [], newer: newBatch)
 #endif
 
         createContentConcealViewModels(newCache)
@@ -208,9 +208,6 @@ final class TimelineFeedLoader: MastodonFeedLoader<TimelineItem, CacheableTimeli
         cached.filteredPosts
     }
     
-    func poll(_ id: Mastodon.Entity.Poll.ID) -> Mastodon.Entity.Poll? {
-        return cacheManager.currentResults()?.polls[id]
-    }
 }
 
 extension TimelineFeedLoader {
@@ -231,7 +228,6 @@ private func polls(_ statuses: [Mastodon.Entity.Status], addedTo existing: [Mast
 struct CacheableTimeline: CacheableFeed {
     
     let items: [TimelineItem]
-    let polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]
     
     @MainActor
     var filteredPosts: [TimelineItem] {
@@ -255,7 +251,7 @@ struct CacheableTimeline: CacheableFeed {
         return !items.isEmpty
     }
  
-    init(older: [TimelineItem], newer: [TimelineItem], polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]) {
+    init(older: [TimelineItem], newer: [TimelineItem]) {
         
         var combined: [TimelineItem]
         
@@ -295,10 +291,9 @@ struct CacheableTimeline: CacheableFeed {
         }
         
         items = combined
-        self.polls = polls
     }
     
-    init(inserting: [TimelineItem], into existingItems: [TimelineItem], asOlderThan: String, polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]) {
+    init(inserting: [TimelineItem], into existingItems: [TimelineItem], asOlderThan: String) {
         // Assume that there should have been a gap item at the requested insertion point.
         let matchingGapItemIndex = existingItems.firstIndex { item in
             switch item {
@@ -308,9 +303,7 @@ struct CacheableTimeline: CacheableFeed {
                 return olderThan == asOlderThan
             }
         }
-        
-        self.polls = polls
-        
+                
         guard let matchingGapItemIndex else { assertionFailure(); items = existingItems; return }
         
         // start with the exiting items newer than the gap
@@ -365,7 +358,7 @@ struct CacheableTimeline: CacheableFeed {
         items = Array(updatedItems)
     }
     
-    init(inserting: [TimelineItem], into existingItems: [TimelineItem], asNewerThan: String, polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]) {
+    init(inserting: [TimelineItem], into existingItems: [TimelineItem], asNewerThan: String) {
         // Assume that there should have been a gap item at the requested insertion point.
         let matchingGapItemIndex = existingItems.firstIndex { item in
             switch item {
@@ -375,7 +368,6 @@ struct CacheableTimeline: CacheableFeed {
                 return newerThan == asNewerThan
             }
         }
-        self.polls = polls
         
         guard let matchingGapItemIndex, let firstInsertingItem = inserting.first else { assertionFailure(); items = existingItems; return }
         
@@ -434,28 +426,11 @@ struct CacheableTimeline: CacheableFeed {
             }
         }
         
-        let updatedPolls = {
-            if let poll = updated.actionablePost?._legacyEntity.poll {
-                var existingPolls = polls
-                existingPolls[poll.id] = poll
-                return existingPolls
-            } else {
-                return polls
-            }
-        }()
-        
-        return CacheableTimeline(older: [], newer: newItems, polls: updatedPolls)
-    }
-    
-    func byUpdating(poll updatedPoll: Mastodon.Entity.Poll) -> CacheableTimeline {
-        var updatedPolls = polls
-        updatedPolls[updatedPoll.id] = updatedPoll
-        
-        return CacheableTimeline(older: items, newer: [], polls: updatedPolls)
+        return CacheableTimeline(older: [], newer: newItems)
     }
     
     @MainActor
-    func byDeleting(postId: Mastodon.Entity.Status.ID, pollID: Mastodon.Entity.Poll.ID?) -> CacheableTimeline {
+    func byDeleting(postId: Mastodon.Entity.Status.ID) -> CacheableTimeline {
         let newItems = items.filter { item in
             switch item {
             case .loadingIndicator, .missingPosts:
@@ -465,12 +440,7 @@ struct CacheableTimeline: CacheableFeed {
             }
         }
         
-        var updatedPolls = polls
-        if let pollID {
-            updatedPolls.removeValue(forKey: pollID)
-        }
-        
-        return CacheableTimeline(older: [], newer: newItems, polls: updatedPolls)
+        return CacheableTimeline(older: [], newer: newItems)
     }
 }
 
@@ -484,7 +454,7 @@ class TimelineCacheManager: MastodonFeedCacheManager {
         self.currentUser = currentUser
         Task {
             let timeline = BodegaPersistence.cachedTimeline(forUser: currentUser)
-            self.staleResults = CacheableTimeline(older: [], newer: timeline, polls: [Mastodon.Entity.Poll.ID : Mastodon.Entity.Poll]())
+            self.staleResults = CacheableTimeline(older: [], newer: timeline)
         }
     }
     
@@ -501,23 +471,17 @@ class TimelineCacheManager: MastodonFeedCacheManager {
     var mostRecentlyFetchedResults: CacheableTimeline?
     
     func updateByInserting(newlyFetched: CacheableTimeline, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
-        
-        var updatedPolls = currentResults()?.polls ?? [:]
-        for pollID in newlyFetched.polls.keys {
-            updatedPolls[pollID] = newlyFetched.polls[pollID]
-        }
-        
         switch insertionPoint {
         case .start:
-            mostRecentlyFetchedResults = CacheableTimeline(older: currentResults()?.items ?? [], newer: newlyFetched.items, polls: updatedPolls)
+            mostRecentlyFetchedResults = CacheableTimeline(older: currentResults()?.items ?? [], newer: newlyFetched.items)
         case .end:
-            mostRecentlyFetchedResults = CacheableTimeline(older: newlyFetched.items, newer: currentResults()?.items ?? [], polls: updatedPolls)
+            mostRecentlyFetchedResults = CacheableTimeline(older: newlyFetched.items, newer: currentResults()?.items ?? [])
         case .replace:
             mostRecentlyFetchedResults = newlyFetched
         case .asOlderThan(let id):
-            mostRecentlyFetchedResults = CacheableTimeline(inserting: newlyFetched.items, into: currentResults()?.items ?? [], asOlderThan: id, polls: updatedPolls)
+            mostRecentlyFetchedResults = CacheableTimeline(inserting: newlyFetched.items, into: currentResults()?.items ?? [], asOlderThan: id)
         case .asNewerThan(let id):
-            mostRecentlyFetchedResults = CacheableTimeline(inserting: newlyFetched.items, into: currentResults()?.items ?? [], asNewerThan: id, polls: updatedPolls)
+            mostRecentlyFetchedResults = CacheableTimeline(inserting: newlyFetched.items, into: currentResults()?.items ?? [], asNewerThan: id)
         }
     }
     
@@ -558,15 +522,9 @@ extension TimelineFeedLoader {
         }
     }
     
-    func didDeletePost(_ postID: Mastodon.Entity.Status.ID, pollID: Mastodon.Entity.Poll.ID?) {
+    func didDeletePost(_ postID: Mastodon.Entity.Status.ID) {
         updateCachedResults { cached in
-            return cached.byDeleting(postId: postID, pollID: pollID)
-        }
-    }
-    
-    func updatePoll(_ poll: Mastodon.Entity.Poll) {
-        updateCachedResults { cached in
-            return cached.byUpdating(poll: poll)
+            return cached.byDeleting(postId: postID)
         }
     }
 }

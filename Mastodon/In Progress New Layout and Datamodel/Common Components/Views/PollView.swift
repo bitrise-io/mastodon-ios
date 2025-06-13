@@ -300,11 +300,13 @@ class PollViewModel: ObservableObject {
     @Published var viewingResults: Bool
     
     private var entity: Mastodon.Entity.Poll
+    private let containingPostID: Mastodon.Entity.Status.ID
     private let optionTranslations: [String]?
     private let actionHandler: MastodonPostMenuActionHandler
     
-    init(pollEntity: Mastodon.Entity.Poll, emojis: [Mastodon.Entity.Emoji]?, optionTranslations: [String]?, actionHandler: MastodonPostMenuActionHandler) {
+    init(pollEntity: Mastodon.Entity.Poll, emojis: [Mastodon.Entity.Emoji]?, optionTranslations: [String]?, containingPostID: Mastodon.Entity.Status.ID, actionHandler: MastodonPostMenuActionHandler) {
         entity = pollEntity
+        self.containingPostID = containingPostID
         self.optionTranslations = optionTranslations
         self.actionHandler = actionHandler
         options = pollEntity.options.enumerated().map { (index, entityOption) in
@@ -321,7 +323,7 @@ class PollViewModel: ObservableObject {
             votingState = .submittingVote(selectionState)
             Task { @MainActor in
                 do {
-                    let updatedPoll = try await actionHandler.vote(poll: entity, choices: selectionState.selectedIndexes)
+                    let updatedPoll = try await actionHandler.vote(poll: entity, choices: selectionState.selectedIndexes, containingPostID: containingPostID)
                     entity = updatedPoll
                     votingState = VotingState.fromEntity(updatedPoll)
                     viewingResults = true
