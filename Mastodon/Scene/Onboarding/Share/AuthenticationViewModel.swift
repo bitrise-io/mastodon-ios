@@ -13,7 +13,7 @@ import MastodonSDK
 import MastodonCore
 import AuthenticationServices
 import MastodonLocalization
-import SwiftUICore
+import SwiftUI
 
 @MainActor
 final class AuthenticationViewModel {

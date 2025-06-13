@@ -6,7 +6,7 @@ import MastodonAsset
 import MastodonCore
 import MastodonLocalization
 import MastodonSDK
-import SwiftUICore
+import SwiftUI
 import UIKit
 
 struct MastodonNotificationInfo {

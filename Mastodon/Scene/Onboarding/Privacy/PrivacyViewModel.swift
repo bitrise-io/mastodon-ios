@@ -8,7 +8,7 @@
 import Foundation
 import MastodonSDK
 import MastodonLocalization
-import SwiftUICore
+import SwiftUI
 
 enum PolicySection {
     case termsOfService([PolicyRow])
