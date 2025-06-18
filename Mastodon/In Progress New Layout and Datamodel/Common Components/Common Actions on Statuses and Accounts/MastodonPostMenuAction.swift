@@ -120,7 +120,7 @@ enum MastodonPostMenuAction {
     var updatesMyActionsOnPost: Bool {
         switch self {
         case .reply:
-            true
+            false
             
         case .boost, .unboost, .favourite, .unfavourite, .bookmark, .unbookmark:
             true
