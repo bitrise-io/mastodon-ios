@@ -83,7 +83,8 @@ final class ComposeViewController: UIViewController {
             authenticationBox: viewModel.authenticationBox,
             composeContext: composeContext,
             destination: viewModel.destination,
-            initialContent: initialContent
+            initialContent: initialContent,
+            completion: viewModel.postPublishCompletion
         )
     }()
     private(set) lazy var composeContentViewController: ComposeContentViewController = {
@@ -205,7 +206,7 @@ extension ComposeViewController {
         let alertController = PortraitAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let discardAction = UIAlertAction(title: L10n.Common.Controls.Actions.discard, style: .destructive) { [weak self] _ in
             guard let self = self else { return }
-            self.dismiss(animated: true, completion: nil)
+            self.dismiss(animated: true, completion: { self.viewModel.postPublishCompletion?(false) })
         }
         alertController.addAction(discardAction)
         let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
@@ -237,7 +238,7 @@ extension ComposeViewController {
             showDismissConfirmAlertController()
             return
         }
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: { self.viewModel.postPublishCompletion?(false) })
     }
     
     @objc private func publishBarButtonItemPressed(_ sender: UIBarButtonItem) {
@@ -287,7 +288,7 @@ extension ComposeViewController {
                     case .success:
                         self?.publishProgressView.progress = 100
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            self?.dismiss(animated: true, completion: nil)
+                            self?.dismiss(animated: true, completion: { self?.viewModel.postPublishCompletion?(true) })
                         }
                     case .failure(let error):
                         UIView.animate(withDuration: 0.25) {

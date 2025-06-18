@@ -88,7 +88,8 @@ extension ShareViewController {
                 authenticationBox: authenticationBox,
                 composeContext: .composeStatus,
                 destination: .topLevel,
-                initialContent: ""
+                initialContent: "",
+                completion: nil
             )
             let composeContentViewController = ComposeContentViewController()
             composeContentViewController.viewModel = composeContentViewModel

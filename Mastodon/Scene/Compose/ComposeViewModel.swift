@@ -37,6 +37,7 @@ final class ComposeViewModel {
     let traitCollectionDidChangePublisher = CurrentValueSubject<Void, Never>(Void())      // use CurrentValueSubject to make initial event emit
     
     // output
+    let postPublishCompletion: ((Bool)->())?
     
     // UI & UX
     @Published var title: String
@@ -45,7 +46,8 @@ final class ComposeViewModel {
         authenticationBox: MastodonAuthenticationBox,
         composeContext: ComposeViewModel.Context,
         destination: ComposeContentViewModel.Destination,
-        initialContent: String = ""
+        initialContent: String = "",
+        completion: ((Bool)->())? = nil
     ) {
         self.authenticationBox = authenticationBox
         self.destination = destination
@@ -68,5 +70,7 @@ final class ComposeViewModel {
         }
         
         self.title = title
+        
+        self.postPublishCompletion = completion
     }
 }

@@ -1247,7 +1247,15 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     let composeViewModel = ComposeViewModel(
                         authenticationBox: authenticatedUser,
                         composeContext: .composeStatus,
-                        destination: .reply(parent: MastodonStatus(entity: statusEntityToReplyTo, showDespiteContentWarning: true))
+                        destination: .reply(parent: MastodonStatus(entity: statusEntityToReplyTo, showDespiteContentWarning: true)),
+                        completion: { status in
+                            // refetch this post to update the reply button
+                            Task { [weak self] in
+                                let status = try await APIService.shared.status(statusID: actionablePost.id, authenticationBox: authenticatedUser).value
+                                let updated = GenericMastodonPost.fromStatus(status)
+                                self?.feedLoader?.updatePost(post: updated)
+                            }
+                        }
                     )
                     presentScene(.compose(viewModel: composeViewModel), transition: .modal(animated: true, completion: nil))
                 case .boost:
@@ -1294,7 +1302,7 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     let editStatusViewModel = ComposeViewModel(
                         authenticationBox: authenticatedUser,
                         composeContext: .editStatus(status: MastodonStatus(entity: statusEntityToEdit, showDespiteContentWarning: true), statusSource: statusSourceToEdit),
-                        destination: .topLevel)
+                        destination: .topLevel, completion: nil)
                     presentScene(.editStatus(viewModel: editStatusViewModel), transition: .modal(animated: true))
                     
             // MARK: POST ACTIONS

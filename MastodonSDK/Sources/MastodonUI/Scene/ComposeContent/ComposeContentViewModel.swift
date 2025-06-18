@@ -36,6 +36,7 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
     let composeContext: ComposeContext
     let destination: Destination
     weak var delegate: ComposeContentViewModelDelegate?
+    let completion: ((Bool)->())?
     
     @Published var viewLayoutFrame = ViewLayoutFrame()
     
@@ -145,11 +146,13 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
         authenticationBox: MastodonAuthenticationBox,
         composeContext: ComposeContext,
         destination: Destination,
-        initialContent: String
+        initialContent: String,
+        completion: ((Bool)->())?
     ) {
         self.authenticationBox = authenticationBox
         self.destination = destination
         self.composeContext = composeContext
+        self.completion = completion
         self.visibility = {
             // default private when user locked
             var visibility: Mastodon.Entity.Status.Visibility = {
