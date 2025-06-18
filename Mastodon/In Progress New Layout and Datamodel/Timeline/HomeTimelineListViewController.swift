@@ -1048,12 +1048,8 @@ struct AttributedStringDisplayInfo {
         self.initialDisplayInfo = initialDisplay
     }
     
-    func byReplacingActionablePost(with actionablePost: GenericMastodonPost) -> MastodonPostViewModel {
-        if let updatedFullPost = try? fullPost?.byReplacingActionablePost(with: actionablePost) {
-            return MastodonPostViewModel(initialDisplayInfo, fullPost: updatedFullPost, isShowingTranslation: isShowingTranslation, isDoingAction: isDoingAction, myRelationshipToAuthor: myRelationshipToAuthor, actionHandler: actionHandler, translation: translation)
-        } else {
-            return self
-        }
+    func update(from actionablePost: GenericMastodonPost) throws {
+        self.fullPost = try fullPost?.byReplacingActionablePost(with: actionablePost)
     }
     
     func hasCalculatedForWidth(_ width: CGFloat) -> Bool {

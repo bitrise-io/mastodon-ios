@@ -5,6 +5,7 @@ import Foundation
 import MastodonCore
 import MastodonSDK
 
+@MainActor
 public protocol CacheableFeed {
     var hasResults: Bool { get }
 }
@@ -62,7 +63,7 @@ public enum MastodonFeedLoaderRequest: Equatable {
 }
 
 @MainActor
-public class MastodonFeedLoader<PublishedType: Identifiable, CachedType: CacheableFeed> {
+public class MastodonFeedLoader<PublishedType: Identifiable, CachedType: CacheableFeed> where PublishedType: Sendable {
     private var activeFilterBoxSubscription: AnyCancellable?
     private var loadRequestQueue = [MastodonFeedLoaderRequest]()
     let cacheManager: (any MastodonFeedCacheManager<CachedType>)
@@ -237,7 +238,15 @@ extension MastodonFeedLoader {
         await cacheManager.commitToCache()
     }
     
-    public func updateCachedResults(_ updater: (CachedType)->(CachedType)) {
+    public func updateCachedResults(_ updater: (CachedType)->()) {
+        guard let cached = cacheManager.currentResults() else { return }
+        updater(cached)
+        Task {
+            await commitToCache()
+        }
+    }
+    
+    public func transformCachedResults(_ updater: (CachedType)->(CachedType)) {
         guard let cached = cacheManager.currentResults() else { return }
         let updatedCache = updater(cached)
         updateAfterInserting(newlyFetchedResults: updatedCache, at: .replace)

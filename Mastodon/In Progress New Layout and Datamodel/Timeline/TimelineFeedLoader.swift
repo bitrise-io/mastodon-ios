@@ -413,20 +413,17 @@ struct CacheableTimeline: CacheableFeed {
     }
     
     @MainActor
-    func byUpdating(post updated: GenericMastodonPost) -> CacheableTimeline {
-        guard let actionableUpdatedId = updated.actionablePost?.id else { return self }
-        
-        let newItems = items.map { item in
+    func update(fromPost updated: GenericMastodonPost) {
+        for item in items {
             switch item {
             case .loadingIndicator, .missingPosts:
-                return item
+                break
             case .post(let existingViewModel):
-                let newViewModel = existingViewModel.byReplacingActionablePost(with: updated)
-                return .post(newViewModel)
+                do {
+                    try existingViewModel.update(from: updated)
+                } catch {}
             }
         }
-        
-        return CacheableTimeline(older: [], newer: newItems)
     }
     
     @MainActor
@@ -518,12 +515,12 @@ extension GenericMastodonPost.PostContent {
 extension TimelineFeedLoader {
     func updatePost(post: GenericMastodonPost) {
         updateCachedResults { cached in
-            return cached.byUpdating(post: post)
+            cached.update(fromPost: post)
         }
     }
     
     func didDeletePost(_ postID: Mastodon.Entity.Status.ID) {
-        updateCachedResults { cached in
+        transformCachedResults { cached in
             return cached.byDeleting(postId: postID)
         }
     }

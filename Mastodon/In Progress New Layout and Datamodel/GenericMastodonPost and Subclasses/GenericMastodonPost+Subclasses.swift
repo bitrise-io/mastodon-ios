@@ -26,7 +26,7 @@ extension GenericMastodonPost {
         } else if let boostPost = self as? MastodonBoostPost {
             guard boostPost.boostedPost.id == updatedPost.id, let updatedPost = updatedPost as? MastodonContentPost else {
                 throw PostActionFailure.postIdMismatch }
-            return MastodonBoostPost(id: boostPost.id, metaData: boostPost.metaData, boostedPost: updatedPost, _legacyEntity: updatedPost._legacyEntity)
+            return MastodonBoostPost(id: boostPost.id, metaData: boostPost.metaData, boostedPost: updatedPost, _legacyEntity: _legacyEntity)
         } else {
             assertionFailure("not implemented")
             return self
