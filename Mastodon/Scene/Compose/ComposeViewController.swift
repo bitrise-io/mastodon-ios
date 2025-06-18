@@ -24,6 +24,11 @@ final class ComposeViewController: UIViewController {
         progressView.alpha = 0
         return progressView
     }()
+    lazy var editPublishProgressView: UIProgressView = {
+        let progressView = UIProgressView(progressViewStyle: .bar)
+        progressView.alpha = 0
+        return progressView
+    }()
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: ComposeViewModel
@@ -37,18 +42,20 @@ final class ComposeViewController: UIViewController {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     func setUpPublishingIndicator() {
-        publishProgressView.translatesAutoresizingMaskIntoConstraints = false
-        publishProgressView.tintColor = .systemIndigo
-        publishProgressView.trackTintColor = .systemGray
-        publishButton.addSubview(publishProgressView)
-        let constraints = [
-            publishProgressView.leadingAnchor.constraint(equalTo: publishButton.leadingAnchor),
-            publishProgressView.trailingAnchor.constraint(equalTo: publishButton.trailingAnchor),
-            publishProgressView.topAnchor.constraint(equalTo: publishButton.topAnchor),
-            publishProgressView.bottomAnchor.constraint(equalTo: publishButton.bottomAnchor),
-            publishProgressView.heightAnchor.constraint(greaterThanOrEqualToConstant: 35)
-        ]
-        NSLayoutConstraint.activate(constraints)
+        for (button, progressView) in [(publishButton, publishProgressView), (saveButton, editPublishProgressView)] {
+            progressView.translatesAutoresizingMaskIntoConstraints = false
+            progressView.tintColor = .systemIndigo
+            progressView.trackTintColor = .systemGray
+            button.addSubview(progressView)
+            let constraints = [
+                progressView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                progressView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+                progressView.topAnchor.constraint(equalTo: button.topAnchor),
+                progressView.bottomAnchor.constraint(equalTo: button.bottomAnchor),
+                progressView.heightAnchor.constraint(greaterThanOrEqualToConstant: 35)
+            ]
+            NSLayoutConstraint.activate(constraints)
+        }
         
         PublisherService.shared.$currentPublishProgress
             .receive(on: DispatchQueue.main)
@@ -58,8 +65,10 @@ final class ComposeViewController: UIViewController {
                 if progress > 0 {
                     UIView.animate(withDuration: 0.25) {
                         self.publishProgressView.alpha = 1
+                        self.editPublishProgressView.alpha = 1
                     }
                     self.publishProgressView.setProgress(progress, animated: true)
+                    self.editPublishProgressView.setProgress(progress, animated: true)
                 }
             }
             .store(in: &disposeBag)
@@ -351,6 +360,32 @@ extension ComposeViewController {
     private func enqueuePublishStatusEdit() {
         do {
             guard let editStatusPublisher = try composeContentViewModel.statusEditPublisher() else { return }
+            cancelBarButtonItem.isEnabled = false
+            saveButton.isEnabled = false
+            editStatusPublisher.state
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] result in
+                    self?.cancelBarButtonItem.isEnabled = true
+                    
+                    switch result {
+                    case .success:
+                        self?.editPublishProgressView.progress = 100
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            self?.dismiss(animated: true, completion: { self?.viewModel.postPublishCompletion?(true) })
+                        }
+                    case .failure(let error):
+                        UIView.animate(withDuration: 0.25) {
+                            self?.editPublishProgressView.alpha = 0
+                        }
+                        self?.saveButton.isEnabled = true
+                        let alertController = UIAlertController.standardAlert(of: error)
+                        self?.present(alertController, animated: true)
+                        // HomeTimelineViewController is also listening and will post the alert if this view has been dismissed
+                    case .pending:
+                        break
+                    }
+                }
+                .store(in: &disposeBag)
             PublisherService.shared.enqueue(
                 statusPublisher: editStatusPublisher,
                 authenticationBox: viewModel.authenticationBox
@@ -360,8 +395,6 @@ extension ComposeViewController {
             present(alertController, animated: true)
             return
         }
-
-        dismiss(animated: true, completion: nil)
     }
 }
 

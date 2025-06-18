@@ -1248,12 +1248,10 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                         authenticationBox: authenticatedUser,
                         composeContext: .composeStatus,
                         destination: .reply(parent: MastodonStatus(entity: statusEntityToReplyTo, showDespiteContentWarning: true)),
-                        completion: { status in
+                        completion: { success in
                             // refetch this post to update the reply button
-                            Task { [weak self] in
-                                let status = try await APIService.shared.status(statusID: actionablePost.id, authenticationBox: authenticatedUser).value
-                                let updated = GenericMastodonPost.fromStatus(status)
-                                self?.feedLoader?.updatePost(post: updated)
+                            if success {
+                                self.refetchAndDisplay(actionablePostID: actionablePost.id)
                             }
                         }
                     )
@@ -1302,7 +1300,12 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     let editStatusViewModel = ComposeViewModel(
                         authenticationBox: authenticatedUser,
                         composeContext: .editStatus(status: MastodonStatus(entity: statusEntityToEdit, showDespiteContentWarning: true), statusSource: statusSourceToEdit),
-                        destination: .topLevel, completion: nil)
+                        destination: .topLevel, completion: { success in
+                            // refetch the post to display the edits
+                            if success {
+                                self.refetchAndDisplay(actionablePostID: statusEntityToEdit.id)
+                            }
+                        })
                     presentScene(.editStatus(viewModel: editStatusViewModel), transition: .modal(animated: true))
                     
             // MARK: POST ACTIONS
@@ -1404,6 +1407,15 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     
     func translation(forContentPostId postId: MastodonSDK.Mastodon.Entity.Status.ID) -> MastodonSDK.Mastodon.Entity.Translation? {
         return translations[postId]
+    }
+    
+    private func refetchAndDisplay(actionablePostID: Mastodon.Entity.Status.ID) {
+        Task { [weak self] in
+            guard let authBox = self?.authenticatedUser else { return }
+            let status = try await APIService.shared.status(statusID: actionablePostID, authenticationBox: authBox).value
+            let updated = GenericMastodonPost.fromStatus(status)
+            self?.feedLoader?.updatePost(post: updated)
+        }
     }
     
     // TRANSLATION
