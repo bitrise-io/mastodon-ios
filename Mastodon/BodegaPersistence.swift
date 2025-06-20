@@ -122,22 +122,6 @@ extension BodegaPersistence {
     
     private static func doCacheTimeline(_ timeline: [TimelineItem], forUser user: UserIdentifier) async throws {
         guard let cachesDirectory = FileManager.default.cachesDirectory else { return }
-
-        // write the order to the file
-        let writableTimeline: [CacheableTimelineItem] = timeline.compactMap { item in
-            switch item {
-            case .post(let viewModel):
-                return .cachedPost(viewModel.initialDisplayInfo)
-            case .missingPosts(let newerThan, let olderThan):
-                return .missingPosts(newerThan: newerThan, olderThan: olderThan)
-            case .loadingIndicator:
-                return nil
-            }
-        }
-        
-        var filePath = cachesDirectory.appendingPathComponent(timelineOrderFilename(forUser: user))
-        let data = try JSONEncoder().encode(writableTimeline)
-        try data.write(to: filePath.standardizedFileURL)
         
         // write the posts to the database
         var posts = [(CacheKey, GenericMastodonPost)]()
@@ -154,6 +138,22 @@ extension BodegaPersistence {
         
         let itemStore = homeTimelineItemStore(forUser: user)
         try await itemStore.store(posts)
+        
+        // write the order to the file
+        let writableTimeline: [CacheableTimelineItem] = timeline.compactMap { item in
+            switch item {
+            case .post(let viewModel):
+                return .cachedPost(viewModel.initialDisplayInfo)
+            case .missingPosts(let newerThan, let olderThan):
+                return .missingPosts(newerThan: newerThan, olderThan: olderThan)
+            case .loadingIndicator:
+                return nil
+            }
+        }
+        
+        let filePath = cachesDirectory.appendingPathComponent(timelineOrderFilename(forUser: user))
+        let data = try JSONEncoder().encode(writableTimeline)
+        try data.write(to: filePath.standardizedFileURL)
     }
 }
 
