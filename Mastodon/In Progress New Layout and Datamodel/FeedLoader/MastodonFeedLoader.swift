@@ -25,6 +25,7 @@ protocol MastodonFeedCacheManager<CachedType> {
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker)
     func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool)
     func commitToCache() async
+    func clearCache() async
 }
 
 public struct MastodonFeedLoaderResult<ResultType> {
@@ -234,6 +235,10 @@ extension MastodonFeedLoader {
 }
 
 extension MastodonFeedLoader {
+    public func clearCache() async {
+        await cacheManager.clearCache()
+    }
+    
     public func commitToCache() async {
         await cacheManager.commitToCache()
     }

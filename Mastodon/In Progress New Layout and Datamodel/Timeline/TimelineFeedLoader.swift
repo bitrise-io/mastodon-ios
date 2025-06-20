@@ -497,6 +497,10 @@ class TimelineCacheManager: MastodonFeedCacheManager {
             BodegaPersistence.cacheTimeline(items, forUser: currentUser)
         }
     }
+    
+    func clearCache() async {
+        try? await BodegaPersistence.clearCachedTimeline(forUser: currentUser)
+    }
 }
 
 extension GenericMastodonPost.PostContent {

@@ -28,7 +28,7 @@ public actor BodegaPersistence {
         if let _currentUserTimelineStore, _currentUserTimelineStore.0 == user.globallyUniqueUserIdentifier {
             return _currentUserTimelineStore.1
         } else {
-            let storageEngine = SQLiteStorageEngine(directory: .documents(appendingPath: timelineStoreFilename(forUser: user)))
+            let storageEngine = SQLiteStorageEngine(directory: .forUser(user), databaseFilename: timelineStoreFilename(forUser: user))
             _currentUserTimelineStore = (user.globallyUniqueUserIdentifier, ObjectStorage<GenericMastodonPost>(storage: storageEngine!))
         }
         return _currentUserTimelineStore!.1
@@ -37,7 +37,7 @@ public actor BodegaPersistence {
     static func cachedTimeline(forUser user: UserIdentifier) -> [TimelineItem] {
         guard let cachesDirectory = FileManager.default.cachesDirectory else { return [] }
 
-        var filePath = cachesDirectory.appendingPathComponent(timelineOrderFilename(forUser: user))
+        let filePath = cachesDirectory.appendingPathComponent(timelineOrderFilename(forUser: user))
 
         guard let data = try? Data(contentsOf: filePath) else { return [] }
 
@@ -62,6 +62,13 @@ public actor BodegaPersistence {
         let cacheKey = CacheKey(userID.globallyUniqueUserIdentifier)
         try await adminNotificationPreferenceStore.removeObject(forKey: cacheKey)
         try await lastReadMarkerStore.removeObject(forKey: cacheKey)
+        try await clearCachedTimeline(forUser: userID)
+        if let _currentUserTimelineStore, _currentUserTimelineStore.0 == userID.globallyUniqueUserIdentifier {
+            self._currentUserTimelineStore = nil
+            Task {
+                try FileManager.default.removeItem(at: FileManager.Directory.forUser(userID).url)
+            }
+        }
     }
     
     public struct Notifications {
@@ -105,6 +112,18 @@ extension BodegaPersistence {
         updatedQueue.append((user, timeline))
         timelineCacheRequests = updatedQueue
         doNextTimelineCacheIfReady()
+    }
+    
+    static func clearCachedTimeline(forUser user: UserIdentifier) async throws {
+        guard let cachesDirectory = FileManager.default.cachesDirectory else { return }
+        
+        // remove the list
+        let filePath = cachesDirectory.appendingPathComponent(timelineOrderFilename(forUser: user))
+        try FileManager.default.removeItem(at: filePath)
+        
+        // clear the posts
+        let itemStore = homeTimelineItemStore(forUser: user)
+        try await itemStore.removeAllObjects()
     }
     
     private static func doNextTimelineCacheIfReady() {
@@ -199,5 +218,11 @@ enum CacheableTimelineItem: Codable {
             let postInfo = try container.decode(GenericMastodonPost.InitialDisplayInfo.self, forKey: .initialDisplayInfo)
             self = .cachedPost(postInfo)
         }
+    }
+}
+
+fileprivate extension FileManager.Directory {
+    static func forUser(_ user: UserIdentifier) -> Self {
+        return .documents(appendingPath: user.globallyUniqueUserIdentifier)
     }
 }

@@ -400,7 +400,9 @@ private class HomeTimelineListViewModel: ObservableObject {
     func refreshFeedFromTop() async {
         guard let feedLoader else { assertionFailure(); return }
         if feedLoader.permissionToLoadImmediately {
-            await feedLoader.loadImmediately(.newer)
+            await feedLoader.loadImmediately(.reload)
+            await feedLoader.clearCache() // reset the cache when user refreshes
+            commitToCache()
         }
     }
     
@@ -606,9 +608,6 @@ struct HomeTimelineListView: View {
         }
         .onAppear() {
             viewModel.clearPendingActions()
-        }
-        .onDisappear() {
-            viewModel.commitToCache()
         }
         .alert(viewModel.activeAlert.title, isPresented: $viewModel.isPresentingAlert, presenting: viewModel.activeAlert) { alert in
             alertContents(alert)

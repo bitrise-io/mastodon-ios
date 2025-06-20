@@ -153,6 +153,10 @@ class UngroupedNotificationCacheManager: MastodonFeedCacheManager {
             }
         }
     }
+    
+    func clearCache() async {
+        fatalError("not implemented")
+    }
 }
 
 enum Fetchable<T> {
@@ -404,6 +408,10 @@ class GroupedNotificationCacheManager: MastodonFeedCacheManager {
                 break
             }
         }
+    }
+    
+    func clearCache() async {
+        fatalError("not implemented")
     }
     
     var shouldSaveCacheToDisk: Bool {
