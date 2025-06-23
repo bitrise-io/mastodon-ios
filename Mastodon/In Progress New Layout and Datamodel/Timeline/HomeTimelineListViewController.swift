@@ -342,7 +342,6 @@ private class HomeTimelineListViewModel: ObservableObject {
     
     // Translations
     private var translations = [ Mastodon.Entity.Status.ID : Mastodon.Entity.Translation]()
-    @Published var translationsShowing = Set<Mastodon.Entity.Status.ID>()
     
     func clearPendingActions() {
         if isPerformingPostAction != nil {
@@ -512,6 +511,10 @@ extension HomeTimelineListViewModel {
                         needsRelationshipFetch.append(fullPost)
                     default:
                         break
+                    }
+                    
+                    if let actionablePost = fullPost.actionablePost, postModel.isShowingTranslation == nil {
+                        postModel.isShowingTranslation = canTranslate(post: actionablePost) ? false : nil
                     }
                 }
                 
@@ -1272,9 +1275,28 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
                     
             // MARK: TRANSLATE
                 case .translatePost:
-                    try await showTranslation(forPost: actionablePost)
+                    try await getTranslation(forPost: actionablePost)
+                    feedLoader?.updateCachedResults({ timeline in
+                        for item in timeline.items {
+                            switch item {
+                            case .loadingIndicator, .missingPosts:
+                                break
+                            case .post(let viewModel):
+                                viewModel.isShowingTranslation = true
+                            }
+                        }
+                    })
                 case .showOriginalLanguage:
-                    translationsShowing.remove(actionablePost.id)
+                    feedLoader?.updateCachedResults({ timeline in
+                        for item in timeline.items {
+                            switch item {
+                            case .loadingIndicator, .missingPosts:
+                                break
+                            case .post(let viewModel):
+                                viewModel.isShowingTranslation = false
+                            }
+                        }
+                    })
                     
             // MARK: EDIT
                 case .editPost:
@@ -1407,25 +1429,20 @@ extension HomeTimelineListViewModel: MastodonPostMenuActionHandler {
     }
     
     // TRANSLATION
-    private func showTranslation(forPost post: MastodonContentPost) async throws {
+    private func getTranslation(forPost post: MastodonContentPost) async throws {
+        guard translations[post.id] == nil else { return }
         
-        if translations[post.id] != nil {
-            translationsShowing.insert(post.id)
-            return
-        } else {
-            guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
-            
-            let translation = try await APIService.shared
-                .translateStatus(
-                    statusID: post.id,
-                    authenticationBox: authenticatedUser
-                ).value
-            
-            guard let translationContent = translation.content, translationContent.isNotEmpty else { throw PostActionFailure.translationEmptyOrInvalid }
-            
-            translations[post.id] = translation
-            translationsShowing.insert(post.id)
-        }
+        guard let authenticatedUser else { throw APIService.APIError.explicit(.authenticationMissing) }
+        
+        let translation = try await APIService.shared
+            .translateStatus(
+                statusID: post.id,
+                authenticationBox: authenticatedUser
+            ).value
+        
+        guard let translationContent = translation.content, translationContent.isNotEmpty else { throw PostActionFailure.translationEmptyOrInvalid }
+        
+        translations[post.id] = translation
     }
     
     // BOOST with optional confirmation dialog
