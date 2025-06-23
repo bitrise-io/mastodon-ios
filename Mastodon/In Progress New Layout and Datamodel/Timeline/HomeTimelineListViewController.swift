@@ -503,38 +503,43 @@ extension HomeTimelineListViewModel {
                 if let cachedPost = cachedPosts[postModel.initialDisplayInfo.id] {
                     postModel.fullPost = cachedPost
                 }
-
-                if let fullPost = postModel.fullPost, postModel.myRelationshipToAuthor == nil {
-                    needsRelationshipFetch.append(fullPost)
+                
+                if let fullPost = postModel.fullPost {
+                    switch postModel.myRelationshipToAuthor {
+                    case .none:
+                        fallthrough
+                    case .isNotMe(nil):
+                        needsRelationshipFetch.append(fullPost)
+                    default:
+                        break
+                    }
                 }
                 
                 if !postModel.hasCalculatedForWidth(contentWidth) {
                     needsHtmlProcessing.append(postModel)
                 }
+            }
 
-                let needsRelationshipFetch = needsRelationshipFetch
-                async let relationshipFetchTask = {
-                    try await feedLoader.fetchRelationships(needsRelationshipFetch)
+            let relationshipFetches = needsRelationshipFetch
+            async let fetchedRelationships = try await feedLoader.fetchRelationships(relationshipFetches)
+            async let htmlProcessingTask = Task {
+            }
+            
+            let _ = await(htmlProcessingTask)
+            for postModel in batch {
+                postModel.myRelationshipToAuthor = try await fetchedRelationships.first(where: {
+                    $0.info?.id == postModel.initialDisplayInfo.actionableAuthorId
+                }) ?? feedLoader.myRelationship(to: postModel.initialDisplayInfo.actionableAuthorId)
+                if postModel.actionHandler == nil {
+                    postModel.actionHandler = self
                 }
-                async let htmlProcessingTask = {
-                }
-                
-                let (_,_) = await(relationshipFetchTask, htmlProcessingTask)
-                for postModel in batch {
-                    if postModel.myRelationshipToAuthor == nil {
-                        postModel.myRelationshipToAuthor = feedLoader.myRelationship(to: postModel.initialDisplayInfo.actionableAuthorId)
-                    }
-                    if postModel.actionHandler == nil {
-                        postModel.actionHandler = self
-                    }
-                    postModel.displayPrepStatus = .donePreparing
-                }
-                
-                currentlyPreparingForDisplay = nil
-                if let displayPrepRequested = self.displayPrepRequested {
-                    self.displayPrepRequested = nil
-                    doPrepareForDisplay(displayPrepRequested, contentWidth: contentWidth)
-                }
+                postModel.displayPrepStatus = .donePreparing
+            }
+            
+            currentlyPreparingForDisplay = nil
+            if let displayPrepRequested = self.displayPrepRequested {
+                self.displayPrepRequested = nil
+                doPrepareForDisplay(displayPrepRequested, contentWidth: contentWidth)
             }
         }
     }
@@ -796,92 +801,13 @@ private struct HomeTimelinePostRowView: View {
                     .font(.footnote)
 #endif
                     
-                    if let actionablePost = viewModel.fullPost?.actionablePost, let actionHandler = viewModel.actionHandler, let actionBarViewModel = actionBarViewModel(forActionablePost: actionablePost, actionHandler: actionHandler) {
-                        ActionBar(viewModel: actionBarViewModel)
+                    if let actionablePost = viewModel.fullPost?.actionablePost, let actionHandler = viewModel.actionHandler, let relationshipToAuthor = viewModel.myRelationshipToAuthor {
+                        ActionBar()
+                            .environment(viewModel)
                             .frame(width: contentWidth, alignment: .leading)
                     }
                 }
             }
-        }
-    }
-    
-    func actionBarViewModel(forActionablePost actionablePost: MastodonContentPost?, actionHandler: MastodonPostMenuActionHandler?) -> ActionBar.ViewModel? {
-        guard let actionablePost, let actionHandler, let relationship = viewModel.myRelationshipToAuthor else { return nil }
-        return .init(post: actionablePost,
-                     actionHandler: actionHandler,
-                     replies: actionButtonViewModel(forPost: actionablePost, action: .reply),
-                     boosts: actionButtonViewModel(forPost: actionablePost, action: .boost),
-                     favourites: actionButtonViewModel(forPost: actionablePost, action: .favourite),
-                     bookmark: actionButtonViewModel(forPost: actionablePost, action: .bookmark),
-                     isShowingTranslation: viewModel.isShowingTranslation,
-                     isDoingAction: viewModel.isDoingAction,
-                     myRelationshipToAuthor: relationship)
-    }
-    
-    func overrideState(for postAction: PostAction, of actionablePost: MastodonContentPost) -> AsyncBool? {
-        switch (viewModel.isDoingAction, postAction) {
-        case (nil, _):
-             return nil
-        case (.boost, .boost), (.favourite, .favourite), (.bookmark, .bookmark):
-            return .settingToTrue
-        case (.unboost, .boost), (.unfavourite, .favourite), (.unbookmark, .bookmark):
-            return .settingToFalse
-        default:
-            return nil
-        }
-    }
-    
-    func actionButtonViewModel(forPost actionablePost: MastodonContentPost, action: PostAction) -> StatefulCountedActionViewModel {
-        let metrics = actionablePost.content.metrics
-        let myActions = actionablePost.content.myActions
-        let overrideState = overrideState(for: .reply, of: actionablePost)
-        switch action {
-        case .reply:
-            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
-            return StatefulCountedActionViewModel(type: .reply, displayDetails: .init(count: metrics.replyCount, isSelected: state), doAction: {
-                switch state {
-                case .isFalse:
-                    viewModel.actionHandler?.doAction(.reply, forPost: actionablePost)
-                default:
-                    break
-                }
-            })
-        case .boost:
-            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
-            return StatefulCountedActionViewModel(type: .boost, displayDetails: .init(count: metrics.boostCount, isSelected: state), doAction: {
-                switch state {
-                case .isFalse:
-                    viewModel.actionHandler?.doAction(.boost, forPost: actionablePost)
-                case .isTrue:
-                    viewModel.actionHandler?.doAction(.unboost, forPost: actionablePost)
-                default:
-                    break
-                }
-            })
-        case .favourite:
-            let state = overrideState ?? AsyncBool.fromBool(myActions.favorited)
-            return StatefulCountedActionViewModel(type: .favourite, displayDetails: .init(count: metrics.favoriteCount, isSelected: state), doAction: {
-                switch state {
-                case .isFalse:
-                    viewModel.actionHandler?.doAction(.favourite, forPost: actionablePost)
-                case .isTrue:
-                    viewModel.actionHandler?.doAction(.unfavourite, forPost: actionablePost)
-                default:
-                    break
-                }
-            })
-        case .bookmark:
-            let state = overrideState ?? AsyncBool.fromBool(myActions.bookmarked)
-            return StatefulCountedActionViewModel(type: .bookmark, displayDetails: .init(count: nil, isSelected: state), doAction: {
-                switch state {
-                case .isFalse:
-                    viewModel.actionHandler?.doAction(.bookmark, forPost: actionablePost)
-                case .isTrue:
-                    viewModel.actionHandler?.doAction(.unbookmark, forPost: actionablePost)
-                default:
-                    break
-                }
-            })
         }
     }
     
@@ -942,50 +868,46 @@ private struct HashtagRowView: View {
 
 private struct ActionBar: View {
     
-    struct ViewModel {
-        let post: MastodonContentPost
-        let actionHandler: MastodonPostMenuActionHandler
-        let replies: StatefulCountedActionViewModel
-        let boosts: StatefulCountedActionViewModel
-        let favourites: StatefulCountedActionViewModel
-        let bookmark: StatefulCountedActionViewModel
-        let isShowingTranslation: Bool?
-        let isDoingAction: MastodonPostMenuAction?
-        let myRelationshipToAuthor: MastodonAccount.Relationship
-    }
-    
-    let viewModel: ActionBar.ViewModel
+    @Environment(MastodonPostViewModel.self) private var viewModel
 
     var body: some View {
         HStack() {
-            StatefulCountedActionButton(viewModel: viewModel.replies)
-            Spacer()
-            StatefulCountedActionButton(viewModel: viewModel.boosts)
-            Spacer()
-            StatefulCountedActionButton(viewModel: viewModel.favourites)
-            Spacer()
-            StatefulCountedActionButton(viewModel: viewModel.bookmark)
-            Spacer()
-            ActionBarMenuButton(viewModel: viewModel)
-            Spacer()
+            if let actionablePost = viewModel.fullPost?.actionablePost {
+                actionButton(forPost: actionablePost, action: .reply)
+                Spacer()
+                actionButton(forPost: actionablePost, action: .boost)
+                Spacer()
+                actionButton(forPost: actionablePost, action: .favourite)
+                Spacer()
+                actionButton(forPost: actionablePost, action: .bookmark)
+                Spacer()
+                ActionBarMenuButton()
+                    .environment(viewModel)
+                Spacer()
+            }
         }
     }
     
     struct ActionBarMenuButton: View {
-        let viewModel: ActionBar.ViewModel
+        @Environment(MastodonPostViewModel.self) private var viewModel
         
         var body: some View {
             Menu {
-                ForEach(submenus(), id: \.self.id) { submenu in
-                    ForEach(submenu.items, id: \.self) { menuAction in
-                        Button(role: menuAction.isDestructive ? .destructive : nil) {
-                            viewModel.actionHandler.doAction(menuAction, forPost: viewModel.post)
+                if let relationship = viewModel.myRelationshipToAuthor {
+                    ForEach(submenus(forRelationshipToAuthor: relationship, isShowingTranslation: viewModel.isShowingTranslation), id: \.self.id) { submenu in
+                        ForEach(submenu.items, id: \.self) { menuAction in
+                            if let actionablePost = viewModel.fullPost?.actionablePost {
+                                Button(role: menuAction.isDestructive ? .destructive : nil) {
+                                    
+                                    viewModel.actionHandler?.doAction(menuAction, forPost: actionablePost)
+                                }
+                                label: {
+                                    Label(menuAction.labelText(username: actionablePost.metaData.author.displayInfo.displayName, postLanguage: actionablePost.content.language), systemImage: menuAction.iconSystemName)
+                                }
+                            }
                         }
-                        label: {
-                            Label(menuAction.labelText(username: viewModel.post.actionablePost?.metaData.author.displayInfo.displayName, postLanguage: viewModel.post.actionablePost?.content.language), systemImage: menuAction.iconSystemName)
-                        }
+                        Divider()
                     }
-                    Divider()
                 }
             } label: {
                 Label("", systemImage: "ellipsis")
@@ -994,10 +916,77 @@ private struct ActionBar: View {
             }
         }
         
-        func submenus() -> [MastodonPostMenuAction.Submenu] {
-            return MastodonPostMenuAction.menuItems(forPostBy: viewModel.myRelationshipToAuthor, isShowingTranslation: viewModel.isShowingTranslation)
+        func submenus(forRelationshipToAuthor relationship: MastodonAccount.Relationship, isShowingTranslation: Bool?) -> [MastodonPostMenuAction.Submenu] {
+            return MastodonPostMenuAction.menuItems(forPostBy: relationship, isShowingTranslation: isShowingTranslation)
         }
     }
+    
+    private func overrideState(for postAction: PostAction, of actionablePost: MastodonContentPost) -> AsyncBool? {
+        switch (viewModel.isDoingAction, postAction) {
+        case (nil, _):
+            return nil
+        case (.boost, .boost), (.favourite, .favourite), (.bookmark, .bookmark):
+            return .settingToTrue
+        case (.unboost, .boost), (.unfavourite, .favourite), (.unbookmark, .bookmark):
+            return .settingToFalse
+        default:
+            return nil
+        }
+    }
+    
+    private func actionButton(forPost actionablePost: MastodonContentPost, action: PostAction) -> StatefulCountedActionButton {
+        let metrics = actionablePost.content.metrics
+        let myActions = actionablePost.content.myActions
+        let overrideState = overrideState(for: .reply, of: actionablePost)
+        switch action {
+        case .reply:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
+            return StatefulCountedActionButton(type: .reply, actionState: .init(count: metrics.replyCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler?.doAction(.reply, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .boost:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.boosted)
+            return StatefulCountedActionButton(type: .boost, actionState: .init(count: metrics.boostCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler?.doAction(.boost, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler?.doAction(.unboost, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .favourite:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.favorited)
+            return StatefulCountedActionButton(type: .favourite, actionState: .init(count: metrics.favoriteCount, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler?.doAction(.favourite, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler?.doAction(.unfavourite, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        case .bookmark:
+            let state = overrideState ?? AsyncBool.fromBool(myActions.bookmarked)
+            return StatefulCountedActionButton(type: .bookmark, actionState: .init(count: nil, isSelected: state), doAction: {
+                switch state {
+                case .isFalse:
+                    viewModel.actionHandler?.doAction(.bookmark, forPost: actionablePost)
+                case .isTrue:
+                    viewModel.actionHandler?.doAction(.unbookmark, forPost: actionablePost)
+                default:
+                    break
+                }
+            })
+        }
+     }
 }
 
 private enum PostViewComponent {

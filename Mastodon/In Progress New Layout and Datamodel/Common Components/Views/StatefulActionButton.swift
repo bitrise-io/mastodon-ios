@@ -20,46 +20,23 @@ enum AsyncBool {
     }
 }
 
-struct StatefulCountedActionViewModel {
-    struct UpdatableDisplayDetails {
+struct StatefulCountedActionButton: View {
+    struct ActionState {
         let count: Int?
         let isSelected: AsyncBool
     }
-    
     let type: PostAction
-    var displayDetails: UpdatableDisplayDetails
-    var doAction: (()->())?
-    var iconName: String {
-        return type.systemIconName(filled: displayDetails.isSelected == .isTrue)
-    }
-    var countLabel: String? {
-        guard let count = displayDetails.count, count > 0 else { return nil }
-        return count.formatted(.number.notation(.compactName))
-    }
-    var color: Color {
-        if displayDetails.isSelected == .isTrue {
-            switch type {
-            case .reply: return .secondary
-            case .boost: return .green
-            case .favourite: return .yellow
-            case .bookmark: return .red
-            }
-        } else {
-            return .secondary
-        }
-    }
-}
-
-struct StatefulCountedActionButton: View {
-    let iconFont: Font = .body
-    let viewModel: StatefulCountedActionViewModel
+    let actionState: ActionState
+    let doAction: (()->())?
+    
+    private let iconFont: Font = .body
     
     var body: some View {
-        Button(action: { viewModel.doAction?() }) {
+        Button(action: { doAction?() }) {
             HStack(spacing: 4) {
-                switch viewModel.displayDetails.isSelected {
+                switch actionState.isSelected {
                 case .isFalse, .isTrue:
-                    Image(systemName: viewModel.iconName)
+                    Image(systemName: iconName)
                         .font(iconFont)
                 case .fetching, .settingToFalse, .settingToTrue:
                     ProgressView()
@@ -73,15 +50,36 @@ struct StatefulCountedActionButton: View {
                     Text("0000")         // to keep the required space
                         .fontWeight(.semibold)
                         .hidden()
-                    Text(viewModel.countLabel ?? "")
-                        .contentTransition(.numericText(value: Double(viewModel.displayDetails.count ?? 0)))
+                    Text(countLabel ?? "")
+                        .contentTransition(.numericText(value: Double(actionState.count ?? 0)))
                 }
                 .font(.footnote)
             }
-            .fontWeight(viewModel.displayDetails.isSelected == .isTrue ? .semibold : .regular)
-            .foregroundStyle(viewModel.color)
+            .fontWeight(actionState.isSelected == .isTrue ? .semibold : .regular)
+            .foregroundStyle(color)
         }
         .buttonStyle(.borderless) // Without this, all the buttons in the row activate when one is tapped.  What a remarkably unexpected result with no documentation.
     }
+    
+    private var iconName: String {
+        return type.systemIconName(filled: actionState.isSelected == .isTrue)
+    }
+    private var countLabel: String? {
+        guard let count = actionState.count, count > 0 else { return nil }
+        return count.formatted(.number.notation(.compactName))
+    }
+    private var color: Color {
+        if actionState.isSelected == .isTrue {
+            switch type {
+            case .reply: return .secondary
+            case .boost: return .green
+            case .favourite: return .yellow
+            case .bookmark: return .red
+            }
+        } else {
+            return .secondary
+        }
+    }
+
 }
 
