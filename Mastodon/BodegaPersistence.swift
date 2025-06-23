@@ -14,7 +14,7 @@ public actor BodegaPersistence {
     private static func timelineOrderFilename(forUser user: UserIdentifier) -> String {
         return "Timeline-order-\(user.globallyUniqueUserIdentifier)"
     }
-    private static var _currentUserTimelineStore: (String, ObjectStorage<GenericMastodonPost>)?
+    private static var _currentUserTimelineStore: (String, ObjectStorage<Mastodon.Entity.Status>)?
     
     private static let adminNotificationPreferenceStore = ObjectStorage<AdminNotificationFilterSettings>(storage:  SQLiteStorageEngine(directory: .documents(appendingPath: "AdminNotificationPreferences"))!)
     private static let lastReadMarkerStore = ObjectStorage<LastReadMarkers>(storage: SQLiteStorageEngine(directory: .documents(appendingPath: "LastReadMarkers"))!)
@@ -23,13 +23,13 @@ public actor BodegaPersistence {
     private static var currentlyCaching: (UserIdentifier, [TimelineItem])?
 
     
-    private static func homeTimelineItemStore(forUser user: UserIdentifier) -> ObjectStorage<GenericMastodonPost>
+    private static func homeTimelineItemStore(forUser user: UserIdentifier) -> ObjectStorage<Mastodon.Entity.Status>
     {
         if let _currentUserTimelineStore, _currentUserTimelineStore.0 == user.globallyUniqueUserIdentifier {
             return _currentUserTimelineStore.1
         } else {
             let storageEngine = SQLiteStorageEngine(directory: .forUser(user), databaseFilename: timelineStoreFilename(forUser: user))
-            _currentUserTimelineStore = (user.globallyUniqueUserIdentifier, ObjectStorage<GenericMastodonPost>(storage: storageEngine!))
+            _currentUserTimelineStore = (user.globallyUniqueUserIdentifier, ObjectStorage<Mastodon.Entity.Status>(storage: storageEngine!))
         }
         return _currentUserTimelineStore!.1
     }
@@ -94,14 +94,15 @@ public actor BodegaPersistence {
 
 extension BodegaPersistence {
     static func cachedPost(_ id: Mastodon.Entity.Status.ID, forUser user: UserIdentifier) async -> GenericMastodonPost? {
-        return await homeTimelineItemStore(forUser: user).object(forKey: CacheKey(id))
+        guard let entity = await homeTimelineItemStore(forUser: user).object(forKey: CacheKey(verbatim: id)) else { return nil }
+        return GenericMastodonPost.fromStatus(entity)
     }
     
     static func cachedPosts(_ ids: [Mastodon.Entity.Status.ID], forUser user: UserIdentifier) async -> [Mastodon.Entity.Status.ID : GenericMastodonPost] {
-        let keys = ids.map { CacheKey($0) }
+        let keys = ids.map { CacheKey(verbatim: $0) }
         let result = await homeTimelineItemStore(forUser: user).objectsAndKeys(keys: keys)
         return result.reduce(into: [Mastodon.Entity.Status.ID : GenericMastodonPost]()) { partialResult, element in
-            partialResult[element.key.value] = element.object
+            partialResult[element.key.value] = GenericMastodonPost.fromStatus(element.object)
         }
     }
     
@@ -143,14 +144,14 @@ extension BodegaPersistence {
         guard let cachesDirectory = FileManager.default.cachesDirectory else { return }
         
         // write the posts to the database
-        var posts = [(CacheKey, GenericMastodonPost)]()
+        var posts = [(CacheKey, Mastodon.Entity.Status)]()
         for item in timeline {
             switch item {
             case .loadingIndicator, .missingPosts:
                 break
             case .post(let viewModel):
                 if let fullPost = await viewModel.fullPost {
-                    posts.append((CacheKey(fullPost.id), fullPost))
+                    posts.append((CacheKey(verbatim: fullPost.id), fullPost._legacyEntity))
                 }
             }
         }
