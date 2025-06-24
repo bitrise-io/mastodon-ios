@@ -26,6 +26,10 @@ jobs:
         run: exec ./.github/scripts/setup.sh
       - name: Select required Xcode version
         run: sudo xcode-select -switch /Applications/Xcode_16.app
+      - name: Confirm Xcode and Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
       - name: Deploy App Store
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
