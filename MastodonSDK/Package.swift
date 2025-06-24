@@ -50,7 +50,7 @@ let package = Package(
         .package(url: "https://github.com/woxtu/UIHostingConfigurationBackport.git", from: "0.1.0"),
         .package(url: "https://github.com/SDWebImage/SDWebImage.git", from: "5.12.0"),
         .package(url: "https://github.com/eneko/Stripes.git", from: "0.2.0"),
-        .package(url: "https://github.com/NextLevel/NextLevelSessionExporter.git", from: "0.4.6"),
+        .package(url: "https://github.com/NextLevel/NextLevelSessionExporter.git", exact: "0.4.6"),
         .package(url: "https://github.com/xmartlabs/XLPagerTabStrip.git", from: "9.1.0"),
     ],
     targets: [
