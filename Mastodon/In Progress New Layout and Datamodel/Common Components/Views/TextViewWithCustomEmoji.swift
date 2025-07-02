@@ -2,13 +2,13 @@
 
 import MastodonSDK
 import MastodonMeta
-import MetaTextKit
 import SwiftUI
+import MastoParse
 
 public enum TextViewWithCustomEmoji {
     public typealias Emojis = [Mastodon.Entity.Emoji]
     
-    case timelinePost(heightCacheID: String, html: String, emojis: Emojis, didSelect: (Meta?)->())
+    case timelinePost(heightCacheID: String, html: String, emojis: Emojis)
     case authorHeader(html: String, emojis: Emojis)
     case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
     case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
@@ -17,18 +17,28 @@ public enum TextViewWithCustomEmoji {
 
 extension TextViewWithCustomEmoji: View {
     public var body: some View {
-        switch self {
-        case .timelinePost(let id, let html, let emojis, let didSelect):
-            MetaTextViewSwiftUI(id: id, html: html, emojis: emojis, format: .fullPost, didSelectMeta: didSelect)
-        case .authorHeader(let html, let emojis):
-            MetaTextViewSwiftUI(html: html, emojis: emojis, format: .authorHeader)
-        case .socialContextHeader(let html, let emojis, let isPrivate):
-            MetaTextViewSwiftUI(html: html, emojis: emojis, format: isPrivate ? .socialContextHeaderPrivate : .socialContextHeader)
-        case .linkPreviewCardAuthorButton(let html, let emojis):
-            MetaTextViewSwiftUI(html: html, emojis: emojis, format: .linkPreviewCardAuthor)
-        case .pollOption(let html, let emojis):
-            MetaTextViewSwiftUI(html: html, emojis: emojis, format: .pollOption)
-        }
+            switch self {
+            case .timelinePost(let id, let html, let emojis):
+                if let blocks = try? getParseBlocks(from: html) {
+                    TimelinePostContentView(contentBlocks: blocks)
+                }
+            case .authorHeader(let html, let emojis):
+                if let blocks = try? getParseBlocks(from: html) {
+                    TimelinePostContentView(contentBlocks: blocks)
+                }
+            case .socialContextHeader(let html, let emojis, let isPrivate):
+                    if let blocks = try? getParseBlocks(from: html) {
+                        TimelinePostContentView(contentBlocks: blocks)
+                    }
+            case .linkPreviewCardAuthorButton(let html, let emojis):
+                    if let blocks = try? getParseBlocks(from: html) {
+                        TimelinePostContentView(contentBlocks: blocks)
+                    }
+            case .pollOption(let html, let emojis):
+                    if let blocks = try? getParseBlocks(from: html) {
+                        TimelinePostContentView(contentBlocks: blocks)
+                    }
+            }
     }
 }
 
@@ -67,85 +77,124 @@ class CalculatedHeightCache {
     }
 }
 
-let heightCache = CalculatedHeightCache()
 
-struct MetaTextViewSwiftUI: UIViewRepresentable {
+struct TimelinePostContentView: View {
+    let contentBlocks: [MastoParseContentBlock]
     
-    let id: String?
-    let html: String
-    let emojis: [Mastodon.Entity.Emoji]
-    let format: MastodonHtmlFormat
-    let metaText: MetaText
-    let metaTapHandler: MetaTapHandler?
-    
-    init(id: String? = nil, html: String, emojis: [Mastodon.Entity.Emoji], format: MastodonHtmlFormat, didSelectMeta: ((Meta?)->())? = nil) {
-        self.id = id
-        self.html = html
-        self.emojis = emojis
-        self.format = format
-        self.metaText = format.metaText
-        if let didSelectMeta {
-            self.metaTapHandler = MetaTapHandler(onTap: didSelectMeta)
-        } else {
-            self.metaTapHandler = nil
-        }
-    }
-    
-    public func makeUIView(context: Context) -> MetaTextView {
-        let metaText = format.metaText
-        metaText.textView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        metaText.textView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-        metaText.textView.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        
-        // Remove padding so that layout plays reasonably nicely with SwiftUI
-        metaText.textView.textContainerInset = .zero
-        metaText.textView.textContainer.lineFragmentPadding = 0
-        
-        // Disable scrolling and editing
-        metaText.textView.isEditable = false
-        metaText.textView.isScrollEnabled = false
-        
-        metaText.textView.linkDelegate = metaTapHandler
-        
-        return metaText.textView
-    }
-    
-    func updateUIView(_ uiView: MetaTextView, context: Context) {
-        let content = MastodonContent(content: html, emojis:  mapEmojiShortcodeToEmojis(emojis))
-        if let metaContent = try? MastodonMetaContent.convert(document: content) {
-            metaText.configure(content: metaContent)
-            uiView.attributedText = metaText.textView.attributedText
-            uiView.backgroundColor = .clear
-        }
-    }
-    
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: MetaTextView, context: Context) -> CGSize? {
-        guard let width = proposal.width else { return nil }
-        if let id, let cachedHeight = heightCache.cachedHeight(for: id, withProposedWidth: width) {
-            return CGSize(width: width, height: cachedHeight)
-        } else {
-            let size = uiView.sizeThatFits(.init(width: width, height: proposal.height ?? .infinity))
-            guard size.width > 0, size.width < .greatestFiniteMagnitude, size.height > 0, size.height < .greatestFiniteMagnitude else { return .zero }
-            if let id {
-                heightCache.cache(height: size.height, forProposedWidth: width, forID: id)
+    var body: some View {
+        VStack(alignment: .leading) {
+            ForEach(contentBlocks) { block in
+                if let blockquote = block as? MastoParseBlockquote {
+                    BlockquoteView(block: blockquote)
+                } else if let row = block as? MastoParseContentRow {
+                    RowView(row: row)
+                } else {
+                    Text("CASE NOT HANDLED")
+                }
             }
-            return size
         }
     }
 }
 
-class MetaTapHandler: MetaTextViewDelegate {
-    let onTap: (Meta?)->()
+let indent: CGFloat = 16
+let nestedBlockQuoteIndicatorWidth: CGFloat = 2
+let indicatorToBlockQuoteSpacing: CGFloat = 4
+
+let blockquoteColor = Color.purple.opacity(0.5)
+struct BlockquoteView: View {
+    let block: MastoParseBlockquote
     
-    init(onTap: @escaping (Meta?) -> Void) {
-        self.onTap = onTap
+    var body: some View {
+        HStack {
+            VStack {
+                Image(systemName: "quote.opening")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(blockquoteColor)
+                
+                Spacer()
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(block.contents.enumerated()), id: \.offset) { idx, element in
+                    RowView(row: element)
+                }
+            }
+        }
+    }
+}
+
+enum TextElement {
+    case image(Image)
+    case text(LocalizedStringKey)
+    case code(String)
+}
+
+struct RowView: View {
+    static let font: Font.TextStyle = .body
+    @ScaledMetric(relativeTo: font) private var imgBaseline: CGFloat = -5 // without this, the custom emoji sit too high amidst the surrounding text
+    
+    let row: MastoParseContentRow
+    
+    var body: some View {
+        let totalFormattingSpaceRequired = row.nestedFormatting.reduce(into: CGFloat.zero) { partialResult, format in
+            switch format {
+            case .listLevel:
+                partialResult += indent
+            case .subordinateBlockquote:
+                partialResult += nestedBlockQuoteIndicatorWidth + indicatorToBlockQuoteSpacing
+            case .topLevelBlockquote:
+                break
+            }
+        }
+        
+        combineElements(row.contents.map({ element in
+            switch element.type {
+            case .text:
+                return .text(LocalizedStringKey(element.contents))
+            case .code:
+                return .code(element.contents)
+            }
+            
+        }))
+        .padding(EdgeInsets(top: 0, leading: totalFormattingSpaceRequired, bottom: 0, trailing: 0))
+        .background() {
+            // Putting the nested blockquote bar in a background correctly expands its height to match the contents of the row. Trying to include it in the same HStack as the content leaves the bar too short.
+            HStack(spacing: 0) {
+                ForEach(Array(row.nestedFormatting.enumerated()), id: \.offset) { idx, indicator in
+                    switch indicator {
+                    case .topLevelBlockquote:
+                        EmptyView()
+                    case .subordinateBlockquote:
+                        blockquoteColor
+                            .frame(width: nestedBlockQuoteIndicatorWidth)
+                        Spacer()
+                            .frame(maxWidth: indicatorToBlockQuoteSpacing)
+                    case .listLevel:
+                        Spacer()
+                            .frame(width: indent)
+                    }
+                }
+                Spacer()
+                    .frame(maxWidth: .infinity)
+            }
+        }
     }
     
-    func metaTextView(_ metaTextView: MetaTextKit.MetaTextView, didSelectMeta meta: Meta) {
-        onTap(meta)
-    }
-    
-    func metaTextViewDidTapNonEntity(_ metaTextView: MetaTextKit.MetaTextView) {
-        onTap(nil)
+    @ViewBuilder func combineElements(_ elements: [TextElement]) -> some View {
+        let pieces = elements.map { element in
+            switch element {
+            case .image(let image):
+                return Text("\(image)").baselineOffset(imgBaseline)
+            case .text(let text):
+                return Text(text)
+            case .code(let text):
+                var attributed = AttributedString(text)
+                attributed.backgroundColor = blockquoteColor
+                attributed.font = .system(.body, design: .monospaced)
+                return Text(attributed)
+            }
+        }
+        pieces.reduce(Text(""), +)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

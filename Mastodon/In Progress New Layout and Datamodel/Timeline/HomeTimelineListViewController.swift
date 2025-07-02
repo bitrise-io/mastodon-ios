@@ -1168,15 +1168,15 @@ fileprivate extension MastodonPostViewModel {
     }
 
     func textContentView() -> TextViewWithCustomEmoji {
-        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis(), didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
+        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis())
         
         guard let actionablePost = fullPost?.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
         let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
         
         if isShowingTranslation == true, let translation = actionHandler?.translation(forContentPostId: actionablePost.id)?.content {
-            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
+            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis)
         } else {
-            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis, didSelect: { [weak self] meta in self?.didSelect(meta: meta) })
+            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis)
         }
     }
 
