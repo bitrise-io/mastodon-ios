@@ -156,6 +156,7 @@ struct RowView: View {
             }
             
         }))
+        .tint(.blue) // this controls the color of links
         .padding(EdgeInsets(top: 0, leading: totalFormattingSpaceRequired, bottom: 0, trailing: 0))
         .background() {
             // Putting the nested blockquote bar in a background correctly expands its height to match the contents of the row. Trying to include it in the same HStack as the content leaves the bar too short.
