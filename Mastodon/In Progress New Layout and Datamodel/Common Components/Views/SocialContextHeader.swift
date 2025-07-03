@@ -6,8 +6,8 @@ import MastodonLocalization
 
 enum SocialContextHeader {
     case mention(isPrivate: Bool)
-    case reply(to: String, isPrivate: Bool, isNotification: Bool, emojis: TextViewWithCustomEmoji.Emojis)
-    case boosted(by: String, emojis: TextViewWithCustomEmoji.Emojis)
+    case reply(to: String, isPrivate: Bool, isNotification: Bool, emojis: MastodonContentView.Emojis)
+    case boosted(by: String, emojis: MastodonContentView.Emojis)
     //case pinned
     
     var isPrivate: Bool {
@@ -48,12 +48,12 @@ enum SocialContextHeader {
         }
     }
     
-    var emojis: TextViewWithCustomEmoji.Emojis {
+    var emojis: MastodonContentView.Emojis {
         switch self {
         case .boosted(_, let emojis):
             return emojis
         case .mention:
-            return TextViewWithCustomEmoji.Emojis()
+            return MastodonContentView.Emojis()
         case .reply(_, _, _, let emojis):
             return emojis
         }
@@ -89,7 +89,7 @@ extension SocialContextHeader: View {
                 .foregroundStyle(color)
                 .frame(height: socialContextHeaderHeight)
             
-            TextViewWithCustomEmoji.socialContextHeader(html: text, emojis: emojis, isPrivate: isPrivate)
+            MastodonContentView.header(html: text, emojis: emojis, style: .socialContext(isPrivate: isPrivate))
                 .frame(height: socialContextHeaderHeight)
                 .alignmentGuide(.gutterAlign) { d in
                     return d[HorizontalAlignment.leading]

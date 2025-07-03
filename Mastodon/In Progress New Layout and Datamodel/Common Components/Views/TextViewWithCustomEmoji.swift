@@ -4,90 +4,125 @@ import MastodonSDK
 import MastodonMeta
 import SwiftUI
 import MastoParse
+import SDWebImage
+import UIKit
+import MastodonAsset
 
-public enum TextViewWithCustomEmoji {
-    public typealias Emojis = [Mastodon.Entity.Emoji]
-    
-    case timelinePost(heightCacheID: String, html: String, emojis: Emojis)
-    case authorHeader(html: String, emojis: Emojis)
-    case socialContextHeader(html: String, emojis: Emojis, isPrivate: Bool)
-    case linkPreviewCardAuthorButton(html: String, emojis: Emojis)
-    case pollOption(html: String, emojis: Emojis)
+func pointSize(for textStyle: SwiftUI.Font.TextStyle, traitCollection: UITraitCollection? = nil) -> CGFloat {
+    let uiTextStyle = textStyle.uiFontTextStyle
+    let font = UIFont.preferredFont(forTextStyle: uiTextStyle, compatibleWith: traitCollection)
+    return font.pointSize
 }
 
-extension TextViewWithCustomEmoji: View {
+extension SwiftUI.Font.TextStyle {
+    var uiFontTextStyle: UIFont.TextStyle {
+        switch self {
+        case .largeTitle: return .largeTitle
+        case .title: return .title1
+        case .title2: return .title2
+        case .title3: return .title3
+        case .headline: return .headline
+        case .subheadline: return .subheadline
+        case .body: return .body
+        case .callout: return .callout
+        case .footnote: return .footnote
+        case .caption: return .caption1
+        case .caption2: return .caption2
+        @unknown default: return .body
+        }
+    }
+}
+
+public enum MastodonContentView {
+    public typealias Emojis = [Mastodon.Entity.Emoji]
+    
+    case timelinePost(heightCacheID: String, html: String, emojis: Emojis, isInlinePreview: Bool)
+    case header(html: String, emojis: Emojis, style: PostViewHeaderStyle)
+}
+
+public enum PostViewHeaderStyle {
+    case author
+    case socialContext(isPrivate: Bool)
+    case linkPreviewCardAuthorButton
+    case pollOption
+    
+    var font: SwiftUI.Font.TextStyle {
+        switch self {
+        case .author:
+                .body
+        case .socialContext:
+                .subheadline
+        case .linkPreviewCardAuthorButton:
+                .callout
+        case .pollOption:
+                .body
+        }
+    }
+    
+    var fontWeight: SwiftUI.Font.Weight {
+        switch self {
+        case .author:
+                .semibold
+        case .linkPreviewCardAuthorButton:
+                .semibold
+        case .pollOption:
+                .semibold
+        case .socialContext:
+                .bold
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .author:
+                .primary
+        case .socialContext(let isPrivate):
+            isPrivate ? Asset.Colors.accent.swiftUIColor : Color.secondary
+        case .linkPreviewCardAuthorButton:
+                .primary
+        case .pollOption:
+                .primary
+        }
+    }
+    
+}
+
+extension MastodonContentView: View {
     public var body: some View {
             switch self {
-            case .timelinePost(let id, let html, let emojis):
+            case .timelinePost(let id, let html, let emojis, let isInlinePreview):
                 if let blocks = try? getParseBlocks(from: html) {
-                    TimelinePostContentView(contentBlocks: blocks)
+                    TimelinePostContentView(contentBlocks: blocks, emojis: emojis)
+                        .font(isInlinePreview ? Font.subheadline : .body)
                 }
-            case .authorHeader(let html, let emojis):
-                if let blocks = try? getParseBlocks(from: html) {
-                    TimelinePostContentView(contentBlocks: blocks)
-                }
-            case .socialContextHeader(let html, let emojis, let isPrivate):
-                    if let blocks = try? getParseBlocks(from: html) {
-                        TimelinePostContentView(contentBlocks: blocks)
-                    }
-            case .linkPreviewCardAuthorButton(let html, let emojis):
-                    if let blocks = try? getParseBlocks(from: html) {
-                        TimelinePostContentView(contentBlocks: blocks)
-                    }
-            case .pollOption(let html, let emojis):
-                    if let blocks = try? getParseBlocks(from: html) {
-                        TimelinePostContentView(contentBlocks: blocks)
-                    }
+            case .header(let html, let emojis, let style):
+                let block = MastoParseInlineElement(type: .text, contents: html)
+                let row = MastoParseContentRow(contents: [block], style: .paragraph, nestedFormatting: [])
+                RowView(row: row, emojis: emojis, font: style.font)
+                    .font(Font.system(style.font))
+                    .fontWeight(style.fontWeight)
+                    .foregroundStyle(style.color)
             }
     }
 }
 
-func mapEmojiShortcodeToEmojis(_ emojis: TextViewWithCustomEmoji.Emojis) -> [MastodonContent.Shortcode: String] {
+func mapEmojiShortcodeToEmojis(_ emojis: MastodonContentView.Emojis) -> [MastodonContent.Shortcode: String] {
     return emojis.reduce(into: [:]) { partialResult, emoji in
         partialResult[emoji.shortcode] = UserDefaults.standard.preferredStaticAvatar ? emoji.staticURL : emoji.url
     }
 }
 
-class CalculatedHeightCache {
-    var cache = NSCache<NSString, NSNumber>()
-    var lastProposedWidth: Int = 0 {
-        didSet {
-            cache.removeAllObjects()
-        }
-    }
-    func cachedHeight(for id: String, withProposedWidth proposedWidth: CGFloat) -> CGFloat? {
-        let intWidth = Int(proposedWidth)
-        guard lastProposedWidth == intWidth else {
-            lastProposedWidth = intWidth
-            return nil
-        }
-        let key = NSString(string: id)
-        if let object = cache.object(forKey: key) {
-            return object.doubleValue
-        } else {
-            return nil
-        }
-    }
-    func cache(height: CGFloat, forProposedWidth proposedWidth: CGFloat, forID id: String) {
-        let intWidth = Int(proposedWidth)
-        if lastProposedWidth != intWidth {
-            lastProposedWidth = intWidth
-        }
-        cache.setObject(NSNumber(floatLiteral: height), forKey: NSString(string: id))
-    }
-}
-
-
 struct TimelinePostContentView: View {
     let contentBlocks: [MastoParseContentBlock]
+    let emojis: MastodonContentView.Emojis
     
     var body: some View {
         VStack(alignment: .leading) {
             ForEach(contentBlocks) { block in
                 if let blockquote = block as? MastoParseBlockquote {
-                    BlockquoteView(block: blockquote)
+                    BlockquoteView(block: blockquote, emojis: emojis)
                 } else if let row = block as? MastoParseContentRow {
-                    RowView(row: row)
+                    RowView(row: row, emojis: emojis)
                 } else {
                     Text("CASE NOT HANDLED")
                 }
@@ -103,6 +138,7 @@ let indicatorToBlockQuoteSpacing: CGFloat = 4
 let blockquoteColor = Color.purple.opacity(0.5)
 struct BlockquoteView: View {
     let block: MastoParseBlockquote
+    let emojis: MastodonContentView.Emojis
     
     var body: some View {
         HStack {
@@ -116,7 +152,7 @@ struct BlockquoteView: View {
             }
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(block.contents.enumerated()), id: \.offset) { idx, element in
-                    RowView(row: element)
+                    RowView(row: element, emojis: emojis)
                 }
             }
         }
@@ -125,15 +161,138 @@ struct BlockquoteView: View {
 
 enum TextElement {
     case image(Image)
+    case emojiShortcode(String)
     case text(LocalizedStringKey)
     case code(String)
 }
 
+@MainActor
+class CustomEmojiTextModel: ObservableObject {
+    @Published public var textElements: [TextElement] = []
+    private var emojis: MastodonContentView.Emojis = []
+    private var isPreparing = false
+    
+    func prepareWith(elements: [MastoParseInlineElement], emojis: MastodonContentView.Emojis, font: SwiftUI.Font.TextStyle) {
+        guard !isPreparing else { return }
+        isPreparing = true
+        self.emojis = emojis
+        self.textElements = elements.reduce(into: [TextElement](), { partialResult, inline in
+            switch inline.type {
+            case .text:
+                // 1. Separate on ":" and look for shortcode matches.
+                // 2. Join stretches of non-matches with ":" as the separator.
+                let substrings = inline.contents.split(separator: ":")
+                var textAndEmojiShortcodes = [TextElement]()
+                var accumulatingNonEmoji: String? = nil
+                for substring in substrings {
+                    if emojis.contains(where: { emoji in
+                        substring == emoji.shortcode
+                    }) {
+                        if let accumulatingNonEmoji {
+                            textAndEmojiShortcodes.append(.text(LocalizedStringKey(accumulatingNonEmoji)))
+                        }
+                        textAndEmojiShortcodes.append(.emojiShortcode(String(substring)))
+                        accumulatingNonEmoji = nil
+                    } else {
+                        if let accumulating = accumulatingNonEmoji {
+                            accumulatingNonEmoji = [accumulating, String(substring)].joined(separator: ":")
+                        } else {
+                            accumulatingNonEmoji = String(substring)
+                        }
+                    }
+                }
+                if let accumulatingNonEmoji {
+                    textAndEmojiShortcodes.append(.text(LocalizedStringKey(accumulatingNonEmoji)))
+                }
+                partialResult.append(contentsOf: textAndEmojiShortcodes)
+            case .code:
+                partialResult.append(.code(inline.contents))
+            }
+        })
+        
+        loadEmojis(font: font)
+    }
+    
+    private func loadEmojis(font: SwiftUI.Font.TextStyle) {
+        let urls = emojis.compactMap { emoji in
+            URL(string: emoji.url)
+        }
+        
+        CustomEmojiTextModel.loadEmojiImages(urls: urls, forFont: font) { [weak self] images in
+            let emojiImages = images.enumerated().reduce(into:  [String : Image]()) { partialResult, enumeration in
+                let (index, image) = enumeration
+                if let shortcode = self?.emojis[index].shortcode, let image {
+                    partialResult[shortcode] = Image(uiImage: image)
+                }
+            }
+            self?.updateWithEmojis(emojiImages)
+        }
+      
+    }
+    
+    private func updateWithEmojis(_ emojis: [String : Image]) {
+        textElements = textElements.map({ element in
+            switch element {
+            case .code, .text, .image:
+                element
+            case .emojiShortcode(let shortcode):
+                if let image = emojis[shortcode] {
+                    .image(image)
+                } else {
+                    element
+                }
+            }
+        })
+    }
+    
+    private static func loadEmojiImages(
+        urls: [URL],
+        forFont font: SwiftUI.Font.TextStyle,
+        completion: @escaping ([UIImage?]) -> Void)
+    {
+        let group = DispatchGroup()
+        var results = Array<UIImage?>(repeating: nil, count: urls.count)
+        
+        let screenScale = UIScreen.main.scale
+        let emojiSize = pointSize(for: font)
+        let pixelSize = CGSize(width: emojiSize, height: emojiSize)
+        
+        let transformer = SDImageResizingTransformer(size: pixelSize, scaleMode: .aspectFill)
+        
+        for (index, url) in urls.enumerated() {
+            group.enter()
+            SDWebImageManager.shared.loadImage(
+                with: url,
+                options: [],
+                context: [.imageTransformer: transformer, .imageScaleFactor: screenScale],
+                progress: nil
+            ) { image, _, error, _, _, _ in
+                results[index] = image          // keep nil if failed
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) { completion(results) }
+    }
+}
+
 struct RowView: View {
-    static let font: Font.TextStyle = .body
-    @ScaledMetric(relativeTo: font) private var imgBaseline: CGFloat = -5 // without this, the custom emoji sit too high amidst the surrounding text
+    let font: SwiftUI.Font.TextStyle
+    private var imgBaseline: CGFloat {
+        let percent: CGFloat = -0.25
+        return pointSize(for: font) * percent
+    }
+    
     
     let row: MastoParseContentRow
+    let emojis: MastodonContentView.Emojis
+    @StateObject private var textModel = CustomEmojiTextModel()
+    
+    init(row: MastoParseContentRow, emojis: MastodonContentView.Emojis, font: SwiftUI.Font.TextStyle = .body) {
+        self.row = row
+        self.emojis = emojis
+        self.font = font
+    }
     
     var body: some View {
         let totalFormattingSpaceRequired = row.nestedFormatting.reduce(into: CGFloat.zero) { partialResult, format in
@@ -147,15 +306,7 @@ struct RowView: View {
             }
         }
         
-        combineElements(row.contents.map({ element in
-            switch element.type {
-            case .text:
-                return .text(LocalizedStringKey(element.contents))
-            case .code:
-                return .code(element.contents)
-            }
-            
-        }))
+        combineElements(textModel.textElements)
         .tint(.blue) // this controls the color of links
         .padding(EdgeInsets(top: 0, leading: totalFormattingSpaceRequired, bottom: 0, trailing: 0))
         .background() {
@@ -179,13 +330,18 @@ struct RowView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+        .onAppear() {
+            textModel.prepareWith(elements: row.contents, emojis: emojis, font: font)
+        }
     }
     
     @ViewBuilder func combineElements(_ elements: [TextElement]) -> some View {
         let pieces = elements.map { element in
             switch element {
             case .image(let image):
-                return Text("\(image)").baselineOffset(imgBaseline)
+                return Text("\(image)").baselineOffset(imgBaseline) // without the baseline adjustment, the custom emoji sit too high amidst the surrounding text
+            case .emojiShortcode(let shortcode):
+                return Text(":\(shortcode):")
             case .text(let text):
                 return Text(text)
             case .code(let text):

@@ -204,7 +204,7 @@ struct LinkPreviewCard: View {
                 } label: {
                     HStack(spacing: tinySpacing) {
                         AvatarView(size: .tiny, authorAvatarUrl: account.avatarURL, goToProfile: nil)
-                        TextViewWithCustomEmoji.linkPreviewCardAuthorButton(html: account.displayNameWithFallback, emojis: account.emojis)
+                        MastodonContentView.header(html: account.displayNameWithFallback, emojis: account.emojis, style: .linkPreviewCardAuthorButton)
                             .lineLimit(1)
                     }
                     .padding(EdgeInsets(top: tinySpacing, leading: 6, bottom: tinySpacing, trailing: 6))

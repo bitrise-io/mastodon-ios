@@ -1167,16 +1167,16 @@ fileprivate extension MastodonPostViewModel {
         return nil
     }
 
-    func textContentView() -> TextViewWithCustomEmoji {
-        let emptyTextContent: TextViewWithCustomEmoji = .timelinePost(heightCacheID: "empty", html: "", emojis: TextViewWithCustomEmoji.Emojis())
+    func textContentView() -> MastodonContentView {
+        let emptyTextContent: MastodonContentView = .timelinePost(heightCacheID: "empty", html: "", emojis: MastodonContentView.Emojis(), isInlinePreview: false)
         
         guard let actionablePost = fullPost?.actionablePost, let untranslatedContent = actionablePost.content.htmlWithEntities?.html else { return emptyTextContent }
-        let emojis = actionablePost.content.htmlWithEntities?.emojis ?? TextViewWithCustomEmoji.Emojis()
+        let emojis = actionablePost.content.htmlWithEntities?.emojis ?? MastodonContentView.Emojis()
         
         if isShowingTranslation == true, let translation = actionHandler?.translation(forContentPostId: actionablePost.id)?.content {
-            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis)
+            return .timelinePost(heightCacheID: actionablePost.id+"translated", html: translation, emojis: emojis, isInlinePreview: false)
         } else {
-            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis)
+            return .timelinePost(heightCacheID: actionablePost.id, html: untranslatedContent, emojis: emojis, isInlinePreview: false)
         }
     }
 

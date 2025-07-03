@@ -85,7 +85,7 @@ struct PollView: View {
                             .frame(width: standardPadding)
                     }
                     
-                    TextViewWithCustomEmoji.pollOption(html: option.text, emojis: option.emojis)
+                    MastodonContentView.header(html: option.text, emojis: option.emojis, style: .pollOption)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                     
