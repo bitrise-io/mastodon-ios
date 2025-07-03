@@ -20,3 +20,10 @@ common:ci --config=upload
 
 # Work around rules_swift_package_manager sandboxing issue
 --strategy_regexp="Compiling Sources/UITextView+Placeholder\.m=sandboxed"
+
+build:remote_bitrise --jobs=100
+build:remote_bitrise --remote_download_minimal
+build:remote_bitrise --noremote_upload_local_results
+build:remote_bitrise --disk_cache=
+build:remote_bitrise --experimental_remote_cache_async
+build:remote_bitrise --extra_execution_platforms=//:darwin_arm64
