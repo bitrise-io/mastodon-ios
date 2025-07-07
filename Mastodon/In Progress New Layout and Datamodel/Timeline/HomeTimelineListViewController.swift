@@ -777,7 +777,13 @@ private struct HomeTimelinePostRowView: View {
                             .onTapGesture {
                                 viewModel.openThreadView()
                             }
-                            
+                            .environment(\.openURL, OpenURLAction { url in
+                                if viewModel.openURL(url) {
+                                    return .handled
+                                } else {
+                                    return .systemAction(url)
+                                }
+                            })
                         
                         if let attachment = viewModel.fullPost?.actionablePost?.content.attachment {
                             switch attachment {
@@ -1082,6 +1088,20 @@ struct AttributedStringDisplayInfo {
                                 entity: actionablePost._legacyEntity,
                                 showDespiteContentWarning:
                                     false))))), transition: .show)
+    }
+    
+    func openURL(_ url: URL) -> Bool {
+        if let mention = fullPost?.actionablePost?.content.htmlWithEntities?.mentions.first(where: { $0.url == url.absoluteString }) {
+            goToProfile(mention)
+            return true
+        } else if let hashtag = fullPost?.actionablePost?.content.htmlWithEntities?.tags.first(where: { $0.name.lowercased() == url.lastPathComponent.lowercased() && url.pathComponents.contains("tags") }) {
+            guard let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return false }
+            let hashtagTimelineViewModel = HashtagTimelineViewModel(authenticationBox: currentUser, hashtag: hashtag.name)
+            actionHandler?.presentScene(.hashtagTimeline(viewModel: hashtagTimelineViewModel), transition: .show)
+            return true
+        } else {
+            return false
+        }
     }
     
     func didSelect(meta: Meta?) {
