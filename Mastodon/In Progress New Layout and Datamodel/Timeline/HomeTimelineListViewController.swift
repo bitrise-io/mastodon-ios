@@ -774,6 +774,10 @@ private struct HomeTimelinePostRowView: View {
                         }
                         viewModel.textContentView()
                             .frame(width: contentWidth, alignment: .leading)
+                            .onTapGesture {
+                                viewModel.openThreadView()
+                            }
+                            
                         
                         if let attachment = viewModel.fullPost?.actionablePost?.content.attachment {
                             switch attachment {
@@ -1066,21 +1070,24 @@ struct AttributedStringDisplayInfo {
         return pollTranslation.options.map { $0.title }
     }
     
+    func openThreadView() {
+        guard let actionablePost = fullPost?.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+        actionHandler?.presentScene(
+            .thread(
+                viewModel: ThreadViewModel(
+                    authenticationBox: currentUser,
+                    optionalRoot: .root(
+                        context: .init(
+                            status: MastodonStatus(
+                                entity: actionablePost._legacyEntity,
+                                showDespiteContentWarning:
+                                    false))))), transition: .show)
+    }
+    
     func didSelect(meta: Meta?) {
         switch meta {
         case .none:
-            guard let actionablePost = fullPost?.actionablePost, let currentUser = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
-            actionHandler?.presentScene(
-                .thread(
-                    viewModel: ThreadViewModel(
-                        authenticationBox: currentUser,
-                        optionalRoot: .root(
-                            context: .init(
-                                status: MastodonStatus(
-                                    entity: actionablePost._legacyEntity,
-                                    showDespiteContentWarning:
-                                        false))))), transition: .show)
-
+            openThreadView()
  
         case .url(_, _, let url, _),
                 .mention(_, let url, _) where url.lowercased().hasPrefix("http"):
