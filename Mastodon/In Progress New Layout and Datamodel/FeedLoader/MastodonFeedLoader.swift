@@ -14,6 +14,7 @@ public enum MastodonFeedLoaderError: Error {
     case requestNotImplemented
 }
 
+/// Implementations of `MastodonFeedCacheManager` are expected to initialize their current results from the cache, merge newly fetched items with previously fetched upon request, and write the updated results to the cache when requested. Separating the published type (which must be published in an array) from the cached type allows the cache manager to save something more complex than a simple array. For instance, the accounts associated with a list of posts might be stored separately from the posts themselves.
 @MainActor
 protocol MastodonFeedCacheManager<CachedType> {
     associatedtype CachedType
@@ -63,6 +64,11 @@ public enum MastodonFeedLoaderRequest: Equatable {
     }
 }
 
+/// Collects the common functionality of fetching paginated feeds, filtering and merging their contents, tracking their last read markers, and optionally caching the results locally.
+/// Consumers subscribe to the `records` and optionally the `currentError` publishers to display the feed. The consumer is also responsible for requesting loads of additional items in the feed, requesting cache updates, and triggering updates of the last read marker. Begin by calling `doFirstLoad()` on the desired subclass of `MastodonFeedLoader`, which will request the (cached) `currentResults` from the cache manager, fetch the last read markers from the server, and request a load of newer items. Consumers should not interact with the `MastodonFeedCacheManager` directly.
+/// Subclasses specify their published type (the `MastodonFeedLoaderResult` published in the feed loader’s records will contain an array of this type, as well as a flag indicating whether there may be older records available to fetch) and the cached type. You will also have to provide an implementation of the `MastodonFeedCacheManager` protocol that works with the specified cached type.
+/// Subclasses must override `fetchResults(for request: MastodonFeedLoaderRequest)` (to connect to the correct API endpoint) and `filteredResults(fromCachedType: CachedType)`  (to apply the user’s filters appropriately to the context).
+/// The provided implementation handles handles removing duplicate records from the feed, fetching the user's filters and updating when they are received, and determining whether there are additional items left to fetch.
 @MainActor
 public class MastodonFeedLoader<PublishedType: Identifiable, CachedType: CacheableFeed> where PublishedType: Sendable {
     private var activeFilterBoxSubscription: AnyCancellable?
@@ -137,6 +143,7 @@ extension MastodonFeedLoader {
         }
     }
     
+    /// Performing a load request calls the subclass’s implementation of `fetchResults(for:﻿)`, then calls the cache manager‘s `updateCacheByInserting(newlyFetchedResults:at:`). The updated `currentResults` from the cache manager are then run through the subclass’s `filteredResults(fromCachedType:﻿)` before being published.
     public func requestLoad(_ request: MastodonFeedLoaderRequest) {
         if !loadRequestQueue.contains(request) {
             loadRequestQueue.append(request)
@@ -153,8 +160,8 @@ extension MastodonFeedLoader {
         }
     }
     
+    /// Use only with pull to refresh, in order to properly update the progress spinner.
     public var permissionToLoadImmediately: Bool {
-        // This is only intended for use with pull to refresh, in order to properly update the progress spinner.
         if isFetching {
             return false
         } else {
@@ -162,8 +169,8 @@ extension MastodonFeedLoader {
             return true
         }
     }
+    /// Use only with pull to refresh, in order to properly update the progress spinner.
     public func loadImmediately(_ request: MastodonFeedLoaderRequest) async {
-        // This is only intended for use with pull to refresh, in order to properly update the progress spinner.
         guard isFetching else { assertionFailure("request permissionToLoadImmediately before calling loadImmediately"); return }
         do {
             try await load(request)
