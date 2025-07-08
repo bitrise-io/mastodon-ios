@@ -822,6 +822,10 @@ private struct HomeTimelinePostRowView: View {
                 }
             }
         }
+        .background(.background.opacity(0.01)) // To allow tap in margin to open threadview. Opacity of 0 does not accept taps, nor does .clear.
+        .onTapGesture {
+            viewModel.openThreadView()
+        }
     }
     
     @ViewBuilder func componentView(_ component: PostViewComponent) -> some View {
