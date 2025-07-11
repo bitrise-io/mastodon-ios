@@ -194,6 +194,10 @@
       "src_type": "swift",
       "label": "@swiftpkg_mastodonsdk//:MastodonSDK.rspm",
       "package_identity": "mastodonsdk",
+      "dependencies": [
+        "CoreDataStack",
+        "MastodonCommon"
+      ],
       "product_memberships": [
         "MastodonSDK",
         "MastodonSDKDynamic"
