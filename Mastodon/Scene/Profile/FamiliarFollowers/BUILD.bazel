@@ -1,0 +1,17 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "FamiliarFollowers",
+    srcs = [
+        "FamiliarFollowersViewController.swift",
+        "FamiliarFollowersViewModel.swift",
+    ],
+    module_name = "FamiliarFollowers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

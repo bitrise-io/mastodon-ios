@@ -1,0 +1,20 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "ServerRules",
+    srcs = [
+        "MastodonServerRulesViewController.swift",
+        "MastodonServerRulesViewModel.swift",
+        "MastodonServerRulesViewModel+Diffable.swift",
+        "ServerRuleItem.swift",
+        "ServerRuleSection.swift",
+    ],
+    module_name = "ServerRules",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Beta Testing Settings",
+    srcs = [
+        "BetaTestSettingsDiffableTableViewDataSource.swift",
+        "BetaTestSettingsViewController.swift",
+    ],
+    module_name = "Beta Testing Settings",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonSDK"],
+)

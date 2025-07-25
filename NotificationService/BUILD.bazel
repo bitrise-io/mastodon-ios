@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "NotificationService",
+    srcs = [
+        "Decode85.swift",
+        "NotificationService.swift",
+        "NotificationService+Decrypt.swift",
+    ],
+    module_name = "NotificationService",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonCore"],
+)

@@ -1,0 +1,10 @@
+load("@build_bazel_rules_swift//swift:swift_test.bzl", "swift_test")
+
+swift_test(
+    name = "MastodonUITests",
+    srcs = [
+        "MastodonUISnapshotTests.swift",
+        "MastodonUITests.swift",
+    ],
+    module_name = "MastodonUITests",
+)

@@ -1,0 +1,17 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "WidgetExtension",
+    srcs = [
+        "View+WidgetBackground.swift",
+        "WidgetExtension.swift",
+        "WidgetExtensionBundle.swift",
+    ],
+    module_name = "WidgetExtension",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

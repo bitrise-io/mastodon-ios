@@ -1,0 +1,19 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "UserList",
+    srcs = [
+        "UserListViewModel.swift",
+        "UserListViewModel+Diffable.swift",
+        "UserListViewModel+State.swift",
+    ],
+    module_name = "UserList",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

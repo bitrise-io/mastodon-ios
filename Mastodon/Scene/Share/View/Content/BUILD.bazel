@@ -1,0 +1,25 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Content",
+    srcs = [
+        "ContentWarningOverlayView.swift",
+        "DoubleTitleLabelNavigationBarTitleView.swift",
+        "MediaView+Configuration.swift",
+        "NavigationBarProgressView.swift",
+        "PollOptionView+Configuration.swift",
+        "ThreadMetaView.swift",
+        "TimelineHeaderView.swift",
+        "UserView+Configuration.swift",
+    ],
+    module_name = "Content",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

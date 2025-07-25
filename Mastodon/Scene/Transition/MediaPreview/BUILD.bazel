@@ -1,0 +1,16 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "MediaPreview",
+    srcs = [
+        "MediaHostToMediaPreviewViewControllerAnimatedTransitioning.swift",
+        "MediaPreviewTransitionController.swift",
+        "MediaPreviewTransitionItem.swift",
+        "MediaPreviewTransitionViewController.swift",
+        "MediaPreviewableViewController.swift",
+        "MediaPreviewingViewController.swift",
+    ],
+    module_name = "MediaPreview",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonUI"],
+)

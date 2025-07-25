@@ -1,0 +1,16 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Common Actions on Statuses and Accounts",
+    srcs = [
+        "ContentConcealViewModel.swift",
+        "MastodonPostMenuAction.swift",
+        "PostActions.swift",
+    ],
+    module_name = "Common Actions on Statuses and Accounts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

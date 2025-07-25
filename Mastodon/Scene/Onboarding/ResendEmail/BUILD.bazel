@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "ResendEmail",
+    srcs = [
+        "MastodonResendEmailViewController.swift",
+        "MastodonResendEmailViewModel.swift",
+        "MastodonResendEmailViewModelNavigationDelegateShim.swift",
+    ],
+    module_name = "ResendEmail",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonCore"],
+)

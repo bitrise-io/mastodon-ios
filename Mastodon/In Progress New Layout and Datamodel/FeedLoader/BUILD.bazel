@@ -1,0 +1,15 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "FeedLoader",
+    srcs = [
+        "LastReadMarkers.swift",
+        "MastodonFeedLoader.swift",
+    ],
+    module_name = "FeedLoader",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

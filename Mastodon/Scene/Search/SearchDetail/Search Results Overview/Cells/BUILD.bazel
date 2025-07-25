@@ -1,0 +1,15 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Cells",
+    srcs = [
+        "SearchResultDefaultSectionTableViewCell.swift",
+        "SearchResultsProfileTableViewCell.swift",
+    ],
+    module_name = "Cells",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

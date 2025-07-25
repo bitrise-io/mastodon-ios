@@ -1,0 +1,19 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "News",
+    srcs = [
+        "DiscoveryNewsViewController.swift",
+        "DiscoveryNewsViewModel.swift",
+        "DiscoveryNewsViewModel+Diffable.swift",
+        "DiscoveryNewsViewModel+State.swift",
+    ],
+    module_name = "News",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

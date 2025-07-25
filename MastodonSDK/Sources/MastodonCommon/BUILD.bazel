@@ -1,0 +1,21 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "MastodonCommon",
+    srcs = [
+        "AppName.swift",
+        "Extension/UserDefaults.swift",
+        "Preference/Preference+App.swift",
+        "Preference/Preference+Appearance.swift",
+        "Preference/Preference+AskBefore.swift",
+        "Preference/Preference+BetaTestSetting.swift",
+        "Preference/Preference+Discovery.swift",
+        "Preference/Preference+Language.swift",
+        "Preference/Preference+Notification.swift",
+        "Preference/Preference+StoreReview.swift",
+        "Preference/Preference+Wizard.swift",
+    ],
+    module_name = "MastodonCommon",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonExtension"],
+)

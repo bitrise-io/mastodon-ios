@@ -1,0 +1,17 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "MultiFollowersCount",
+    srcs = [
+        "MultiFollowersCountWidget.swift",
+        "MultiFollowersCountWidgetView.swift",
+    ],
+    module_name = "MultiFollowersCount",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

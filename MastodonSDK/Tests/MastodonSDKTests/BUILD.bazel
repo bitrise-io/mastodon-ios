@@ -1,0 +1,16 @@
+load("@build_bazel_rules_swift//swift:swift_test.bzl", "swift_test")
+
+swift_test(
+    name = "MastodonSDKTests",
+    srcs = [
+        "API/MastodonSDK+API+AccountTests.swift",
+        "API/MastodonSDK+API+AppTests.swift",
+        "API/MastodonSDK+API+Instance.swift",
+        "API/MastodonSDK+API+OAuthTests.swift",
+        "API/MastodonSDK+API+OnboardingTests.swift",
+        "API/MastodonSDK+API+TimelineTests.swift",
+        "MastodonSDKTests.swift",
+    ],
+    module_name = "MastodonSDKTests",
+    deps = ["//MastodonSDK/Sources/MastodonSDK"],
+)

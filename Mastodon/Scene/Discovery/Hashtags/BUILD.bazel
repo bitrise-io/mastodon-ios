@@ -1,0 +1,18 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Hashtags",
+    srcs = [
+        "DiscoveryHashtagsViewController.swift",
+        "DiscoveryHashtagsViewModel.swift",
+        "DiscoveryHashtagsViewModel+Diffable.swift",
+    ],
+    module_name = "Hashtags",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

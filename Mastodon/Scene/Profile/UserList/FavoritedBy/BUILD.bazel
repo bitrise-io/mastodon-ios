@@ -1,0 +1,18 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "FavoritedBy",
+    srcs = [
+        "FavoritedByViewController.swift",
+        "FavoritedByViewController+DataSourceProvider.swift",
+    ],
+    module_name = "FavoritedBy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "TableviewCell",
+    srcs = [
+        "StatusTableViewCell.swift",
+        "StatusTableViewCell+ViewModel.swift",
+        "StatusTableViewCellDelegate.swift",
+        "StatusThreadRootTableViewCell.swift",
+        "StatusThreadRootTableViewCell+ViewModel.swift",
+        "ThreadReplyLoaderTableViewCell.swift",
+        "TimelineFooterTableViewCell.swift",
+        "TimelineHeaderTableViewCell.swift",
+        "UserTableViewCell.swift",
+        "UserTableViewCell+ViewModel.swift",
+    ],
+    module_name = "TableviewCell",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

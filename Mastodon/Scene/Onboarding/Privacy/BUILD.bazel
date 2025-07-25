@@ -1,0 +1,18 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Privacy",
+    srcs = [
+        "PrivacyTableViewCell.swift",
+        "PrivacyTableViewController.swift",
+        "PrivacyViewModel.swift",
+    ],
+    module_name = "Privacy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Mastodon",
+    srcs = ["BodegaPersistence.swift"],
+    module_name = "Mastodon",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

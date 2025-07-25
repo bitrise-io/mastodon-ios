@@ -1,0 +1,21 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Protocol",
+    srcs = [
+        "CellFrameCacheContainer.swift",
+        "DisposeBagCollectable.swift",
+        "PageboyNavigateable.swift",
+        "PagerTabStripNavigateable.swift",
+        "ScrollViewContainer.swift",
+        "SegmentedControlNavigateable.swift",
+        "StatusTableViewControllerNavigateable.swift",
+        "TableViewControllerNavigateable.swift",
+    ],
+    module_name = "Protocol",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonLocalization",
+    ],
+)

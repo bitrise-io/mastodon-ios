@@ -1,0 +1,21 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Following",
+    srcs = [
+        "FollowingListViewController.swift",
+        "FollowingListViewModel.swift",
+        "FollowingListViewModel+Diffable.swift",
+        "FollowingListViewModel+State.swift",
+    ],
+    module_name = "Following",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/CoreDataStack",
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+        "//MastodonSDK/Sources/MastodonUI",
+    ],
+)

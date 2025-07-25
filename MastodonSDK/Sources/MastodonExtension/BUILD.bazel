@@ -1,0 +1,23 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "MastodonExtension",
+    srcs = [
+        "Array.swift",
+        "CALayer.swift",
+        "CGImage.swift",
+        "Collection.swift",
+        "Int.swift",
+        "NSLayoutConstraint.swift",
+        "NSManagedObjectContext.swift",
+        "Publisher.swift",
+        "UIButton.swift",
+        "UIEdgeInsets.swift",
+        "UIImage.swift",
+        "UIView.swift",
+        "UInt64.swift",
+        "UserDefaults.swift",
+    ],
+    module_name = "MastodonExtension",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Helper",
+    srcs = [
+        "ImageProvider.swift",
+        "MastodonLocalCode.swift",
+        "PortraitAlertController.swift",
+        "URLActivityItem.swift",
+    ],
+    module_name = "Helper",
+    visibility = ["//visibility:public"],
+)

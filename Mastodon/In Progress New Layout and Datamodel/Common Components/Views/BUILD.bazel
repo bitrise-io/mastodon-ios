@@ -1,0 +1,26 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Views",
+    srcs = [
+        "AuthorHeaderView.swift",
+        "AvatarView.swift",
+        "LinkPreviewCard.swift",
+        "MediaAttachmentView.swift",
+        "PollView.swift",
+        "SecondaryBackground.swift",
+        "ShowMoreLozenge.swift",
+        "SocialContextHeader.swift",
+        "StatefulActionButton.swift",
+        "TextViewWithCustomEmoji.swift",
+        "WebContentView.swift",
+    ],
+    module_name = "Views",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//MastodonSDK/Sources/MastodonAsset",
+        "//MastodonSDK/Sources/MastodonCore",
+        "//MastodonSDK/Sources/MastodonLocalization",
+        "//MastodonSDK/Sources/MastodonSDK",
+    ],
+)

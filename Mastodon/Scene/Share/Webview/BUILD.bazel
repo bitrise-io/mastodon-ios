@@ -1,0 +1,12 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "Webview",
+    srcs = [
+        "WebViewController.swift",
+        "WebViewModel.swift",
+    ],
+    module_name = "Webview",
+    visibility = ["//visibility:public"],
+    deps = ["//MastodonSDK/Sources/MastodonCore"],
+)
