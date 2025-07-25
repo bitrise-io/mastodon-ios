@@ -137,3 +137,4 @@ vendor/
 # IDEs
 .idea
 .vscode
+.ijwb
