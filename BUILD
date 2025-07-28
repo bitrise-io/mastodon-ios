@@ -9,6 +9,11 @@ load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
 # control to ignore it (i.e., add it to your `.gitignore`).
 # gazelle:exclude .build
 
+# gazelle:exclude Mastodon
+# gazelle:exclude MastodonSDK
+# gazelle:exclude MastodonIntent
+# gazelle:exclude WidgetExtension
+
 # This declaration builds a Gazelle binary that incorporates all of the Gazelle
 # plugins for the languages that you use in your workspace. In this example, we
 # are only listing the Gazelle plugin for Swift from swift_gazelle_plugin.

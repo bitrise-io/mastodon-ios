@@ -2,14 +2,10 @@ load("@build_bazel_rules_swift//swift:swift_test.bzl", "swift_test")
 
 swift_test(
     name = "MastodonTests",
-    srcs = [
-        "MastodonTests.swift",
-        "MetricFormatterTests.swift",
-    ],
+    srcs = glob(["**/*.swift"]),
     module_name = "MastodonTests",
     deps = [
-        "//Mastodon",
-        "//MastodonSDK/Sources/MastodonCore",
-        "//MastodonSDK/Sources/MastodonUI",
+        "@swiftpkg_mastodonsdk//:MastodonSDK",
+        "//Mastodon:Mastodon.library",
     ],
 )
