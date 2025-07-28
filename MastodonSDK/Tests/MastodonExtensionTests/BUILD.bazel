@@ -1,8 +1,0 @@
-load("@build_bazel_rules_swift//swift:swift_test.bzl", "swift_test")
-
-swift_test(
-    name = "MastodonExtensionTests",
-    srcs = ["IntTests.swift"],
-    module_name = "MastodonExtensionTests",
-    deps = ["//MastodonSDK/Sources/MastodonSDK"],
-)
