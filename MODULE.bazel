@@ -44,8 +44,10 @@ use_repo(
     swift_deps,
     "swift_deps_info",
     "swift_package",
+    "swiftpkg_bodega",
     "swiftpkg_kanna",
     "swiftpkg_lightchart",
     "swiftpkg_mastodonsdk",
+    "swiftpkg_mastoparse",
     "swiftpkg_mbprogresshud",
 )

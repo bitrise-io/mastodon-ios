@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "bodega",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mergesort/Bodega.git",
+      "state" : {
+        "revision" : "bfd8871e9c2590d31b200e54c75428a71483afdf",
+        "version" : "2.1.3"
+      }
+    },
+    {
       "identity" : "faviconfinder",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/will-lumley/FaviconFinder.git",
@@ -82,6 +91,15 @@
       }
     },
     {
+      "identity" : "mastoparse",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mastodon/MastoParse.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2e20fb52cb51390e853687071e80e8f9d7b6055d"
+      }
+    },
+    {
       "identity" : "mbprogresshud",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jdg/MBProgressHUD.git",
@@ -136,6 +154,15 @@
       }
     },
     {
+      "identity" : "sqlite.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/stephencelis/SQLite.swift.git",
+      "state" : {
+        "revision" : "392dd6058624d9f6c5b4c769d165ddd8c7293394",
+        "version" : "0.15.4"
+      }
+    },
+    {
       "identity" : "stripes",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eneko/Stripes.git",
@@ -178,6 +205,15 @@
       "state" : {
         "revision" : "41daa93a5d229e1548ec86ab527ce4783ca84dda",
         "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "swift-toolchain-sqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-toolchain-sqlite",
+      "state" : {
+        "revision" : "b626d3002773b1a1304166643e7f118f724b2132",
+        "version" : "1.0.4"
       }
     },
     {

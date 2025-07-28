@@ -22,5 +22,10 @@ let package = Package(
             url: "https://github.com/tid-kijyun/Kanna.git",
             from: "5.2.7"
         ),
+        .package(
+            url: "https://github.com/mastodon/MastoParse.git",
+            branch: "main"
+        ),
+        .package(url: "https://github.com/mergesort/Bodega.git", .upToNextMajor(from: "2.0.0")),
     ]
 )

@@ -3262,9 +3262,9 @@
     "@@rules_swift_package_manager+//:extensions.bzl%swift_deps": {
       "general": {
         "bzlTransitiveDigest": "+z+pZIYCLcHGxGMADT76Mme+Sq6/ptcE1QGsNUmgRZ4=",
-        "usagesDigest": "A8RIh1B2V3mJDIX0ac+7T0AchaTQ95KwBO4suIFdky8=",
+        "usagesDigest": "Kegr1d3OVQeVFqmCJAbses8mk7SPMel9lJQO6HuC6a0=",
         "recordedFileInputs": {
-          "@@//Package.resolved": "c02eb477c6eaac2bfbb289b4224323eae44fe4cb6f0b06ccaa6d29d0e32785f2"
+          "@@//Package.resolved": "e397964df36927ded01d5ba293899da563322ab8a6be8b565e29cef82bbe5ee5"
         },
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -3276,7 +3276,9 @@
                 "@swiftpkg_mastodonsdk//:pkg_info.json": "mastodonsdk",
                 "@swiftpkg_lightchart//:pkg_info.json": "lightchart",
                 "@swiftpkg_mbprogresshud//:pkg_info.json": "mbprogresshud",
-                "@swiftpkg_kanna//:pkg_info.json": "kanna"
+                "@swiftpkg_kanna//:pkg_info.json": "kanna",
+                "@swiftpkg_mastoparse//:pkg_info.json": "mastoparse",
+                "@swiftpkg_bodega//:pkg_info.json": "bodega"
               }
             }
           },
@@ -3347,6 +3349,50 @@
               "commit": "41c3d28ea0eac07e4551b28def9de1ede702e739",
               "remote": "https://github.com/tid-kijyun/Kanna.git",
               "version": "5.3.0",
+              "env": {},
+              "env_inherit": [],
+              "init_submodules": false,
+              "recursive_init_submodules": true,
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_cmds": [],
+              "patch_cmds_win": [],
+              "patch_tool": "",
+              "patches": [],
+              "publicly_expose_all_targets": false,
+              "replace_scm_with_registry": false
+            }
+          },
+          "swiftpkg_mastoparse": {
+            "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
+            "attributes": {
+              "bazel_package_name": "swiftpkg_mastoparse",
+              "commit": "2e20fb52cb51390e853687071e80e8f9d7b6055d",
+              "remote": "https://github.com/mastodon/MastoParse.git",
+              "version": "",
+              "env": {},
+              "env_inherit": [],
+              "init_submodules": false,
+              "recursive_init_submodules": true,
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_cmds": [],
+              "patch_cmds_win": [],
+              "patch_tool": "",
+              "patches": [],
+              "publicly_expose_all_targets": false,
+              "replace_scm_with_registry": false
+            }
+          },
+          "swiftpkg_bodega": {
+            "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
+            "attributes": {
+              "bazel_package_name": "swiftpkg_bodega",
+              "commit": "bfd8871e9c2590d31b200e54c75428a71483afdf",
+              "remote": "https://github.com/mergesort/Bodega.git",
+              "version": "2.1.3",
               "env": {},
               "env_inherit": [],
               "init_submodules": false,
@@ -3626,6 +3672,28 @@
               "replace_scm_with_registry": false
             }
           },
+          "swiftpkg_sqlite.swift": {
+            "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
+            "attributes": {
+              "bazel_package_name": "swiftpkg_sqlite.swift",
+              "commit": "392dd6058624d9f6c5b4c769d165ddd8c7293394",
+              "remote": "https://github.com/stephencelis/SQLite.swift.git",
+              "version": "0.15.4",
+              "env": {},
+              "env_inherit": [],
+              "init_submodules": false,
+              "recursive_init_submodules": true,
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_cmds": [],
+              "patch_cmds_win": [],
+              "patch_tool": "",
+              "patches": [],
+              "publicly_expose_all_targets": false,
+              "replace_scm_with_registry": false
+            }
+          },
           "swiftpkg_stripes": {
             "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
             "attributes": {
@@ -3736,6 +3804,28 @@
               "replace_scm_with_registry": false
             }
           },
+          "swiftpkg_swift_toolchain_sqlite": {
+            "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
+            "attributes": {
+              "bazel_package_name": "swiftpkg_swift_toolchain_sqlite",
+              "commit": "b626d3002773b1a1304166643e7f118f724b2132",
+              "remote": "https://github.com/swiftlang/swift-toolchain-sqlite",
+              "version": "1.0.4",
+              "env": {},
+              "env_inherit": [],
+              "init_submodules": false,
+              "recursive_init_submodules": true,
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_cmds": [],
+              "patch_cmds_win": [],
+              "patch_tool": "",
+              "patches": [],
+              "publicly_expose_all_targets": false,
+              "replace_scm_with_registry": false
+            }
+          },
           "swiftpkg_swiftsoup": {
             "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
             "attributes": {
@@ -3792,12 +3882,14 @@
               "init_submodules": false,
               "recursive_init_submodules": true,
               "patch_args": [
-                "-p0"
+                "-p1"
               ],
               "patch_cmds": [],
               "patch_cmds_win": [],
               "patch_tool": "",
-              "patches": [],
+              "patches": [
+                "@@//third-party/tabman:tabman.patch"
+              ],
               "publicly_expose_all_targets": false,
               "replace_scm_with_registry": false
             }
@@ -3897,6 +3989,8 @@
             "swiftpkg_lightchart",
             "swiftpkg_mbprogresshud",
             "swiftpkg_kanna",
+            "swiftpkg_mastoparse",
+            "swiftpkg_bodega",
             "swift_deps_info",
             "swift_package"
           ],
