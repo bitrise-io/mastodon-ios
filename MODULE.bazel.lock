@@ -209,7 +209,7 @@
   "moduleExtensions": {
     "@@apple_support+//crosstool:setup.bzl%apple_cc_configure_extension": {
       "general": {
-        "bzlTransitiveDigest": "gv4nokEMGNye4Jvoh7Tw0Lzs63zfklj+n4t0UegI7Ms=",
+        "bzlTransitiveDigest": "4vzWoFey2mnm603onNMfaDX4DRoTrnIgZawOBMnWpoI=",
         "usagesDigest": "1Gzn+Vr10MnEBbqI06T5XOtNkHx83WKXFg5CtmhQ5kA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -240,7 +240,7 @@
     },
     "@@buildifier_prebuilt+//:defs.bzl%buildifier_prebuilt_deps_extension": {
       "general": {
-        "bzlTransitiveDigest": "u4exIm/Ie7MnBJpWnXNoPRCqYpyYnW2ns2kmg+V/3To=",
+        "bzlTransitiveDigest": "7rRNjMDfOHtbmT/pm0WR1bjjsYlNlI+X/FpcpoHll3o=",
         "usagesDigest": "eWMDBEn8E8CrwAPXrlrjIap2pseSMhxDyDdrntHBOOE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -379,7 +379,7 @@
     },
     "@@cgrindel_bazel_starlib+//tools/git:extensions.bzl%local_git_ext": {
       "general": {
-        "bzlTransitiveDigest": "Q/NQyKFI2DljjsevKbLpWlOrT/bOsP3m/A8uvcXQb40=",
+        "bzlTransitiveDigest": "5Ylpz6IEZF/7p+KubbRE1vOfNSfX9aqFX+b+CXIAUGA=",
         "usagesDigest": "GTJztBtxOycRqOsHe5wlfF+8S/ib0E2h3tPBY87nd2s=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -512,7 +512,7 @@
     },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
-        "bzlTransitiveDigest": "hUTp2w+RUVdL7ma5esCXZJAFnX7vLbVfLd7FwnQI6bU=",
+        "bzlTransitiveDigest": "URQTcVYyatfFO8w2HD1Z1tb8lTBnhHn1wkiu5DYTSow=",
         "usagesDigest": "QI2z8ZUR+mqtbwsf2fLqYdJAkPOHdOV+tF2yVAUgRzw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -3225,7 +3225,7 @@
     },
     "@@rules_python+//python/uv:uv.bzl%uv": {
       "general": {
-        "bzlTransitiveDigest": "Xpqjnjzy6zZ90Es9Wa888ZLHhn7IsNGbph/e6qoxzw8=",
+        "bzlTransitiveDigest": "UwuEebIvWhq1IDSj2VbBXlMc20ec8cBFyxShHe64sy8=",
         "usagesDigest": "vJ5RHUxAnV24M5swNGiAnkdxMx3Hp/iOLmNANTC5Xc8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -3261,10 +3261,10 @@
     },
     "@@rules_swift_package_manager+//:extensions.bzl%swift_deps": {
       "general": {
-        "bzlTransitiveDigest": "+z+pZIYCLcHGxGMADT76Mme+Sq6/ptcE1QGsNUmgRZ4=",
+        "bzlTransitiveDigest": "D6NDUvUIlquBBykgFB19iM7axs7enuh6dRy8dQacwAw=",
         "usagesDigest": "Kegr1d3OVQeVFqmCJAbses8mk7SPMel9lJQO6HuC6a0=",
         "recordedFileInputs": {
-          "@@//Package.resolved": "e397964df36927ded01d5ba293899da563322ab8a6be8b565e29cef82bbe5ee5"
+          "@@//Package.resolved": "77dcdc51bae93fc2ed2cd58085a25c668cd9dc0fe0e7568bfb8578ecf2502154"
         },
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -3295,7 +3295,7 @@
               "bazel_package_name": "swiftpkg_mastodonsdk",
               "env": {},
               "env_inherit": [],
-              "path": "MastodonSDK"
+              "path": "./MastodonSDK"
             }
           },
           "swiftpkg_lightchart": {

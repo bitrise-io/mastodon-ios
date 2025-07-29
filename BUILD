@@ -13,6 +13,7 @@ load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
 # gazelle:exclude MastodonSDK
 # gazelle:exclude MastodonIntent
 # gazelle:exclude WidgetExtension
+# gazelle:exclude Localization
 
 # This declaration builds a Gazelle binary that incorporates all of the Gazelle
 # plugins for the languages that you use in your workspace. In this example, we

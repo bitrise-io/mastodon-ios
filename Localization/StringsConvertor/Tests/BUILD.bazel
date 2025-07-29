@@ -1,9 +1,0 @@
-load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
-
-swift_library(
-    name = "Tests",
-    srcs = ["LinuxMain.swift"],
-    module_name = "Tests",
-    visibility = ["//visibility:public"],
-    deps = ["//Localization/StringsConvertor/Tests/StringsConvertorTests"],
-)
