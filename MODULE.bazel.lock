@@ -3295,7 +3295,7 @@
               "bazel_package_name": "swiftpkg_mastodonsdk",
               "env": {},
               "env_inherit": [],
-              "path": "/Users/ramil.ianbulatov/bitrise/mastodon-ios/MastodonSDK"
+              "path": "MastodonSDK"
             }
           },
           "swiftpkg_lightchart": {
