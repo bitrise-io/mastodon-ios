@@ -1,4 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@rules_xcodeproj//xcodeproj:defs.bzl", "top_level_target", "xcodeproj")
 
 # Ignore the `.build` folder that is created by running Swift package manager
 # commands. The Swift Gazelle plugin executes some Swift package manager
@@ -30,4 +31,18 @@ gazelle_binary(
 gazelle(
     name = "update_build_files",
     gazelle = ":gazelle_bin",
+)
+
+xcodeproj(
+    name = "xcodeproj",
+    project_name = "MastodonBazel",
+    top_level_targets = [
+        top_level_target(
+            "//Mastodon",
+            target_environments = ["simulator"],
+        ),
+        "//MastodonTests",
+        "//MastodonUITests",
+    ],
+    tags = ["manual"],
 )
