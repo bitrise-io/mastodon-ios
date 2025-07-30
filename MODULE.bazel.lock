@@ -3264,7 +3264,7 @@
         "bzlTransitiveDigest": "D6NDUvUIlquBBykgFB19iM7axs7enuh6dRy8dQacwAw=",
         "usagesDigest": "Kegr1d3OVQeVFqmCJAbses8mk7SPMel9lJQO6HuC6a0=",
         "recordedFileInputs": {
-          "@@//Package.resolved": "77dcdc51bae93fc2ed2cd58085a25c668cd9dc0fe0e7568bfb8578ecf2502154"
+          "@@//Package.resolved": "dd7eeda5524588984e4a2b67f2be0f8761523aec6c4e7902aaf3ccc8ead1c334"
         },
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -3786,9 +3786,9 @@
             "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
             "attributes": {
               "bazel_package_name": "swiftpkg_swift_system",
-              "commit": "41daa93a5d229e1548ec86ab527ce4783ca84dda",
+              "commit": "b63d24d465e237966c3f59f47dcac6c70fb0bca3",
               "remote": "https://github.com/apple/swift-system.git",
-              "version": "1.6.0",
+              "version": "1.6.1",
               "env": {},
               "env_inherit": [],
               "init_submodules": false,
@@ -3830,9 +3830,9 @@
             "repoRuleId": "@@rules_swift_package_manager+//swiftpkg/internal:swift_package.bzl%swift_package",
             "attributes": {
               "bazel_package_name": "swiftpkg_swiftsoup",
-              "commit": "dee225a3da7b68d34936abc4dc8f34f2264db647",
+              "commit": "a81b1a5ac933dee8c6cfccf05d5ffcc5eb8c7ec4",
               "remote": "https://github.com/scinfu/SwiftSoup.git",
-              "version": "2.9.6",
+              "version": "2.10.0",
               "env": {},
               "env_inherit": [],
               "init_submodules": false,
