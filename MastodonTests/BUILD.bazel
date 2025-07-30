@@ -1,0 +1,21 @@
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_test")
+
+ios_unit_test(
+    name = "MastodonTests",
+    bundle_id = "org.joinmastodon.MastodonTests",
+    minimum_os_version = "17.0",
+    test_host = "//Mastodon:Mastodon",
+    deps = [":MastodonTests.library"],
+    visibility = ["@rules_xcodeproj//xcodeproj:generated"],
+)
+
+swift_test(
+    name = "MastodonTests.library",
+    srcs = glob(["**/*.swift"]),
+    module_name = "MastodonTests",
+    deps = [
+        "@swiftpkg_mastodonsdk//:MastodonSDK",
+        "//Mastodon:Mastodon.library",
+    ],
+)

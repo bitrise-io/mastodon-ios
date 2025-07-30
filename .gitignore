@@ -137,3 +137,7 @@ vendor/
 # IDEs
 .idea
 .vscode
+.ijwb
+
+# Bazel
+bazel-*
